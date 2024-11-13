@@ -1,0 +1,5 @@
+httpx
+pytest
+
+# Load testing
+locust

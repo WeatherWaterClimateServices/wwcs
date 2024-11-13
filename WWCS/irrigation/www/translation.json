@@ -1,0 +1,221 @@
+{
+  "languages": ["en", "ru", "en/ru"],
+  "translation": [
+    {
+      "en": "Agency for hydrometeorology of the Republic of Tajikistan",
+      "ru": "Агенство по гидрометеорологии Республики Таджикистан",
+      "en/ru": "Agency for hydrometeorology of the Republic of Tajikistan / Агенство по гидрометеорологии Республики Таджикистан "
+    },
+    {
+    "en": "Forecast Time",
+    "ru": "Время прогноза",
+    "en/ru": "Forecast Time / Время прогноза"
+    
+    },
+    {
+    "en": "Map Forecast Time",
+    "ru": "карта прогноз время",
+    "en/ru": "Map Forecast Time / карта прогноз время"
+    },
+        {
+    "en": "Show map forecast",
+    "ru": "Показать прогноз на карте",
+    "en/ru": "Show map forecast / Показать прогноз на карте"
+    },
+    {
+    "en": "Map forecast",
+    "ru": "Прогноз по карте",
+    "en/ru": "Map forecast / Прогноз по карте"
+    },
+    {
+    "en": "Observation Time",
+    "ru": "Время наблюдения",
+    "en/ru": "Observation Time / Время наблюдения"
+    },
+    {
+    "en": "Select observation",
+    "ru": "Выберите наблюдение",
+    "en/ru": "Select observation / Выберите наблюдение"
+    },
+    {
+    "en": "Select language",
+    "ru": "Выберите язык",
+    "en/ru": "Select language / Выберите язык"
+    },
+    {
+    "en": "Select second observation",
+    "ru": "Выберите второе наблюдение",
+    "en/ru": "Select second observation / Выберите второе наблюдение"
+    },
+    {
+    "en": "Station Map",
+    "ru": "Карта станции",
+    "en/ru": "Station Map / Карта станции"
+    },
+    {
+    "en": "Meteogram",
+    "ru": "Метеограмма",
+    "en/ru": "Meteogram / Метеограмма"
+    },
+    {
+    "en": "Observations",
+    "ru": "Наблюдения",
+    "en/ru": "Observations / Наблюдения"
+    },
+    {
+    "en": "Status",
+    "ru": "Статус",
+    "en/ru": "Status / Статус"
+    },
+    {
+    "en": "Temperature",
+    "ru": "Температура",
+    "en/ru": "Temperature / Температура"
+    },
+    {
+    "en": "Relative Humidity",
+    "ru": "Относительная влажность",
+    "en/ru": "Relative Humidity / Относительная влажность"
+    },
+    {
+    "en": "Pressure",
+    "ru": "Давление",
+    "en/ru": "Pressure / Давление"
+    },
+    {
+    "en": "Solar",
+    "ru": "Солнечный",
+    "en/ru": "Solar / Солнечный"
+    },
+    {
+    "en": "Signal",
+    "ru": "Сигнал",
+    "en/ru": "Signal / Сигнал"
+    },
+    {
+    "en": "Battery",
+    "ru": "Аккумулятор",
+    "en/ru": "Battery / Аккумулятор"
+    },
+    {
+    "en": "Data",
+    "ru": "Данные",
+    "en/ru": "Data / Данные"
+    },
+    {
+    "en": "Station Information",
+    "ru": "Информация о станции",
+    "en/ru": "Station Information / Информация о станции"
+    },
+    {
+    "en": "Satellite",
+    "ru": "Спутник",
+    "en/ru": "Satellite / Спутник"
+    },
+    {
+    "en": "Street View",
+    "ru": "Просмотр улиц",
+    "en/ru": "Street View / Просмотр улиц"
+    },
+    {
+    "en": "Station",
+    "ru": "Станция",
+    "en/ru": "Station / Станция"
+    },
+    {
+    "en": "Altitude",
+    "ru": "Высота",
+    "en/ru": "Altitude / Высота"
+    },
+    {
+    "en": "Logger ID",
+    "ru": "Иденификатор регистратора",
+    "en/ru": "Logger ID / Идентификатор регистратора"
+    },
+    {
+    "en": "Start Date",
+    "ru": "Дата начала",
+    "en/ru": "Start Date / Дата начала"
+    },
+    {
+    "en": "Latitude",
+    "ru": "Широта",
+    "en/ru": "Latitude / Широта"
+    },
+    {
+    "en": "Longitude",
+    "ru": "Долгота",
+    "en/ru": "Longitude / Долгота"
+    },
+    {
+    "en": "Precipitation",
+    "ru": "Дождь",
+    "en/ru": "Precipitation / Дождь"
+    },
+    {
+    "en": "Show raw forecast",
+    "ru": "Показать необработанный прогноз",
+    "en/ru": "Show raw forecast / Показать необработанный прогноз"
+    },
+    {
+    "en": "Show administrative areas",
+    "ru": "Показать административные зоны",
+    "en/ru": "Show administrative areas / Показать административные зоны"
+    },
+    {
+    "en": "Overview",
+    "ru": "Обзор",
+    "en/ru": "Overview / Обзор"
+    },
+    {
+    "en": "Irrigation",
+    "ru": "Ирригация",
+    "en/ru": "Irrigation / Ирригация"
+    },
+    {
+    "en": "Map",
+    "ru": "Карта",
+    "en/ru": "Map / Карта"
+    },
+    {
+    "en": "Irrigation Advice",
+    "ru": "Советы по орошению",
+    "en/ru": "Irrigation Advice / Советы по орошению"
+    },
+    {
+    "en": "Water Balance",
+    "ru": "Водный баланс",
+    "en/ru": "Water Balance / Водный баланс"
+    },
+    {
+    "en": "Soil Moisture Balance",
+    "ru": "Баланс влажности почвы",
+    "en/ru": "Soil Moisture Balance / Баланс влажности почвы"
+    },
+    {
+    "en": "Site Parameters",
+    "ru": "Параметры сайта",
+    "en/ru": "Site Parameters / Параметры сайта"
+    },
+    {
+    "en": "Manual Ingestion",
+    "ru": "Ручное всасывание",
+    "en/ru": "Manual Ingestion / Ручное всасывание"
+    },
+    {
+    "en": "Automatic Ingestion",
+    "ru": "Автоматическое всасывание",
+    "en/ru": "Automatic Ingestion / Автоматическое всасывание"
+    },
+    {
+    "en": "Irrigate",
+    "ru": "Орошать",
+    "en/ru": "Irrigate / Орошать"
+    },
+    {
+    "en": "Do not irrigate",
+    "ru": "Не орошать",
+    "en/ru": "Do not irrigate / Не орошать"
+    }
+  ]
+}

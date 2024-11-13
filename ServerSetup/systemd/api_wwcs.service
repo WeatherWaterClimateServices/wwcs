@@ -1,0 +1,21 @@
+[Unit]
+Description=Python WWCS API
+After=network.target
+
+[Service]
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+PrivateTmp=true
+Restart=always
+Type=exec
+
+ExecStart=/home/wwcs/venv/bin/gunicorn api_wwcs:app -b 127.0.0.1:5052 -w 2 -k uvicorn.workers.UvicornWorker --access-logfile - --log-level=debug
+WorkingDirectory=/home/wwcs/wwcs/API
+User=wwcs
+Group=wwcs
+
+Environment="ENV=PROD"
+
+[Install]
+WantedBy=multi-user.target
+
