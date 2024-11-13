@@ -1,0 +1,221 @@
+{
+  "languages": ["en", "ru", "en/ru"],
+  "translation": [
+    {
+      "en": "Agency for hydrometeorology of the Republic of Tajikistan",
+      "ru": "Агенство по гидрометеорологии Республики Таджикистан",
+      "en/ru": "Agency for hydrometeorology of the Republic of Tajikistan / Агенство по гидрометеорологии Республики Таджикистан "
+    },
+    {
+    "en": "Forecast Time",
+    "ru": "Время прогноза",
+    "en/ru": "Forecast Time / Время прогноза"
+    
+    },
+    {
+    "en": "Map Forecast Time",
+    "ru": "карта прогноз время",
+    "en/ru": "Map Forecast Time / карта прогноз время"
+    },
+        {
+    "en": "Show map forecast",
+    "ru": "Показать прогноз на карте",
+    "en/ru": "Show map forecast / Показать прогноз на карте"
+    },
+    {
+    "en": "Map forecast",
+    "ru": "Прогноз по карте",
+    "en/ru": "Map forecast / Прогноз по карте"
+    },
+    {
+    "en": "Observation Time",
+    "ru": "Время наблюдения",
+    "en/ru": "Observation Time / Время наблюдения"
+    },
+    {
+    "en": "Select observation",
+    "ru": "Выберите наблюдение",
+    "en/ru": "Select observation / Выберите наблюдение"
+    },
+    {
+    "en": "Select language",
+    "ru": "Выберите язык",
+    "en/ru": "Select language / Выберите язык"
+    },
+    {
+    "en": "Select second observation",
+    "ru": "Выберите второе наблюдение",
+    "en/ru": "Select second observation / Выберите второе наблюдение"
+    },
+    {
+    "en": "Station Map",
+    "ru": "Карта станции",
+    "en/ru": "Station Map / Карта станции"
+    },
+    {
+    "en": "Meteogram",
+    "ru": "Метеограмма",
+    "en/ru": "Meteogram / Метеограмма"
+    },
+    {
+    "en": "Observations",
+    "ru": "Наблюдения",
+    "en/ru": "Observations / Наблюдения"
+    },
+    {
+    "en": "Status",
+    "ru": "Статус",
+    "en/ru": "Status / Статус"
+    },
+    {
+    "en": "Temperature",
+    "ru": "Температура",
+    "en/ru": "Temperature / Температура"
+    },
+    {
+    "en": "Relative Humidity",
+    "ru": "Относительная влажность",
+    "en/ru": "Relative Humidity / Относительная влажность"
+    },
+    {
+    "en": "Pressure",
+    "ru": "Давление",
+    "en/ru": "Pressure / Давление"
+    },
+    {
+    "en": "Solar",
+    "ru": "Солнечный",
+    "en/ru": "Solar / Солнечный"
+    },
+    {
+    "en": "Signal",
+    "ru": "Сигнал",
+    "en/ru": "Signal / Сигнал"
+    },
+    {
+    "en": "Battery",
+    "ru": "Аккумулятор",
+    "en/ru": "Battery / Аккумулятор"
+    },
+    {
+    "en": "Data",
+    "ru": "Данные",
+    "en/ru": "Data / Данные"
+    },
+    {
+    "en": "Station Information",
+    "ru": "Информация о станции",
+    "en/ru": "Station Information / Информация о станции"
+    },
+    {
+    "en": "Satellite",
+    "ru": "Спутник",
+    "en/ru": "Satellite / Спутник"
+    },
+    {
+    "en": "Street View",
+    "ru": "Просмотр улиц",
+    "en/ru": "Street View / Просмотр улиц"
+    },
+    {
+    "en": "Station",
+    "ru": "Станция",
+    "en/ru": "Station / Станция"
+    },
+    {
+    "en": "Altitude",
+    "ru": "Высота",
+    "en/ru": "Altitude / Высота"
+    },
+    {
+    "en": "Logger ID",
+    "ru": "Иденификатор регистратора",
+    "en/ru": "Logger ID / Идентификатор регистратора"
+    },
+    {
+    "en": "Start Date",
+    "ru": "Дата начала",
+    "en/ru": "Start Date / Дата начала"
+    },
+    {
+    "en": "Latitude",
+    "ru": "Широта",
+    "en/ru": "Latitude / Широта"
+    },
+    {
+    "en": "Longitude",
+    "ru": "Долгота",
+    "en/ru": "Longitude / Долгота"
+    },
+    {
+    "en": "Precipitation",
+    "ru": "Дождь",
+    "en/ru": "Precipitation / Дождь"
+    },
+    {
+    "en": "Show raw forecast",
+    "ru": "Показать необработанный прогноз",
+    "en/ru": "Show raw forecast / Показать необработанный прогноз"
+    },
+    {
+    "en": "Show administrative areas",
+    "ru": "Показать административные зоны",
+    "en/ru": "Show administrative areas / Показать административные зоны"
+    },
+    {
+    "en": "Control Panel",
+    "ru": "Панель управления",
+    "en/ru": "Control Panel / Панель управления"
+    },
+    {
+    "en": "Warning Levels",
+    "ru": "Уровни предупреждения",
+    "en/ru": "Warning Levels / Уровни предупреждения"
+    },
+    {
+    "en": "Warning Map",
+    "ru": "Карта предупреждений",
+    "en/ru": "Warning Map / Карта предупреждений"
+    },
+    {
+    "en": "Warning Thresholds",
+    "ru": "Пороги предупреждения",
+    "en/ru": "Warning Thresholds / Пороги предупреждения"
+    },
+    {
+    "en": "Thresholds",
+    "ru": "Пороги",
+    "en/ru": "Thresholds / Пороги"
+    },
+    {
+    "en": "Warnings",
+    "ru": "Предупреждения",
+    "en/ru": "Warnings / Предупреждения"
+    },
+    {
+    "en": "Frost",
+    "ru": "Мороз",
+    "en/ru": "Frost / Мороз"
+    },
+    {
+    "en": "Heat",
+    "ru": "Тепло",
+    "en/ru": "Heat / Тепло"
+    },
+    {
+    "en": "Low probability",
+    "ru": "Низкая вероятность",
+    "en/ru": "Low probability / Низкая вероятность"
+    },
+    {
+    "en": "Medium probability",
+    "ru": "Средняя вероятность",
+    "en/ru": "Medium probability / Средняя вероятность"
+    },
+    {
+    "en": "High probability",
+    "ru": "Высокая вероятность",
+    "en/ru": "High probability / Высокая вероятность"
+    }
+  ]
+}

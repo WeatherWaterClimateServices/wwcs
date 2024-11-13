@@ -1,0 +1,16 @@
+# api_wwcs
+python-dotenv
+xarray
+netcdf4
+
+# Flask
+Flask
+Flask-MySQLdb
+gevent
+gunicorn
+
+# FastAPI
+databases[asyncmy]
+fastapi
+mysqlclient
+uvicorn

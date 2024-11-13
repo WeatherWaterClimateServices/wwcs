@@ -1,0 +1,140 @@
+/* Global Font adjustments */
+* { font-family: Helvetica; color: #404040; }
+
+/* Header background */
+.skin-blue .main-header {
+  background-color: #ffffff;
+}
+
+/* Header background */
+.navbar-custom-menu {
+  margin-right: 30px;
+}
+
+/* Logo */
+.skin-blue .main-header .logo {
+  background-color: #ffffff;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  height: 90px;
+}
+
+/* Logo when hovered */
+.skin-blue .main-header .logo:hover {
+  background-color: #ffffff;
+}
+
+/* navbar (rest of the header) */
+.skin-blue .main-header .navbar {
+  background-color: #ffffff;
+  height: 100px;
+}
+
+/* Menu Language */
+.main-header .navbar-custom-menu {
+  margin-top: 10px;
+}
+
+/*Toggle button when hovered  */                    
+.skin-blue .main-header .navbar .sidebar-toggle{
+ color: #404040;
+ background-color: #ffffff;
+ margin-top: 25px;
+ font-size: 16px;
+ margin-left: -20px
+}
+
+/* Toggle button when hovered  */                    
+.skin-blue .main-header .navbar .sidebar-toggle:hover {
+ color: #404040;
+ background-color: #ebebeb;
+ margin-top: 25px;
+ font-size: 16px;
+}
+
+/* Main sidebar */
+.skin-blue .main-sidebar {
+   margin-top: 50px;
+   margin-right: 50px;
+   background-color: #ebebeb;
+   color: white;
+}
+
+.skin-blue .sidebar-menu>li.active>a {
+   background-color:  #e6f2ff;
+}
+
+.skin-blue .sidebar-menu>li.hover>a {
+   background-color:  #e6f2ff;
+}
+
+.sidebar .shiny-input-container {
+   margin-top: 15px;
+}
+
+/* Box properties */
+.box.box-solid.box-primary>.box-header {
+  color:#ffffff;
+  background:#ffffff;
+  border-radius: 5px 5px 0px 0px;
+}
+
+.box.box-solid.box-primary{
+  border-radius: 5px 5px 5px 5px;
+  border-color: #ffffff;
+  
+}
+
+/* Boxes header text */
+.box-header h3.box-title {
+   font-size: 18px;
+   text-transform: uppercase;
+}
+
+/* Tab-box adjustments */
+.nav-tabs-custom {
+  overflow: hidden;
+}
+
+/* Tab-box adjustments */
+.shiny-input-container {
+  margin: auto;
+  margin-top: 0px;
+  margin-bottom: -20px;
+}
+.nav-tabs-custom > .nav-tabs > li.header {
+   font-size: 18px;
+   text-transform: uppercase;
+}
+
+/* Value adjustments */
+.small-box p{
+  color: white;
+}  
+.small-box h3{
+  color: white;
+}  
+
+.small-box h3 {
+    font-size: 26px;
+}
+
+.small-box.bg-teal {
+   background-color: #404040 !important;
+}  
+
+/* Body Background */
+.content-wrapper, .right-side {background-color: #ebebeb;}
+
+/*Fontsize Leaflet Menue */
+.leaflet {
+  font-size: 14px;
+  border-color: #ffffff;
+}
+
+/*Fontsize Markers */
+.awesome-marker i {
+	font-size: 11px !important;
+}
+
+

@@ -1,0 +1,14 @@
+{
+    "Adafruit BME280 Library": "2.2.4",
+    "GovoroxSSLClient": "1.3.2",
+    "Adafruit Unified Sensor": "1.1.14",
+    "LTC2942": "1.2.2",
+    "Adafruit BMP3XX Library": "2.1.5",
+    "arduino-sht": "1.2.5",
+    "ArduinoJson": "7.2.0",
+    "Time": "1.6.1",
+    "ESP32Time": "2.0.6",
+    "ArduinoHttpClient": "0.6.1",
+    "StreamDebugger": "1.0.1",
+    "TinyGSM": "0.12.0"
+}
