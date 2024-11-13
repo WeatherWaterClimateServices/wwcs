@@ -1,0 +1,85 @@
+Test
+MS Rohat
+MS Palos Proletarier
+MS Rogun
+MS Rohat
+MS Kushtepa
+MS Durakhshon-1
+MS Safed-dara
+MS Hirmancho
+MS Sagirdasht
+SE Akdjar-Syrdarya
+SE Kzylkishlak-Syrdarya
+SE Kayrakkum-Wasser. - Syrdarya
+SE Tartki - Kafarnigan-Test
+SE Tartki
+SE Sardai miena
+HP Hirmanjo-Pyanj
+GP Ayvaj-Pandsch
+Khorog-Gunt
+GP Schuchand-Bartang
+GP Garm - Vakhsh
+GP Darband - Vakhsh
+GP Yozgand - Obihingou
+GP Karbostonak
+GP Tarkti - Kafirnigan
+GP Dagana-Warzob
+GP Dupuli - Zeravshan
+GP Tigrovaya Balka - Vakhsh
+GP Irht-Küste - Sarez-See. Sarez
+MS Sawnob
+MS Buston
+MS Kairakkum-Stausee
+MS Khujand-Oburdon
+MS Gulshan
+MS Isfara
+MS Panjikent
+MS Istaravshan
+MS Shakhristan
+MS Sangiston
+MS Mayhura
+MS Iskanderkul
+MS Anzob-Pass
+MS Yavan
+MS Madruskat
+MS Dehavz
+MS Kalailabiob
+MS Lyakhsh
+MS Khushyori
+MS Duschanbe
+MS Hissar
+MS Isanbai
+MS Darband
+MS Chormagzak
+MS Bustonobod
+MS Sanglok
+MS Faizabad
+MS Hawaling
+MS Dangara
+MS Rasht
+MS Tavildara
+MS Darvoz
+MS Muminobod
+MS Gorbunov 
+MS Humrogi
+MS Irht
+MS Karakul
+MS Murgab
+MS Ayvaj
+MS Ganzhina
+MS Kurgan-Tjube
+MS Nischni Panj
+MS Hamadoni
+MS Kulob
+MS Farkhor
+MS Pandsch
+MS Navobod
+MS Rushan
+MS Bulunkul
+MS Chorog
+MS Javshangoz
+MS Ishkashim
+MC Shaymak
+MC-GGP
+MC Rohat
+M99

@@ -1,0 +1,14 @@
+[Unit]
+Description=Irrigation Bot
+
+[Service]
+User=wwcs
+Group=wwcs
+WorkingDirectory=/home/wwcs/wwcs/ServerBackend/WWCS-MeteoSwiss/irrigation/telegramBot
+ExecStart=/home/wwcs/venv/bin/python bot.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+

@@ -1,0 +1,8 @@
+httpx
+pyduinocli
+PySide6
+python-dateutil
+qrcode
+
+# This is needed only to build the installer
+pyinstaller

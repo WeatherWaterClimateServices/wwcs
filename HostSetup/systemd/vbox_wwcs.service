@@ -1,0 +1,20 @@
+[Unit]
+Description=VirtualBox WWCS
+After=network.target vboxdrv.service
+
+[Service]
+User=omar
+Group=omar
+Type=forking
+Restart=no
+TimeoutSec=5min
+IgnoreSIGPIPE=no
+KillMode=process
+GuessMainPID=no
+RemainAfterExit=yes
+
+ExecStart=/usr/bin/VBoxManage startvm WWCSVM --type headless
+ExecStop=/usr/bin/VBoxManage controlvm WWCSVM acpipowerbutton
+
+[Install]
+WantedBy=multi-user.target
