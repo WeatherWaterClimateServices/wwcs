@@ -16,7 +16,7 @@ library(DBI)
 # PARALLEL COMPUTING
 # ------------------------------------------------
 
-numOfCores <- parallel::detectCores() - 1
+numOfCores <- parallel::detectCores() - 2
 # Register all the cores
 doParallel::registerDoParallel(numOfCores)
 

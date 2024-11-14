@@ -26,6 +26,10 @@ if (gadm0 == "TJK") {
 # ------------------------------------------------
 
 ui <- fluidPage(
+  # Add favicon
+  tags$head(
+    tags$link(rel = "shortcut icon", href = "api_favicon.ico")
+  ),
   tags$style(type = "text/css", "#map {height: calc(60vh) !important;}; "),
   column(width = 7,
          titlePanel("Weather, Water, and Climate Service Data Retrieval"),

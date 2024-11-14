@@ -105,4 +105,19 @@ body <- dashboardBody(
   )
 )
 
-ui <- dashboardPage(skin = "blue", title = "WWCS - Harvest", header, sidebar, body)
+
+ui <- tagList(
+  # Add favicon
+  tags$head(
+    tags$link(rel = "shortcut icon", href = "harvest_favicon.ico")
+  ),
+  
+  # Dashboard page layout
+  dashboardPage(
+    skin = "blue",
+    title = "WWCS - Harvest",
+    header,
+    sidebar,
+    body
+  )
+)

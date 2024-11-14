@@ -106,11 +106,19 @@ body <- dashboardBody(
   )
 )
 
-ui <- dashboardPage(skin = "blue",
-                    title = tags$head(tags$link(rel="icon", 
-                                                href="data:image/x-icon;base64,AAABAAEAEBAQAAEAetc", 
-                                                type="image/x-icon")
-                    ),
-                    header,
-                    sidebar,
-                    body)
+ui <- tagList(
+  # Add favicon
+  tags$head(
+    tags$link(rel = "shortcut icon", href = "planting_favicon.ico")
+  ),
+  
+  # Dashboard page layout
+  dashboardPage(
+    skin = "blue",
+    title = "WWCS - Planting",
+    header,
+    sidebar,
+    body
+  )
+)
+

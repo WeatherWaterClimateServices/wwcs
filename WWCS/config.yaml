@@ -1,4 +1,5 @@
 # Configuration file for the WWCS application
+
 servicepass: "wwcs1234" # Password for service applications
 wwcs_domain: "wwcs.tj" # Domain name of the server
 
