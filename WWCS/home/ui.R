@@ -55,7 +55,7 @@ shinyUI(# Include a fliudPage above the navbar to incorporate a icon in the head
               image = 'cold-wave-small.png',
               label = 'Cold and Heat Early Warning',
               content = 'Control Panel for Early Warning',
-              button_link = paste0('https://', wwcs_domain,'ews'), 
+              button_link = paste0('https://', wwcs_domain,'/ews'), 
               button_label = 'Click me'
             )
           ),
