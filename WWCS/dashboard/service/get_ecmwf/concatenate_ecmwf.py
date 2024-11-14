@@ -1,14 +1,3 @@
-#!/usr/bin/env python
-
-# --------------------------------
-#
-# RETRIEVAL OF ECMWF FORECASTS FOR 
-# THE WWCS TAJIKISTAN PROJECT
-#
-# Author: Omar Bellprat
-# Date: 7.2.2022
-# --------------------------------
-
 import os
 import yaml
 from ecmwfapi import *
@@ -18,6 +7,13 @@ import pandas as pd
 from datetime import datetime, timedelta
 import mysql.connector
 import xarray as xr
+from dotenv import load_dotenv
+
+# Configuration
+load_dotenv("/opt/shiny-server/WWCS/.env")
+ENV = os.environ.get('ENV')
+USERNAME = os.environ.get('USERNAME', 'wwcs')
+PASSWORD = os.environ.get('PASSWORD')
 
 cdo = Cdo()
 
@@ -60,7 +56,7 @@ os.chdir(outdir)
 # Read station names and locations
 # --------------------------------
 
-cnx = mysql.connector.connect(user='wwcs', password=config['dbpass'],
+cnx = mysql.connector.connect(user='wwcs', password=PASSWORD,
                               host='127.0.0.1',
                               database='SitesHumans')
 

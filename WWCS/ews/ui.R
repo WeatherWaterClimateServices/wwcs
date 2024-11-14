@@ -138,4 +138,18 @@ body <- dashboardBody(
   )
 )
 
-ui <- dashboardPage(skin = "blue", title = "WWCS - Early Warnings", header, sidebar, body)
+ui <- tagList(
+  # Add favicon
+  tags$head(
+    tags$link(rel = "shortcut icon", href = "coldwave_favicon.ico")
+  ),
+  
+  # Dashboard page layout
+  dashboardPage(
+    skin = "blue",
+    title = "WWCS - Early Warning",
+    header,
+    sidebar,
+    body
+  )
+)

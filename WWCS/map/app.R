@@ -173,6 +173,10 @@ alignCenter <- function(el) {
 
 # Define UI
 ui <- fluidPage(
+  # Add favicon
+  tags$head(
+    tags$link(rel = "shortcut icon", href = "dashboard_favicon.ico")
+  ),
   shinybrowser::detect(),
   tags$style(type = "text/css", "#map {height: calc(90vh) !important;}; "),
   tags$style(type = 'text/css', '.modal-dialog { width: fit-content !important};'),

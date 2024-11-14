@@ -157,10 +157,20 @@ text - align:center
   )
 )
 
-ui <- dashboardPage(skin = "blue",
-                    title = "WWCS - Dashboard",
-                    header,
-                    sidebar,
-                    body)
+ui <- tagList(
+  # Add favicon
+  tags$head(
+    tags$link(rel = "shortcut icon", href = "dashboard_favicon.ico")
+  ),
+  
+  # Dashboard page layout
+  dashboardPage(
+    skin = "blue",
+    title = "WWCS - Dashboard",
+    header,
+    sidebar,
+    body
+  )
+)
 
 ui <- secure_app(ui)

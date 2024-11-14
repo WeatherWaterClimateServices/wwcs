@@ -12,6 +12,14 @@ from datetime import datetime, timedelta
 import fnmatch
 import mysql.connector
 import yaml
+from dotenv import load_dotenv
+
+# Configuration
+load_dotenv("/opt/shiny-server/WWCS/.env")
+ENV = os.environ.get('ENV')
+USERNAME = os.environ.get('USERNAME', 'wwcs')
+PASSWORD = os.environ.get('PASSWORD')
+
 
 # Load YAML data from a file
 with open('/opt/shiny-server/WWCS/config.yaml', 'r') as file:
@@ -64,7 +72,7 @@ os.chdir(outdir)
 # Read station names and locations
 # --------------------------------
 
-cnx = mysql.connector.connect(user='wwcs', password=config['dbpass'],
+cnx = mysql.connector.connect(user='wwcs', password=PASSWORD,
                               host='127.0.0.1',
                               database='SitesHumans')
 

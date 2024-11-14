@@ -171,11 +171,20 @@ body <- dashboardBody(
 
 
 
-ui <- dashboardPage(skin = "blue",
-                    title = "WWCS - Irrigation",
-                    header,
-                    sidebar,
-                    body)
-
+ui <- tagList(
+  # Add favicon
+  tags$head(
+    tags$link(rel = "shortcut icon", href = "irrigation_favicon.ico")
+  ),
+  
+  # Dashboard page layout
+  dashboardPage(
+    skin = "blue",
+    title = "WWCS - Irrigation",
+    header,
+    sidebar,
+    body
+  )
+)
 # Wrap your UI with secure_app
 # ui <- secure_app(ui)

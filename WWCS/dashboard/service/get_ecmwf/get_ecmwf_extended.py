@@ -11,6 +11,13 @@ import datetime as datetime
 import fnmatch
 import mysql.connector
 import yaml
+from dotenv import load_dotenv
+
+# Configuration
+load_dotenv("/opt/shiny-server/WWCS/.env")
+ENV = os.environ.get('ENV')
+USERNAME = os.environ.get('USERNAME', 'wwcs')
+PASSWORD = os.environ.get('PASSWORD')
 
 # Define global variables
 # --------------------------------
@@ -22,7 +29,6 @@ train_period = config['train_period']
 forecast_days = config['forecast_days']
 total_days = train_period + forecast_days
 
-    
 server = ECMWFService("mars")
 outdir = "/srv/shiny-server/dashboard/ifsdata"
 dat = [d.strftime("%Y-%m-%d") for d in pd.date_range(datetime.datetime.today() - datetime.timedelta(days = 20), datetime.datetime.today())]
@@ -31,7 +37,7 @@ os.chdir(outdir)
 # Read station names and locations
 # --------------------------------
 
-cnx = mysql.connector.connect(user='wwcs', password=config['dbpass'],
+cnx = mysql.connector.connect(user='wwcs', password=PASSWORD,
                               host='127.0.0.1',
                               database='SitesHumans')
 
