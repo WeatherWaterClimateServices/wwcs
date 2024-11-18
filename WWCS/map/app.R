@@ -35,7 +35,7 @@ credentials <- data.frame(
 # Read administrative areas
 bd <- sf::st_read(
   paste0(
-    "/opt/shiny-server/WWCS/boundaries/gadm41_",
+    "/srv/shiny-server/dashboard/appdata/boundaries/gadm41_",
     gadm0,
     "_2.shp"
   ),
