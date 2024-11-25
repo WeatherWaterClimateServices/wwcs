@@ -32,14 +32,17 @@ total_days = train_period + forecast_days
 # Delete all files which are old
 # --------------------------------
 
-directory_path = "/srv/shiny-server/dashboard/ifsdata"
+outdir = "/srv/shiny-server/dashboard/ifsdata"
 
+if not os.path.exists(outdir):
+   os.makedirs(outdir)
+    
 date_pattern = r'(\d{4})-(\d{2})-(\d{2})'
 
 two_months_ago = datetime.now() - timedelta(days=60)
 
 # Iterate over all files in the directory.
-for filename in os.listdir(directory_path):
+for filename in os.listdir(outdir):
     # Search for the date in the filename using regex.
     match = re.search(date_pattern, filename)
     
@@ -54,7 +57,7 @@ for filename in os.listdir(directory_path):
             # Compare the extracted date with the threshold date.
             if file_date < two_months_ago:
                 # Build the full path of the file to delete.
-                file_path = os.path.join(directory_path, filename)
+                file_path = os.path.join(outdir, filename)
                 os.remove(file_path)
                 print(f"Deleted: {file_path}")
         except ValueError:
@@ -65,7 +68,8 @@ for filename in os.listdir(directory_path):
 # --------------------------------
 
 server = ECMWFService("mars")
-outdir = "/srv/shiny-server/dashboard/ifsdata"
+
+   
 dat = [d.strftime("%Y-%m-%d") for d in pd.date_range(datetime.today() - timedelta(days = total_days), datetime.today())]
 os.chdir(outdir)
 
