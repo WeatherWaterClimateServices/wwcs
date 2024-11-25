@@ -11,6 +11,9 @@ echo "=== CRON JOB ==="
 
 cd /srv/shiny-server/dashboard/service/
 
+# Ensure the cronout folder exists
+mkdir -p cronout
+
 echo "=== GET LATEST OBSERVATIONS  ==="
 
 R CMD BATCH --no-save get_wwcs/get_wwcs.R cronout/wwcs.out
