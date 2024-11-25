@@ -11,11 +11,11 @@ cd /srv/shiny-server/dashboard/service
 
 echo "=== RETRIEVE EMCWF FORECASTS ==="
 
-python3 get_ecmwf/get_ecmwf.py > cronout/ecmwf.out
+./get_ecmwf/get_ecmwf.py > cronout/ecmwf.out
 
-python3 get_ecmwf/get_ecmwf_extended.py > cronout/ecmwf_extended.out
+./get_ecmwf/get_ecmwf_extended.py > cronout/ecmwf_extended.out
 
-python3 get_ecmwf/concatenate_ecmwf.py > cronout/ecmwf_concatenate.out
+./get_ecmwf/concatenate_ecmwf.py > cronout/ecmwf_concatenate.out
 
 echo "=== GET OBSERVATIONS AND POSTPROCESS FORECASTS ==="
 
