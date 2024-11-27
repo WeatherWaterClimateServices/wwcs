@@ -33,4 +33,6 @@ WWCS/boundaries/
 WWCS/weather_icons.zip
 WWCS/map_dev/
 WWCS/dashboard_dev/
+WWCS/dashboard/service/cronjob_tjhm_data.sh
+WWCS/dashboard/service/get_hydromet_data/
 
