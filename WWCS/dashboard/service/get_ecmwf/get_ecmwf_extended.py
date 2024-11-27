@@ -29,6 +29,11 @@ train_period = config['train_period']
 forecast_days = config['forecast_days']
 total_days = train_period + forecast_days
 
+maxlat = config['maxlat']
+minlat = config['minlat']
+maxlon = config['maxlon']
+minlon = config['minlon']
+
 server = ECMWFService("mars")
 outdir = "/srv/shiny-server/dashboard/ifsdata"
 dat = [d.strftime("%Y-%m-%d") for d in pd.date_range(datetime.datetime.today() - datetime.timedelta(days = 20), datetime.datetime.today())]
@@ -76,7 +81,7 @@ for i in dat:
                 "time": "00:00:00",
                 "type": "pf",
                 "grid": "0.1/0.1",
-                "area": "41.5/67/36.5/75.5",
+                "area": str(maxlat) + "/" + str(minlon) + "/" + str(minlat) + "/" + str(maxlon),
             },
             "output_extended.grb")
         os.system('grib_to_netcdf output_extended.grb -o output_' + i + '_extended.nc')

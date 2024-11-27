@@ -13,6 +13,10 @@ import yaml
 with open("/opt/shiny-server/WWCS/config.yaml", 'r') as file:
     config = yaml.safe_load(file)
 
+maxlat = config['maxlat']
+minlat = config['minlat']
+maxlon = config['maxlon']
+minlon = config['minlon']
 
 # Retrieve ECMWF Data 
 # --------------------------------
@@ -59,7 +63,7 @@ print("Converting files to netcdf ...")
 for i in range(len(files)):
     if not glob.glob(files_nc_tj[i]):
         cdo.copy(input = files[i], output =  files_nc[i], options = '-t ecmwf -f nc')
-        cdo.sellonlatbox("67,75.5,36.5,41.5", input = files_nc[i], output = files_nc_tj[i])
+        cdo.sellonlatbox(str(minlon) + "," + str(maxlon) + "," + str(minlat) + "," + str(maxlon), input = files_nc[i], output = files_nc_tj[i])
 
 cdo.mergetime(input = tmpdir + "output_tj_step_*.nc", output = outdir + "tj_area_" + dat + ".nc")
 
