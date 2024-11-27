@@ -27,22 +27,25 @@ with open('/opt/shiny-server/WWCS/config.yaml', 'r') as file:
     
 train_period = config['train_period']
 forecast_days = config['forecast_days']
+
+maxlat = config['maxlat']
+minlat = config['minlat']
+maxlon = config['maxlon']
+minlon = config['minlon']
+
 total_days = train_period + forecast_days
 
 # Delete all files which are old
 # --------------------------------
 
-outdir = "/srv/shiny-server/dashboard/ifsdata"
+directory_path = "/srv/shiny-server/dashboard/ifsdata"
 
-if not os.path.exists(outdir):
-   os.makedirs(outdir)
-    
 date_pattern = r'(\d{4})-(\d{2})-(\d{2})'
 
 two_months_ago = datetime.now() - timedelta(days=60)
 
 # Iterate over all files in the directory.
-for filename in os.listdir(outdir):
+for filename in os.listdir(directory_path):
     # Search for the date in the filename using regex.
     match = re.search(date_pattern, filename)
     
@@ -57,7 +60,7 @@ for filename in os.listdir(outdir):
             # Compare the extracted date with the threshold date.
             if file_date < two_months_ago:
                 # Build the full path of the file to delete.
-                file_path = os.path.join(outdir, filename)
+                file_path = os.path.join(directory_path, filename)
                 os.remove(file_path)
                 print(f"Deleted: {file_path}")
         except ValueError:
@@ -68,8 +71,7 @@ for filename in os.listdir(outdir):
 # --------------------------------
 
 server = ECMWFService("mars")
-
-   
+outdir = "/srv/shiny-server/dashboard/ifsdata"
 dat = [d.strftime("%Y-%m-%d") for d in pd.date_range(datetime.today() - timedelta(days = total_days), datetime.today())]
 os.chdir(outdir)
 
@@ -112,7 +114,7 @@ for i in dat:
                 "time": "00:00:00",
                 "type": "em",
                 "grid": "0.1/0.1",
-                "area": "41.5/67/36.5/75.5",
+                "area": str(maxlat) + "/" + str(minlon) + "/" + str(minlat) + "/" + str(maxlon),
             },
             "output_em.grb")
         server.execute(
@@ -127,7 +129,7 @@ for i in dat:
                 "time": "00:00:00",
                 "type": "es",
                 "grid": "0.1/0.1",
-                "area": "41.5/67/36.5/75.5",
+                "area": str(maxlat) + "/" + str(minlon) + "/" + str(minlat) + "/" + str(maxlon),
             },
             "output_es.grb")
         # Postprocess Data
