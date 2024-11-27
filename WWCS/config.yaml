@@ -5,10 +5,10 @@ wwcs_domain: "wwcs.tj" # Domain name of the server
 
 # Define area of WWCS application
 
-minlat: 36.67197 
-maxlat: 41.05197   
-minlon: 67.38713   
-maxlon: 75.14713  
+minlat: 36.5 
+maxlat: 41.5  
+minlon: 67   
+maxlon: 75.5
 
 # Define view point of leaflet map
 
