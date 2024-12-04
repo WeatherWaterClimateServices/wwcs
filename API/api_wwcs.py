@@ -120,6 +120,197 @@ async def get_obs_by_area(response: Response, area: str):
     return []
 
 
+async def get_stations_metadata():
+    query = """
+        SELECT 
+            siteID,
+            siteName,
+            latitude,
+            longitude,
+            altitude
+        FROM SitesHumans.Sites
+        WHERE type = 'WWCS'
+        ORDER BY siteName
+    """
+
+    rows = await database_machines.fetch_all(query=query)
+    
+    # Format the result
+    results = []
+    # If siteID starts with "CLIM" then use the sensor_type = ClimaVue, otherwise use Sensirion
+    for row in rows:
+        results.append({
+            "siteID": row.siteID,
+            "siteName": row.siteName,
+            "latitude": row.latitude,
+            "longitude": row.longitude,
+            "altitude": row.altitude,
+            "sensor_type": "ClimaVUE50" if row.siteID.startswith("CLIM") else "SensirionSHT30",
+            "sensor_height": "2m"
+        })
+    
+    return results
+
+@app.get("/stations/")
+async def get_stations(response: Response):
+    try:
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return await get_stations_metadata()
+    except Exception:
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Internal Server Error")
+
+  
+
+async def get_ecmwf(siteID):
+    query = """
+        SELECT 
+            mo.loggerID,
+            mo.timestamp,
+            mo.ta,
+            mo.rh,
+            mo.p,
+            mo.ts10cm,
+            mo.pr,
+            mo.wind_speed,
+            mo.wind_dir,
+            mo.wind_gust,
+            mo.rad,
+            mo.U_Battery1,
+            mo.U_Solar,
+            mo.signalStrength,
+            mo.lightning_count,
+            mo.lightning_dist,
+            mo.vapour_press,
+            sh.siteName,
+            sh.latitude,
+            sh.longitude
+        FROM v_machineobs mo
+        JOIN SitesHumans.Sites sh ON mo.siteID = sh.siteID
+        WHERE mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        AND mo.siteID = :siteID
+        ORDER BY mo.timestamp DESC
+    """
+
+    rows = await database_machines.fetch_all(query=query, values={"siteID": siteID})
+    
+    # Convert rows to a list of dictionaries with the correct structure
+    results = []
+    for row in rows:
+        formatted_data = [
+            {
+                "label": "Air Temperature",
+                "value": None if row.ta is None else float(row.ta),
+                "unit": "°C",
+                "machineName": "air_temperature"
+            },
+            {
+                "label": "Relative Humidity",
+                "value": None if row.rh is None else float(row.rh),
+                "unit": "%",
+                "machineName": "relative_humidity"
+            },
+            {
+                "label": "Air Pressure",
+                "value": None if row.p is None else float(row.p),
+                "unit": "hPa",
+                "machineName": "air_pressure"
+            },
+            {
+                "label": "Precipitation",
+                "value": None if row.pr is None else float(row.pr),
+                "unit": "mm",
+                "machineName": "precipitation"
+            },
+            {
+                "label": "Wind Speed",
+                "value": None if row.wind_speed is None else float(row.wind_speed),
+                "unit": "m/s",
+                "machineName": "wind_speed"
+            },
+            {
+                "label": "Wind Direction",
+                "value": None if row.wind_dir is None else float(row.wind_dir),
+                "unit": "°",
+                "machineName": "wind_direction"
+            },
+            {
+                "label": "Wind Gust",
+                "value": None if row.wind_gust is None else float(row.wind_gust),
+                "unit": "m/s",
+                "machineName": "wind_gust"
+            },
+            {
+                "label": "Radiation",
+                "value": None if row.rad is None else float(row.rad),
+                "unit": "W/m²",
+                "machineName": "radiation"
+            },
+            {
+                "label": "Soil Temperature 10cm",
+                "value": None if row.ts10cm is None else float(row.ts10cm),
+                "unit": "°C",
+                "machineName": "soil_temperature_10cm"
+            },
+            {
+                "label": "Battery Voltage",
+                "value": None if row.U_Battery1 is None else float(row.U_Battery1),
+                "unit": "V",
+                "machineName": "battery_voltage"
+            },
+            {
+                "label": "Solar Voltage",
+                "value": None if row.U_Solar is None else float(row.U_Solar),
+                "unit": "V",
+                "machineName": "solar_voltage"
+            },
+            {
+                "label": "Signal Strength",
+                "value": None if row.signalStrength is None else float(row.signalStrength),
+                "unit": "dBm",
+                "machineName": "signal_strength"
+            },
+            {
+                "label": "Lightning Count",
+                "value": None if row.lightning_count is None else float(row.lightning_count),
+                "unit": "count",
+                "machineName": "lightning_count"
+            },
+            {
+                "label": "Lightning Distance",
+                "value": None if row.lightning_dist is None else float(row.lightning_dist),
+                "unit": "km",
+                "machineName": "lightning_distance"
+            },
+            {
+                "label": "Vapour Pressure",
+                "value": None if row.vapour_press is None else float(row.vapour_press),
+                "unit": "hPa",
+                "machineName": "vapour_pressure"
+            }
+        ]
+
+        results.append({
+            "name": row.siteName,
+            "siteID": siteID,
+            "datetime": convert_timestamp(str(row.timestamp)),
+            "latitude": row.latitude,
+            "longitude": row.longitude,
+            "data": formatted_data
+        })
+
+    return results
+
+@app.get("/ecmwf/")
+async def get_obs(response: Response, siteID: str):
+    try:
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return await get_ecmwf(siteID)
+    except Exception:
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Internal Server Error")
 
 # ---------------------------------------
 # GET FORECAST DATA
@@ -348,5 +539,5 @@ async def get_data_warning_harvest(request: Request, response: Response):
 def convert_timestamp(original_timestamp: str) -> str:
     """Convert ISO timestamp to RFC 1123 format."""
     dt = datetime.datetime.fromisoformat(original_timestamp)
-    return dt.strftime("%a, %d %b %Y %H:%M:%S GMT")
+    return dt.strftime("%a, %d %b %Y %H:%M:%S GMT+5")
       
