@@ -483,7 +483,7 @@ server <- function(input, output, session) {
               "Precipitation" = "pr",
               "Wind Speed" = "wind_speed",
               "Wind Direction" = "wind_dir",
-              "Battery" = "U_battery",
+              "Battery" = "U_Battery",
               "Radiation" = "rad"
             ),
             selected = c("ta")
@@ -511,9 +511,9 @@ server <- function(input, output, session) {
               "Temperature" = "ta",
               "Relative Humidity" = "rh",
               "Pressure" = "p",
-              "Solar" = "U_solar",
+              "Solar" = "U_Solar",
               "Signal" = "signalStrength",
-              "Battery" = "U_battery",
+              "Battery" = "U_Battery",
               "Box Temperature" = "logger_ta",
               "Box Relative Humidity" = "logger_rh"
             ),
