@@ -201,7 +201,7 @@ ui <- fluidPage(
   verbatimTextOutput("status")
 )
 
-ui <- secure_app(ui)
+# ui <- secure_app(ui)
 
 # Define Server
 server <- function(input, output, session) {
@@ -248,7 +248,7 @@ server <- function(input, output, session) {
   
   # Render the leaflet map
   output$map <- renderLeaflet({
-    leaflet(data = mapdata,
+    leaflet("map", data = mapdata,
             options = leafletOptions(minZoom = 6, maxZoom = 17)) %>%
       setView(lng = setlon,
               lat = setlat,
@@ -275,23 +275,6 @@ server <- function(input, output, session) {
         color = "black",
         weight = 2
       ) %>%
-      addAwesomeMarkers(
-        lng = ~ longitude[ready],
-        lat = ~ latitude[ready],
-        label = ~ siteID[ready],
-        layerId = ~ siteID[ready],
-        icon = icons_green,
-        group = "WWCS",
-        labelOptions = labelOptions(
-          style = list(
-            "color" = "white",
-            "font-size" = "14px",
-            "background-color" = "#404040",
-            "border-color" = "#404040",
-            "font-weight" = "bold"
-          )
-        )
-      )  %>%
       addLayersControl(
         position = c("bottomright"),
         overlayGroups = c("WWCS", "WWCS (hold)", "WWCS (down)", "TJHM"),
@@ -302,6 +285,28 @@ server <- function(input, output, session) {
   
   # Update the visibility of markers based on user input
   observe({
+    if (length(ready) > 0) {
+      proxy <- leafletProxy("map")
+      proxy %>%
+        addAwesomeMarkers(
+          lng = mapdata$longitude[ready],
+          lat = mapdata$latitude[ready],
+          label = mapdata$siteID[ready],
+          layerId = mapdata$siteID[ready],
+          icon = icons_green,
+          group = "WWCS",
+          labelOptions = labelOptions(
+            style = list(
+              "color" = "white",
+              "font-size" = "14px",
+              "background-color" = "#404040",
+              "border-color" = "#404040",
+              "font-weight" = "bold"
+            )
+          )
+        )
+    }
+    
     if (length(ready_hydromet) > 0) {
       proxy <- leafletProxy("map") 
       proxy %>%
