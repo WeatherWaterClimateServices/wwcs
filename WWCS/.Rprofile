@@ -103,6 +103,6 @@ calc_et0 <- function(et0_input) {
     return(out)
 }
 
-divivison <- function(x, y) {
+division <- function(x, y) {
   x / y
 }
