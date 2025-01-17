@@ -1,15 +1,16 @@
-.PHONY: install test
+.PHONY: install update_po update_mo
+
+LOCALES = tg
+PO_FILES = $(foreach loc,$(LOCALES),locale/$(loc)/LC_MESSAGES/messages.po)
 
 install:
 	python3 -m venv venv
 	./venv/bin/pip install -U pip
 	./venv/bin/pip install -r requirements.txt
 
-gettext-template:
+update_po:
 	xgettext bot.py -o locale/messages.pot
+	$(foreach po,$(PO_FILES),msgmerge --update $(po) locale/messages.pot;)
 
-gettext-build:
-	msgfmt -o locale/tg/LC_MESSAGES/messages.mo locale/tg/LC_MESSAGES/messages.po
-
-test:
-	./venv/bin/pytest test_bot.py
+update_mo:
+	$(foreach loc,$(LOCALES),msgfmt -o locale/$(loc)/LC_MESSAGES/messages.mo locale/$(loc)/LC_MESSAGES/messages.po)

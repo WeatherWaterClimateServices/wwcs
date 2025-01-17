@@ -1,14 +1,71 @@
 # Translations
 
+We only support one language per installation, and this should be defined by a
+environement variable. When deployed, set the language in the .env file like this:
+
+    LANGUAGE=tg
+
+## Introduction
+
+In the source files strings are marked for translation using gettext. For
+example:
+
+    _("Hello world")
+
+In execution the gettext function will lookup the correct translation. This is also used
+by the gettext command line programs to extract the strings to be translated, and generate
+the PO files.
+
+PO files are text files with the source messages (msgid) and their translations (msgstr).
+For a new language the translations will be empty at the beginning.
+
+The PO files must be edited to add or update the translations. And then the PO files must
+be compiled to the MO binary format, which will be used when running the program.
+
+## Required software
+
+We use the following software for development (none of this is required in deployment):
+
+- gettext: used to update the translation (PO) files and to compile them to MO files
+- make: we use make to simplify the management of the files
+- poedit: is a graphical application to edit the PO files, for translators
+
+Install with:
+
+    # Debian
+    apt install gettext make poedit
+
+## Update translations
+
 After a development, if the message strings have changed, the translation files must be
-updated.
+updated:
 
-To add a new language first initialize. For example for Tajik:
+    make update_po
 
-    mkdir locale/tg/LC_MESSAGES -p
-    msginit -l tg -o locale/tg/LC_MESSAGES/messages.po -i locale/messages.pot --no-translator
+Then the PO files must be edited to update the translations. We recommend to use poedit,
+for example:
 
-This is how the locale.pot file was generated for the first time:
+    poedit locale/tg/LC_MESSAGES/messages.po
 
-    xgettext bot.py -o locale/messages.pot
-    # Changed charset=CHARSET to charset=UTF-8
+When saving the PO file with poedit it should as well update the MO file, so no further
+steps should be required. But if needed MO files can be explicitly updated with:
+
+    make update_mo
+
+All locale files should be commited, so don't forget to:
+
+    git add locale
+
+# Add a new language
+
+To add a new language you need first to initialize the PO file. This is the procedure, for
+example for the Khmer (km) language:
+
+    mkdir locale/km/LC_MESSAGES -p
+    msginit -l km -o locale/km/LC_MESSAGES/messages.po -i locale/messages.pot --no-translator
+
+Now edit the Makefile and add the km language to the list of locales, for example:
+
+    LOCALES = km tg
+
+Then you can continue editing the PO file with poedit as described above.
