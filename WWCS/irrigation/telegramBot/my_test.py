@@ -1,5 +1,4 @@
 import telebot
-import time
 
 API_TOKEN = 'XXX'
 # API_TOKEN = 'XXX'
