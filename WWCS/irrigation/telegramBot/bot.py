@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 root = pathlib.Path(__file__).parent
 
-GETTEXT_DOMAIN = 'wwcs'
+GETTEXT_DOMAIN = 'messages'
 gettext.bindtextdomain(GETTEXT_DOMAIN, root / 'locale')
 gettext.textdomain(GETTEXT_DOMAIN)
 _ = gettext.gettext
@@ -118,14 +118,12 @@ async def check_irrigation():
             print(f'{human_id=} {site_id=} {fieldtype=}')
 
             if fieldtype == 'channel':
-                # "Лутфан сатҳи ҳозираи обро фиристед"
                 message = _("Please send the current water level")
                 msg = await bot.send_message(telegram_id, message)
                 bot.register_next_step_handler(msg, process_channel_begin, site_id, irrigation_need, area, fieldtype)
 
             #add new condition counter - 22.05.2024
             elif fieldtype == 'counter':
-                # "Салом. Лутфан имруз ба обёрии замин бояд шуруъ намоед. Нишондиҳандаи ҳисобкунаки обатонро пеш аз обёрии замин фиристед."
                 message = _("Hello. Please start irrigating your land today. Send your water meter reading before irrigating your land.")
                 msg = await bot.send_message(telegram_id, message)
                 bot.register_next_step_handler(msg, process_counter_begin, site_id, irrigation_need, area, fieldtype)
@@ -137,7 +135,6 @@ async def check_irrigation():
                 # print(f'Unexpected {fieldtype=}') # TODO
 
             elif fieldtype == 'traditional':
-                # "Салом. Вақте ки обёрии замин анҷом ёфт, лутфан бифиристед, ки шумо воқеан M3 обёрӣ кардед?"
                 message = _("Hello. When the irrigation of the land is finished, please send me the actual M3 irrigation?")
                 await bot.send_message(telegram_id, message)
                 bot.register_next_step_handler(msg, process_traditional, site_id, irrigation_need, area, fieldtype)
@@ -165,19 +162,16 @@ async def process_channel_begin(message, site_id, irrigation_need, area, fieldty
     try:
         water_level = int(message.text)
     except ValueError:
-        # Лутфан рақамро нависед, на матн.
         message = _("Please write the number, not the text.")
         msg = await bot.send_message(message.chat.id, message)
         bot.register_next_step_handler(msg, process_channel_begin, site_id, irrigation_need, area, fieldtype)
         return
 
     irrigation_time = calculate_irrigation_time(irrigation_need, water_level, area, fieldtype)
-    # Лутфан ҳоло обёриро оғоз кунед, Шумо бояд {irrigation_time} дақиқа заминро обёрӣ кунед.
     message = _("Please start watering now, you need to irrigate the land for {irrigation_time} minutes.")
     message = message.format(irrigation_time=irrigation_time)
     await bot.send_message(message.chat.id, message)
 
-    # Вақте ки обёрии замин анҷом ёфт, лутфан бифиристед, ки шумо воқеан чанд дақиқа обёрӣ кардед?
     message = _("When the irrigation of the land is finished, please send how many minutes you actually irrigated?")
     await bot.send_message(message.chat.id, message)
     bot.register_next_step_handler(message, process_channel_end, site_id, area, water_level, fieldtype)
@@ -188,13 +182,11 @@ async def process_channel_end(message, site_id, area, water_level, fieldtype):
     try:
         actual_minutes = int(message.text)
     except ValueError:
-        # Лутфан рақамро нависед, на матн.
         message = _("Please write the number, not the text.")
         msg = await bot.send_message(message.chat.id, message)
         bot.register_next_step_handler(msg, process_channel_end, site_id, area, water_level, fieldtype)
         return
     convert_and_save_irrigation_data(site_id, actual_minutes, area, fieldtype)
-    # Ташаккур барои ҳамкорӣ! Маълумоти обёрии шумо сабт шуд.
     message = _("Thank you for your cooperation! Your irrigation data has been recorded.")
     await bot.send_message(message.chat.id, message)
 
@@ -211,11 +203,10 @@ async def process_counter_begin(msg, site_id, irrigation_need, area, fieldtype):
 
     M3_need = calculate_irrigation_need(irrigation_need, area, fieldtype)
     cubic_metres = counter_begin + (M3_need / 10)
-    # "Шумо бояд то даме заминро обёрӣ кунед, ки нишондиҳандаи ҳисобкунаки оби шумо ба {reading} M3 баробар шавад."
     message = _("You should irrigate the land until your water meter reading reaches {cubic_metres} M3.")
     message = message.format(cubic_metres=cubic_metres)
     await bot.send_message(msg.chat.id, message)
-    # Нишондиҳандаи ҳисобкунаки об пас аз обёрии замин ба чанд баробар шуд?
+
     message = _("What was the water meter reading after the land was irrigated?")
     await bot.send_message(msg.chat.id, message)
     bot.register_next_step_handler(msg, process_counter_end, site_id, irrigation_need, area, fieldtype, counter_begin)
@@ -225,7 +216,6 @@ async def process_counter_end(message, site_id, irrigation_need, area, fieldtype
     try:
         counter_end = int(message.text)
     except ValueError:
-        # Лутфан рақамро нависед, на матн.
         message = _("Please write the number, not the text.")
         msg = await bot.send_message(message.chat.id, message)
         bot.register_next_step_handler(msg, process_counter_end, site_id, irrigation_need, area, fieldtype)
@@ -233,9 +223,8 @@ async def process_counter_end(message, site_id, irrigation_need, area, fieldtype
 
     # Save in the database
     update_irrigationApp(site_id, (counter_end - counter_begin) * 10)
-    # Нишондиҳандаи {counter_end} дар махзани маълумот сабт шуд.
-    message = _("The {counter_end} indicator has been recorded in the database.")
-    message = message.format(counter_end=counter_end)
+    message = _("The {value} indicator has been recorded in the database.")
+    message = message.format(value=counter_end)
     await bot.send_message(message.chat.id, message)
 
 #PUMP
@@ -244,7 +233,6 @@ async def process_pump_begin(msg, site_id, irrigation_need, area, fieldtype):
     try:
         pump_begin = int(msg.text)
     except ValueError:
-        # Лутфан рақамро нависед, на матн.
         message = _("Please write the number, not the text.")
         msg = await bot.send_message(msg.chat.id, message)
         bot.register_next_step_handler(msg, process_pump_begin, site_id, irrigation_need, area, fieldtype)
@@ -252,11 +240,10 @@ async def process_pump_begin(msg, site_id, irrigation_need, area, fieldtype):
 
     M3_need = calculate_irrigation_need(irrigation_need, area, fieldtype)
     cubic_metres = pump_begin + (M3_need / 10)
-    # Шумо бояд то даме заминро обёрӣ кунед, ки нишондиҳандаи ҳисобкунаки оби шумо ба {cubic_metres} M3 баробар шавад.
     message = _("You should irrigate the land until your water meter reads {cubic_metres} M3.")
     message = message.format(cubic_metres=cubic_metres)
     await bot.send_message(msg.chat.id, message)
-    # Нишондиҳандаи ҳисобкунаки об пас аз обёрии замин ба чанд баробар шуд?
+
     message = _("What was the water meter reading after the land was irrigated?")
     await bot.send_message(msg.chat.id, message)
     bot.register_next_step_handler(msg, process_counter_end, site_id, irrigation_need, area, fieldtype, pump_begin)
@@ -266,7 +253,6 @@ async def process_pump_end(message, site_id, irrigation_need, area, fieldtype, p
     try:
         pump_end = int(message.text)
     except ValueError:
-        # Лутфан рақамро нависед, на матн.
         message = _("Please write the number, not the text.")
         msg = await bot.send_message(message.chat.id, message)
         bot.register_next_step_handler(msg, process_counter_end, site_id, irrigation_need, area, fieldtype)
@@ -274,7 +260,6 @@ async def process_pump_end(message, site_id, irrigation_need, area, fieldtype, p
 
     # Save in the database
     update_irrigationApp(site_id, (pump_end - pump_begin) * 10)
-    # Нишондиҳандаи {value} дар махзани маълумот сабт шуд.
     message = _("The {value} indicator has been recorded in the database.")
     message = message.format(value=pump_end)
     await bot.send_message(message.chat.id, message)
@@ -285,7 +270,6 @@ async def process_traditional(message, site_id, irrigation_need, area, fieldtype
     try:
         traditional_end = int(message.text)
     except ValueError:
-        # Лутфан рақамро нависед, на матн.
         message = _("Please write the number, not the text.")
         msg = await bot.send_message(message.chat.id, message)
         bot.register_next_step_handler(msg, process_traditional, site_id, irrigation_need, area, fieldtype)
@@ -296,7 +280,6 @@ async def process_traditional(message, site_id, irrigation_need, area, fieldtype
 
     # Save in the database
     update_irrigationApp(site_id, traditional_end * 10)
-    # Нишондиҳандаи {value} дар махзани маълумот сабт шуд.
     message = _("The {value} indicator has been recorded in the database.")
     message = message.format(value=traditional_end)
     await bot.send_message(message.chat.id, message)
