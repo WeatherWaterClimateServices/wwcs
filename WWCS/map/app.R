@@ -221,17 +221,17 @@ server <- function(input, output, session) {
   # Initialize reactive values
   
   selected <- reactiveValues(
-    id = "CLIMDYU001",
-    name = "CLIMDYU001",
-    logger = "3c:71:bf:e1:4b:9c",
-    altitude = 1540,
-    startdate = "2021-11-16",
-    lat = 39.0552,
-    lon = 70.66,
+    id = NA,
+    name = NA,
+    logger = NA,
+    altitude = NA,
+    startdate = NA,
+    lat = NA,
+    lon = NA,
     status = NA,
     lastobs = NA,
     title = NA,
-    type = "WWCS"
+    type = NA
   )
   
   station_data <- reactiveValues(# Get the data for the selected station
