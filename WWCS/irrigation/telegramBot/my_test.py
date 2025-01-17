@@ -1,8 +1,13 @@
+import os
+
+from dotenv import load_dotenv
 import telebot
 
-API_TOKEN = 'XXX'
-# API_TOKEN = 'XXX'
-bot = telebot.TeleBot(API_TOKEN)
+
+load_dotenv()
+BOT_TOKEN = os.environ['BOT_TOKEN']
+
+bot = telebot.TeleBot(BOT_TOKEN)
 
 @bot.message_handler(func=lambda message: True)
 def catch_all(message):

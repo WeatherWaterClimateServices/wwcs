@@ -17,7 +17,7 @@ load_dotenv()
 ENV = os.environ.get('ENV')
 USERNAME = os.environ.get('USERNAME', 'wwcs')
 PASSWORD = os.environ.get('PASSWORD')
-BOT_TOKEN = os.environ['TOKEN']
+BOT_TOKEN = os.environ['BOT_TOKEN']
 LANGUAGE = os.environ.get('LANGUAGE', 'en')
 
 # Initialize gettext
