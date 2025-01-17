@@ -12,20 +12,23 @@ import telebot.async_telebot
 from dotenv import load_dotenv
 
 
-root = pathlib.Path(__file__).parent
-
-GETTEXT_DOMAIN = 'messages'
-gettext.bindtextdomain(GETTEXT_DOMAIN, root / 'locale')
-gettext.textdomain(GETTEXT_DOMAIN)
-_ = gettext.gettext
-
-
 # Configuration
 load_dotenv()
 ENV = os.environ.get('ENV')
 USERNAME = os.environ.get('USERNAME', 'wwcs')
 PASSWORD = os.environ.get('PASSWORD')
-TOKEN = os.environ['TOKEN']
+BOT_TOKEN = os.environ['TOKEN']
+LANGUAGE = os.environ.get('LANGUAGE', 'en')
+
+# Initialize gettext
+root = pathlib.Path(__file__).parent
+translation = gettext.translation(
+    'messages',                 # The domain, messages is the default
+    localedir=root / 'locale',  # Where the translation files are stored
+    languages=[LANGUAGE],       # We only support one language at a time
+    fallback=True,              # Return the source id if not translation file is found
+)
+_ = translation.gettext
 
 class Handler:
 
@@ -51,7 +54,7 @@ class MyBot(telebot.async_telebot.AsyncTeleBot):
         return self.__handlers.get(msg.chat.id)
 
 
-bot = MyBot(TOKEN)
+bot = MyBot(BOT_TOKEN)
 
 
 def connect_db():
