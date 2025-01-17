@@ -29,9 +29,26 @@ shinyUI(# Include a fliudPage above the navbar to incorporate a icon in the head
         jumbotron(
           "Weather, Water and Climate Services (WWCS)",
           div(
-            img(src = "meteoswiss.png", style = "width: 80px"),
-            "Access page for prototype services developed by MeteoSwiss under the WWCS Tajikistan project",
-            style = "font-size: 22px"
+            div(
+            style = "display: flex; align-items: center; padding: 10px;",
+            tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
+                   img(src = "meteoswiss.png", height = "50px")),  # Clickable MeteoSwiss logo
+            span("Access page for prototype services developed by MeteoSwiss under the WWCS Tajikistan project.",
+                 style = "margin-left: 10px;"),  # Adds spacing after the logo
+            style = "font-size: 22px"),
+            div(
+              style = "text-align: right, align-items: right; padding: 10px;",
+              tags$div(style = "margin-top: 20px; align: right;",  # Explicitly adds space before "Funded by"
+                       "Funded by:"
+              ),
+              tags$div(style = "display: flex; align-items: center; gap: 10px; margin-top: 5px;",  # Adds spacing between logos
+                       tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                              img(src = "logo_caritas.png", height = "20px")),
+                       tags$a(href = "https://www.eda.admin.ch/deza/de/home.html", target = "_blank",  # Opens link in a new tab
+                              img(src = "logo_sdc.png", height = "100px"))
+              ),
+              style = "font-size: 18px"
+            )
           ),
           button = FALSE
         ),

@@ -74,6 +74,29 @@ sidebar <- dashboardSidebar(
     timeFormat = "%Y-%m-%d %H-%M-%S",
     timezone = timezone_country,
     step = 21600 / 2,
+  ),
+  br(),
+  br(),
+  div(
+    style = "padding-left: 10px; padding-right: 10px;",
+    h4("Development Information"),
+    # Bullet points for additional information
+    tags$ul(
+      tags$li("Software development and service operation:", tags$div(style = "flex: 0; display: flex; align-items: center;", 
+                                                                      tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
+                                                                             img(src = "meteoswiss.png", height = "30px")))),
+      tags$li("Station management:", 
+              tags$a(style = "flex: 0; display: flex; align-items: center;", 
+                      href = "https://www.meteo.tj", target = "_blank",  # Opens link in a new tab
+                     img(src = "logo_hydromet_small.png", height = "30px")),
+              tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                                             img(src = "logo_caritas.png", height = "10px"))),
+      tags$li("Funding:", tags$div(style = "flex: 0; display: flex; align-items: center;",
+                                   tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                                          img(src = "logo_caritas.png", height = "10px")),
+                                   tags$a(href = "https://www.eda.admin.ch/deza/de/home.html", target = "_blank",  # Opens link in a new tab
+                                          img(src = "logo_sdc.png", height = "80px"))))
+    )
   )
 )
 
@@ -104,7 +127,7 @@ body <- dashboardBody(
                                                                                       "lightblue"),
         tags$div(
           style = "display: flex; align-items: center; padding: 10px;",
-          tags$div(style = "flex: 1; text-align: right; padding-right: 10px;", p("Developed and powered by ")),
+          tags$div(style = "flex: 1; text-align: right; padding-right: 10px;", p("© weather icons")),
           # Image part
           tags$div(style = "flex: 0; display: flex; align-items: center;", 
                    tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
@@ -173,4 +196,4 @@ ui <- tagList(
   )
 )
 
-ui <- secure_app(ui)
+# ui <- secure_app(ui)
