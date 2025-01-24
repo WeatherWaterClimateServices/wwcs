@@ -167,10 +167,16 @@ server <- function(input, output, session) {
       status = "No forecast" 
       
     } else {
-      if (nrow(levels) == 1 & levels$level == "green") {
-        status = "No Frost"
-        text <- "No frost expected in the next days"
-        color <- "green"
+      if (nrow(levels) == 1) {
+        if (levels$level == "green") {
+          status = "No Frost"
+          text <- "No frost expected in the next days"
+          color <- "green"
+        } else {
+          status = "Frost"
+          text <- "Frost exptect in the next days"
+          color <- "blue"
+        }
       } else {
         status = "Frost"
         text <- "Frost exptect in the next days"

@@ -60,7 +60,7 @@ lag1: 3 # Days to consider for lag 1
 
 # Harvest parameters
 
-harvest_default_station: "CLIMNUR002"
+harvest_default_station: "CLIMDYU006"
 past_rain_thrs: 1 # Threshold for past rain in mm
 future_rain_thrs: 1 # Threshold for future rain in mm
 past_rain_days: 5 # Threshold for past rain in mm

@@ -201,7 +201,7 @@ ui <- fluidPage(
   verbatimTextOutput("status")
 )
 
-# ui <- secure_app(ui)
+ui <- secure_app(ui)
 
 # Define Server
 server <- function(input, output, session) {

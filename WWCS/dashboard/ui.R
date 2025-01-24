@@ -82,7 +82,7 @@ sidebar <- dashboardSidebar(
     h4("Development Information"),
     # Bullet points for additional information
     tags$ul(
-      tags$li("Software development and service operation:", tags$div(style = "flex: 0; display: flex; align-items: center;", 
+      tags$li("Service development and operation:", tags$div(style = "flex: 0; display: flex; align-items: center;", 
                                                                       tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
                                                                              img(src = "meteoswiss.png", height = "30px")))),
       tags$li("Station management:", 

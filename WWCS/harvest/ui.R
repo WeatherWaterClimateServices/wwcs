@@ -28,6 +28,7 @@ header <- dashboardHeader(title = tags$a(
 # ------------------------------- Dashboard Sidebar
 
 sidebar <- dashboardSidebar(
+  width = 300, 
   collapsed = TRUE,
   sidebarMenu(
     menuItem("Overview", tabName = "overview", icon = icon("dashboard")),
@@ -58,6 +59,29 @@ sidebar <- dashboardSidebar(
       timeFormat = "%Y-%m-%d %H-%M-%S",
       step = 21600,
       timezone = "UTC"
+    ),
+    br(),
+    br(),
+    div(
+      style = "padding-left: 10px; padding-right: 10px;",
+      h4("Development Information"),
+      # Bullet points for additional information
+      tags$ul(
+        tags$li("Service development and operation:", tags$div(style = "flex: 0; display: flex; align-items: center;", 
+                                                               tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
+                                                                      img(src = "meteoswiss.png", height = "30px")))),
+        tags$li("Station management:", 
+                tags$a(style = "flex: 0; display: flex; align-items: center;", 
+                       href = "https://www.meteo.tj", target = "_blank",  # Opens link in a new tab
+                       img(src = "logo_hydromet_small.png", height = "30px")),
+                tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                       img(src = "logo_caritas.png", height = "10px"))),
+        tags$li("Funding:", tags$div(style = "flex: 0; display: flex; align-items: center;",
+                                     tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                                            img(src = "logo_caritas.png", height = "10px")),
+                                     tags$a(href = "https://www.eda.admin.ch/deza/de/home.html", target = "_blank",  # Opens link in a new tab
+                                            img(src = "logo_sdc.png", height = "80px"))))
+      )
     )
   )
 )

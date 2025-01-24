@@ -23,10 +23,36 @@ tags$li(
 # ------------------------------- Dashboard Sidebar
 
 sidebar <-
-  dashboardSidebar(sidebarMenu(
+  dashboardSidebar(
+  width = 300, 
+  sidebarMenu(
     menuItem(i18n$t("Overview"), tabName = "overview", icon = icon("dashboard")),
     menuItem(i18n$t("Site Parameters"), tabName = "control", icon = icon("th")),
     menuItem(i18n$t("Irrigation"), tabName = "manual", icon = icon("water"))
+  ),
+  div(
+    style = "padding-left: 10px; padding-right: 10px;",
+    h4("Development Information"),
+    # Bullet points for additional information
+    tags$ul(
+      tags$li("Service development:", tags$div(style = "flex: 0; display: flex; align-items: center;", 
+                                                             tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
+                                                                    img(src = "meteoswiss.png", height = "30px")))),
+      tags$li("Irrigation Methodology from:", tags$div(style = "flex: 0; display: flex; align-items: center;", 
+                                                             tags$a(href = "https://icarda.org/", target = "_blank",  # Opens link in a new tab
+                                                                    img(src = "logo-icarda.png", height = "30px")))),
+      tags$li("Station management:", 
+              tags$a(style = "flex: 0; display: flex; align-items: center;", 
+                     href = "https://www.meteo.tj", target = "_blank",  # Opens link in a new tab
+                     img(src = "logo_hydromet_small.png", height = "30px")),
+              tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                     img(src = "logo_caritas.png", height = "10px"))),
+      tags$li("Funding:", tags$div(style = "flex: 0; display: flex; align-items: center;",
+                                   tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                                          img(src = "logo_caritas.png", height = "10px")),
+                                   tags$a(href = "https://www.eda.admin.ch/deza/de/home.html", target = "_blank",  # Opens link in a new tab
+                                          img(src = "logo_sdc.png", height = "80px"))))
+    )
   ))
 
 
