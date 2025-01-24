@@ -1,1 +1,1 @@
-This folder contains documentation and code for additional low-cost sensors, together with some early testing. These developments have been done by Mirjam Bonardi during her work at SLF, under supervision of Mathias Bavay.
+This folder contains documentation and code for additional low-cost sensors, together with some early testing. These developments have been done by @borlowsky Mirjam Bonardi during her work at SLF, under supervision of Mathias Bavay.
