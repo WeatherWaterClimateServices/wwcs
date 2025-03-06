@@ -3,5 +3,7 @@ numpy
 elevation
 rasterio
 ecmwf-api-client
+cdo
+requests
 
 
