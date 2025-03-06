@@ -5,5 +5,7 @@ rasterio
 ecmwf-api-client
 cdo
 requests
-
-
+pandas
+mysql-connector-python
+pyyaml
+python-dotenv
