@@ -4,6 +4,7 @@ import elevation as ele
 import numpy as np
 import os.path
 from topo_descriptors import topo, helpers
+from topo_descriptors.helpers import get_dem_netcdf, scale_to_pixel
 import yaml
 
 # Read YAML file
@@ -41,6 +42,7 @@ for x in range(ntiles):
             ele.clip(bounds=[rlon[x]-margin2,rlat[y]-margin2,rlon[x+1]+margin2,rlat[y+1]+margin2], product = "SRTM3", output = file2)
 
 
+
 for x in range(ntiles):
     for y in range(ntiles): 
         filein = outdir + 'DEM-30m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
@@ -49,28 +51,46 @@ for x in range(ntiles):
         fileout20 = outdir + 'TPI-20-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
         fileout100 = outdir + 'TPI-100-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
 
+        tpi5_created = False
+        tpi100_created = False
+
         if not os.path.isfile(fileout5):
-            dem = xr.open_rasterio(filein)
-            dem = dem.isel(band=0, drop=True)
+            print("Creating file " + fileout5)
+            dem_ds = get_dem_netcdf(filein)
+            varname = list(dem_ds)[0]
+            dem_ds.attrs.update(crs="epsg:4326")
 
             scale_meters = 500
-            scale_pixel, __ = helpers.scale_to_pixel(scale_meters, dem)
-            tpi = topo.tpi(dem, scale_pixel).rename("tpi")
-            tpi5 = tpi.rename({'x': 'lon','y': 'lat'})
+            scale_pixel, __ = scale_to_pixel(scale_meters, dem_ds)
+            tpi = topo.tpi(dem_ds[varname], scale_pixel).rename("tpi")
+            tpi5 = tpi.rename({'x': 'lon', 'y': 'lat'})
             tpi5.to_netcdf(fileout5)
-            
-        if not os.path.isfile(fileout100):
-            dem = xr.open_rasterio(filein2)
-            dem = dem.isel(band=0, drop=True)
+            tpi5_created = os.path.isfile(fileout5)
 
+        if not os.path.isfile(fileout100):
+            dem_ds = get_dem_netcdf(filein2)
+            varname = list(dem_ds)[0]
+            dem_ds.attrs.update(crs="epsg:4326")
+
+            print("Creating file " + fileout20)
             scale_meters = 20000
-            scale_pixel, __ = helpers.scale_to_pixel(scale_meters, dem)
-            tpi = topo.tpi(dem, scale_pixel).rename("tpi")
-            tpi20 = tpi.rename({'x': 'lon','y': 'lat'})
+            scale_pixel, __ = scale_to_pixel(scale_meters, dem_ds)
+            tpi = topo.tpi(dem_ds[varname], scale_pixel).rename("tpi")
+            tpi20 = tpi.rename({'x': 'lon', 'y': 'lat'})
             tpi20.to_netcdf(fileout20)
 
+            print("Creating file " + fileout100)
             scale_meters = 100000
-            scale_pixel, __ = helpers.scale_to_pixel(scale_meters, dem)
-            tpi = topo.tpi(dem, scale_pixel).rename("tpi")
-            tpi100 = tpi.rename({'x': 'lon','y': 'lat'})
-            tpi100.to_netcdf(fileout100)            
+            scale_pixel, __ = scale_to_pixel(scale_meters, dem_ds)
+            tpi = topo.tpi(dem_ds[varname], scale_pixel).rename("tpi")
+            tpi100 = tpi.rename({'x': 'lon', 'y': 'lat'})
+            tpi100.to_netcdf(fileout100)
+            tpi100_created = os.path.isfile(fileout100)
+
+        # Remove DEM files only if TPI files were created successfully
+        if tpi5_created and os.path.isfile(filein):
+            os.remove(filein)
+            print("Deleted file " + filein)
+        if tpi100_created and os.path.isfile(filein2):
+            os.remove(filein2)
+            print("Deleted file " + filein2)
