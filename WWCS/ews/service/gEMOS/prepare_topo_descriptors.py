@@ -30,18 +30,20 @@ outdir = '/srv/shiny-server/dashboard/appdata/topotiles/'
 
 if not os.path.exists(outdir):
    os.makedirs(outdir)
-   
+
 for x in range(ntiles):
     for y in range(ntiles): 
         file = outdir + 'DEM-30m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
         file2 = outdir + 'DEM-90m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
-        if not os.path.isfile(file):
+        fileout5 = outdir + 'TPI-5-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
+        fileout100 = outdir + 'TPI-100-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
+        
+        # Only download DEM files if corresponding TPI files do not exist
+        if not os.path.isfile(fileout5) and not os.path.isfile(file):
             print("Preparing file " + file)
-            ele.clip(bounds=[rlon[x]-margin,rlat[y]-margin,rlon[x+1]+margin,rlat[y+1]+margin], output = file)
-        if not os.path.isfile(file2):
-            ele.clip(bounds=[rlon[x]-margin2,rlat[y]-margin2,rlon[x+1]+margin2,rlat[y+1]+margin2], product = "SRTM3", output = file2)
-
-
+            ele.clip(bounds=[rlon[x]-margin, rlat[y]-margin, rlon[x+1]+margin, rlat[y+1]+margin], output=file)
+        if not os.path.isfile(fileout100) and not os.path.isfile(file2):
+            ele.clip(bounds=[rlon[x]-margin2, rlat[y]-margin2, rlon[x+1]+margin2, rlat[y+1]+margin2], product="SRTM3", output=file2)
 
 for x in range(ntiles):
     for y in range(ntiles): 
