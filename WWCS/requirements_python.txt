@@ -2,6 +2,7 @@ topo-descriptors
 numpy
 elevation
 rasterio
+rioxarray
 ecmwf-api-client
 cdo
 requests
