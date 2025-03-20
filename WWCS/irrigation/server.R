@@ -251,22 +251,25 @@ server <- function(input, output, session) {
 
   output$apiOutput <- renderText({
     paste0(
-      "curl -X POST -H \"Content-Type: application/json\" -d '{\"siteID\":\"",
-      input$selectid,
-      "\", \"Iapp\":",
-      input$irrigationingest,
-      ", \"precip\":",
-      input$precipingest,
-      ", \"date\":\"",
-      input$dateingest,
-      "\"}' https://wwcs.tj/services/irrigationApp"
+          "curl -X POST -H \"Content-Type: application/json\" -d '{\"siteID\":\"",
+          selected$id,
+          "\", \"irrigationApp\":",
+          input$irrigationingest,
+          ", \"precip\":",
+          input$precipingest,
+          ", \"date\":\"",
+          input$dateingest,
+          "\"}' https://",
+          wwcs_domain,
+          "/services/irrigationApp"
     )
-
   })
 
   output$api2Output <- renderText({
     paste0(
-      "https://wwcs.tj/services/irrigationNeed?siteID=",
+      "https://",
+      wwcs_domain,
+      "/services/irrigationNeed?siteID=",
       input$selectid,
       "&date=",
       input$dateingest
