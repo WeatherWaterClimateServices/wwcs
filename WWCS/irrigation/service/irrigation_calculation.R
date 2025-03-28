@@ -9,6 +9,7 @@ window <- 350 ## BORIS HACK
 source('/opt/shiny-server/WWCS/.Rprofile')
 source("/srv/shiny-server/irrigation/R/crop_parameters.R")
 source("/srv/shiny-server/irrigation/R/calc_et0.R")
+crop.parameters <- readr::read_csv(file = "/srv/shiny-server/irrigation/appdata/CropParameters.csv", show_col_types = FALSE) ## BORIS HACK
 
 yesterday <- Sys.Date()
 
@@ -58,12 +59,13 @@ irrigation_sites <- dbReadTable(pool, "Sites")   %>%
     irrigation,
     FC,
     WP,
+    Crop, ##BORIS HACK - get crop info to read in Kc and RD later
     StartDate,
     area,
     type,
     humanID
   )) %>% dplyr::mutate( ##BORIS HACK; compute constants
-    MAD = 0.4, 
+    MAD = 0.4, ## BORIS: this should be come from the Sites table!
     TAW = FC - WP,
     PHIt = FC - TAW*MAD
   )
@@ -198,7 +200,7 @@ for (i in 1:nrow(irrigation_sites)) {
   
   irrigation_temp <- irrigation_temp %>% 
     dplyr::mutate(
-      ETc = ET0 * Kc$value[1:nrow(irrigation_temp)],
+      ETc = ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)],  ##BORIS HACK - read from more generic file
       ETca = zoo::na.approx(ETc),
       FC = zoo::na.approx(irrigation_sites$FC[i]),##BORIS HACK - use value from db
       WP = zoo::na.approx(irrigation_sites$WP[i]),##BORIS HACK - use value from db
@@ -225,16 +227,18 @@ for (i in 1:nrow(irrigation_sites)) {
       irrigation_temp$Precipitation[j] = 0
     } 
     
-    
+    ## store this RD here - BORIS HACK
+    this.RD <- crop.parameters[[paste0(irrigation_sites$Crop[i], "_RD")]][j]
+
     if (j == 1) {
       irrigation_temp$PHIc[j] = irrigation_sites$FC[i] ## BORIS HACK; was 30.5
-      irrigation_temp$Ks[j] = 0 ##BORIS HACK; was 1; assume saturated soil
-    } else {
+      irrigation_temp$Ks[j] = 1 ##BORIS question - this assumes no stress?
+    } else { ## BORIS HACK to read RD per crop
       phi_update <-
         irrigation_temp$PHIc[j - 1] - (irrigation_temp$ETca[j - 1] * 100 /
-                                         (RD[j] * 1000)) +
+                                         (this.RD * 1000)) +
         (irrigation_temp$Iapp[j] + irrigation_temp$Precipitation[j]) *
-        100 / (RD[j] * 1000)
+        100 / (this.RD * 1000)
       
       if (phi_update > irrigation_sites$FC[i]) { ##BORIS HACK; FC from db
         irrigation_temp$PHIc[j] <- irrigation_sites$FC[i] ##BORIS HACK; FC from db
@@ -263,7 +267,7 @@ for (i in 1:nrow(irrigation_sites)) {
     # SOIL WATER DEFICIT
     # ------------------------------------------------
     
-    irrigation_temp$SWD[j] <- FC - irrigation_temp$PHIc[j]
+    irrigation_temp$SWD[j] <- irrigation_sites$FC[i] - irrigation_temp$PHIc[j]
     
     
     # ------------------------------------------------
@@ -271,7 +275,7 @@ for (i in 1:nrow(irrigation_sites)) {
     # ------------------------------------------------
     
     water_balance <-
-      (irrigation_temp$SWD[j] / 100) * RD[j] * 1000 - (irrigation_temp$Precipitation[j] + irrigation_temp$Iapp[j])
+      (irrigation_temp$SWD[j] / 100) * this.RD * 1000 - (irrigation_temp$Precipitation[j] + irrigation_temp$Iapp[j]) ##BORIS HACK
     
     if (water_balance > 0) {
       irrigation_temp$Ineed[j] <- water_balance
