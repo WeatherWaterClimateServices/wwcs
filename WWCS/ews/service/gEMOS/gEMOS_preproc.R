@@ -29,7 +29,7 @@ train_points <-
 # CREATE SPATIAL GRID FOR SPATIAL MODEL
 # --------------------------------
 
-gadm <- sf::st_read(paste0("/srv/shiny-server/dashboard/appdata/boundaries/gadm41_", gadm0, "_0.shp"))
+gadm <- sf::st_read(paste0("/opt/shiny-server/WWCS/boundaries/gadm41_", gadm0, "_0.shp"))
 
 boundary <- sf::st_as_sf(gadm)
 
