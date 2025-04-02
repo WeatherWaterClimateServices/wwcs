@@ -48,6 +48,7 @@ warning_default_station: "CLIMNUR002"
 # Irrigation parameters
 
 irrigation_default_station: "LAKH012-3" # Default station for irrigation
+window: 350 # Days to consider for the irrigation window
 
 # Planting parameters
 

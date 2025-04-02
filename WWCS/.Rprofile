@@ -38,6 +38,7 @@ warning_default_station = config$warning_default_station
 
 irrigation_default_station = config$irrigation_default_station
 servicepass = config$servicepass
+window = config$window
 
 # Planting parameters
 
