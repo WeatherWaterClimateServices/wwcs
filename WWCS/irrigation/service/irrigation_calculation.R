@@ -4,12 +4,9 @@ library(dplyr)
 library(lubridate)
 library(tidyjson)
 
-window <- 350 ## BORIS HACK
-
 source('/opt/shiny-server/WWCS/.Rprofile')
-source("/srv/shiny-server/irrigation/R/crop_parameters.R")
 source("/srv/shiny-server/irrigation/R/calc_et0.R")
-crop.parameters <- readr::read_csv(file = "/srv/shiny-server/irrigation/appdata/CropParameters.csv", show_col_types = FALSE) ## BORIS HACK
+crop.parameters <- readr::read_csv(file = "/srv/shiny-server/irrigation/appdata/CropParameters.csv", show_col_types = FALSE)
 
 yesterday <- Sys.Date()
 
@@ -57,17 +54,19 @@ irrigation_sites <- dbReadTable(pool, "Sites")   %>%
     latitude,
     longitude,
     irrigation,
-    FC,
-    WP,
-    Crop, ##BORIS HACK - get crop info to read in Kc and RD later
+    FC, ## field capacity
+    WP, ## wilting point
+    MAD, ## to come from the Sites table! (was .4 in crop_parameters.R)
+    PHIc, ## to come from the Sites table for first timestep; suggest a default value, e.g. avg(FC, WP)! (was 30.5 hardcoded in here at first timestep); c=content -> this varies
+    Crop, 
     StartDate,
     area,
     type,
     humanID
-  )) %>% dplyr::mutate( ##BORIS HACK; compute constants
-    MAD = 0.4, ## BORIS: this should be come from the Sites table!
+  )) %>% dplyr::mutate( ##compute constants
     TAW = FC - WP,
-    PHIt = FC - TAW*MAD
+    PHIt = FC - TAW*MAD ## was 21.8 hardcoded in here, but of different value in crop_parameters.R); t=threshold -> constant
+
   )
 
 irrigation <- dbReadTable(pool_service, "Irrigation") 
@@ -187,12 +186,10 @@ for (i in 1:nrow(irrigation_sites)) {
   
   irrigation_temp <- calc_et0(station)
   
-  # Replace values in ET0 with the ones from ET0new only where ET0new is not NA
-  
+  # Replace values in ET0 with the ones from ET0new only where ET0new is not NA  
   irrigation_temp$ET0 <- ifelse(is.na(irrigation_temp$ET0new), irrigation_temp$ET0, irrigation_temp$ET0new)
   
-  # Omit ET0new
-  
+  # Omit ET0new  
   irrigation_temp <- irrigation_temp %>%
     dplyr::select(-ET0new)
   
@@ -200,11 +197,8 @@ for (i in 1:nrow(irrigation_sites)) {
   
   irrigation_temp <- irrigation_temp %>% 
     dplyr::mutate(
-      ETc = ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)],  ##BORIS HACK - read from more generic file
-      ETca = zoo::na.approx(ETc),
-      FC = zoo::na.approx(irrigation_sites$FC[i]),##BORIS HACK - use value from db
-      WP = zoo::na.approx(irrigation_sites$WP[i]),##BORIS HACK - use value from db
-      PHIt = zoo::na.approx(FC - (FC-WP)*MAD)## BORIS HACK use formula
+      ETc = ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)],  
+      ETca = zoo::na.approx(ETc, na.rm=FALSE) ## if ever a trailing of heading value is NA, keep it
     )
 
   # Only compute values which are not yet in the data base
@@ -214,12 +208,12 @@ for (i in 1:nrow(irrigation_sites)) {
   nday <- nrow(irrigation_temp)
   
   for (j in 1:nday) {
-    if (!"Iapp" %in% names(irrigation_temp) || is.na(irrigation_temp$Iapp[j])) { ## BORIS HACK
+    if (!"Iapp" %in% names(irrigation_temp) || is.na(irrigation_temp$Iapp[j])) {
       irrigation_temp$Iapp[j] = 0
     }
     
     
-    if (!"Precipitation" %in% names(irrigation_temp) || is.na(irrigation_temp$Precipitation[j])) { ## BORIS HACK
+    if (!"Precipitation" %in% names(irrigation_temp) || is.na(irrigation_temp$Precipitation[j])) { 
       irrigation_temp$Precipitation[j] = irrigation_temp$PrecipitationStation[j]
     } 
     
@@ -227,55 +221,58 @@ for (i in 1:nrow(irrigation_sites)) {
       irrigation_temp$Precipitation[j] = 0
     } 
     
-    ## store this RD here - BORIS HACK
+    ## store this RD here
     this.RD <- crop.parameters[[paste0(irrigation_sites$Crop[i], "_RD")]][j]
 
-    if (j == 1) {
-      irrigation_temp$PHIc[j] = irrigation_sites$FC[i] ## BORIS HACK; was 30.5
-      irrigation_temp$Ks[j] = 1 ##BORIS question - this assumes no stress?
-    } else { ## BORIS HACK to read RD per crop
+    if (j == 1) { ## if first day, assign starting value
+      irrigation_temp$PHIc[j] = irrigation_sites$PHIc[i] ## start value from db
+      irrigation_temp$Ks[j] = 1
+    } else { ## if not first day, go through the water balance
       phi_update <-
         irrigation_temp$PHIc[j - 1] - (irrigation_temp$ETca[j - 1] * 100 /
                                          (this.RD * 1000)) +
         (irrigation_temp$Iapp[j] + irrigation_temp$Precipitation[j]) *
         100 / (this.RD * 1000)
-      
-      if (phi_update > irrigation_sites$FC[i]) { ##BORIS HACK; FC from db
-        irrigation_temp$PHIc[j] <- irrigation_sites$FC[i] ##BORIS HACK; FC from db
-      } else {
-        irrigation_temp$PHIc[j] <- phi_update
+
+      ## assign moisture content PHIc
+      if (is.na(phi_update)) {## catch an NA, e.g. if station temporarily down
+        irrigation_temp$PHIc[j] <- irrigation_temp$PHIc[j-1]
+      } else { ## otherwise, if all good
+        if (phi_update > irrigation_sites$FC[i]){
+          irrigation_temp$PHIc[j] <- irrigation_sites$FC[i]
+        } else {
+          irrigation_temp$PHIc[j] <- phi_update
+        }
       }
-      
-      if (irrigation_temp$PHIc[j] > irrigation_sites$PHIt[i]) {##BORIS HACK db val
+
+      ## check if mosture content causes stress (no stress: Ks=1)
+      if (irrigation_temp$PHIc[j] > irrigation_sites$PHIt[i]) {
         irrigation_temp$Ks[j] <- 1
       } else {
         irrigation_temp$Ks[j] <-
           1 - (irrigation_sites$PHIt[i] - irrigation_temp$PHIc[j]) / 
-	  (irrigation_sites$PHIt[i] - irrigation_sites$WP[i])##BORIS HACK db val
+	  (irrigation_sites$PHIt[i] - irrigation_sites$WP[i])
       }
-    }
+    } ## end not first day
     
     # ------------------------------------------------
     # COMPUTE SOIL CONDITIONS
     # ------------------------------------------------
     
     # Irrigation + Precipitation
-    
-##    irrigation_temp$ETca[j] <- ## BORIS HACK - comment out
-##      irrigation_temp$ETc[j] * irrigation_temp$Ks[j]
+    irrigation_temp$ETca[j] <- 
+      irrigation_temp$ETc[j] * irrigation_temp$Ks[j]
     
     # SOIL WATER DEFICIT
-    # ------------------------------------------------
-    
+    # ------------------------------------------------    
     irrigation_temp$SWD[j] <- irrigation_sites$FC[i] - irrigation_temp$PHIc[j]
-    
-    
+        
     # ------------------------------------------------
     # COMPUTE IRRIGATION NEED
     # ------------------------------------------------
     
     water_balance <-
-      (irrigation_temp$SWD[j] / 100) * this.RD * 1000 - (irrigation_temp$Precipitation[j] + irrigation_temp$Iapp[j]) ##BORIS HACK
+      (irrigation_temp$SWD[j] / 100) * this.RD * 1000 - (irrigation_temp$Precipitation[j] + irrigation_temp$Iapp[j]) 
     
     if (water_balance > 0) {
       irrigation_temp$Ineed[j] <- water_balance
@@ -294,18 +291,18 @@ for (i in 1:nrow(irrigation_sites)) {
             'REPLACE INTO Irrigation (siteID, date, irrigationNeed, irrigationApp, WP, FC, SWD, ETca, Ks, PHIc, PHIt, precipitation, ET0, ETc)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
           ),
-          params = list(
+          params = list( ## some of them are fixed in time, these come from the sites directly 
             irrigation_temp$siteID[j],
             irrigation_temp$date[j],
             irrigation_temp$Ineed[j],
             irrigation_temp$Iapp[j],
-            irrigation_temp$WP[j],
-            irrigation_temp$FC[j],
+            irrigation_sites$WP[i],
+            irrigation_sites$FC[i],
             irrigation_temp$SWD[j],
             irrigation_temp$ETca[j],
             irrigation_temp$Ks[j],
             irrigation_temp$PHIc[j],
-            irrigation_temp$PHIt[j],
+            irrigation_sites$PHIt[i],
             irrigation_temp$Precipitation[j],
             irrigation_temp$ET0[j],
             irrigation_temp$ETc[j]
