@@ -5,8 +5,8 @@ library(lubridate)
 library(tidyjson)
 
 source('/opt/shiny-server/WWCS/.Rprofile')
-source("/srv/shiny-server/irrigation/R/crop_parameters.R")
 source("/srv/shiny-server/irrigation/R/calc_et0.R")
+crop.parameters <- readr::read_csv(file = "/srv/shiny-server/irrigation/appdata/CropParameters.csv", show_col_types = FALSE)
 
 yesterday <- Sys.Date()
 
@@ -54,13 +54,20 @@ irrigation_sites <- dbReadTable(pool, "Sites")   %>%
     latitude,
     longitude,
     irrigation,
-    FC,
-    WP,
+    FC, ## field capacity
+    WP, ## wilting point
+    MAD, ## to come from the Sites table! (was .4 in crop_parameters.R)
+    PHIc, ## to come from the Sites table for first timestep; suggest a default value, e.g. avg(FC, WP)! (was 30.5 hardcoded in here at first timestep); c=content -> this varies
+    Crop, 
     StartDate,
     area,
     type,
     humanID
-  ))
+  )) %>% dplyr::mutate( ##compute constants
+    TAW = FC - WP,
+    PHIt = FC - TAW*MAD ## was 21.8 hardcoded in here, but of different value in crop_parameters.R); t=threshold -> constant
+
+  )
 
 irrigation <- dbReadTable(pool_service, "Irrigation") 
 
@@ -179,12 +186,10 @@ for (i in 1:nrow(irrigation_sites)) {
   
   irrigation_temp <- calc_et0(station)
   
-  # Replace values in ET0 with the ones from ET0new only where ET0new is not NA
-  
+  # Replace values in ET0 with the ones from ET0new only where ET0new is not NA  
   irrigation_temp$ET0 <- ifelse(is.na(irrigation_temp$ET0new), irrigation_temp$ET0, irrigation_temp$ET0new)
   
-  # Omit ET0new
-  
+  # Omit ET0new  
   irrigation_temp <- irrigation_temp %>%
     dplyr::select(-ET0new)
   
@@ -192,12 +197,8 @@ for (i in 1:nrow(irrigation_sites)) {
   
   irrigation_temp <- irrigation_temp %>% 
     dplyr::mutate(
-      ETc = ET0 * Kc$value[1:nrow(irrigation_temp)],
-      ETca = zoo::na.approx(ETc),
-      FC = zoo::na.approx(irrigation_sites$FC[i]),
-      WP = zoo::na.approx(irrigation_sites$WP[i]),
-      PHIt = zoo::na.approx(21.8), 
-      
+      ETc = ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)],  
+      ETca = zoo::na.approx(ETc, na.rm=FALSE) ## if ever a trailing of heading value is NA, keep it
     )
   
   # Only compute values which are not yet in the data base
@@ -220,52 +221,58 @@ for (i in 1:nrow(irrigation_sites)) {
       irrigation_temp$Precipitation[j] = 0
     } 
     
-    
-    if (j == 1) {
-      irrigation_temp$PHIc[j] = 30.5
+    ## store this RD here
+    this.RD <- crop.parameters[[paste0(irrigation_sites$Crop[i], "_RD")]][j]
+
+    if (j == 1) { ## if first day, assign starting value
+      irrigation_temp$PHIc[j] = irrigation_sites$PHIc[i] ## start value from db
       irrigation_temp$Ks[j] = 1
-    } else {
+    } else { ## if not first day, go through the water balance
       phi_update <-
         irrigation_temp$PHIc[j - 1] - (irrigation_temp$ETca[j - 1] * 100 /
-                                         (RD[j] * 1000)) +
+                                         (this.RD * 1000)) +
         (irrigation_temp$Iapp[j] + irrigation_temp$Precipitation[j]) *
-        100 / (RD[j] * 1000)
-      
-      if (phi_update > FC) {
-        irrigation_temp$PHIc[j] <- FC
-      } else {
-        irrigation_temp$PHIc[j] <- phi_update
+        100 / (this.RD * 1000)
+
+      ## assign moisture content PHIc
+      if (is.na(phi_update)) {## catch an NA, e.g. if station temporarily down
+        irrigation_temp$PHIc[j] <- irrigation_temp$PHIc[j-1]
+      } else { ## otherwise, if all good
+        if (phi_update > irrigation_sites$FC[i]){
+          irrigation_temp$PHIc[j] <- irrigation_sites$FC[i]
+        } else {
+          irrigation_temp$PHIc[j] <- phi_update
+        }
       }
-      
-      if (irrigation_temp$PHIc[j] > PHIt) {
+
+      ## check if mosture content causes stress (no stress: Ks=1)
+      if (irrigation_temp$PHIc[j] > irrigation_sites$PHIt[i]) {
         irrigation_temp$Ks[j] <- 1
       } else {
         irrigation_temp$Ks[j] <-
-          1 - (PHIt - irrigation_temp$PHIc[j]) / (PHIt - WP)
+          1 - (irrigation_sites$PHIt[i] - irrigation_temp$PHIc[j]) / 
+	  (irrigation_sites$PHIt[i] - irrigation_sites$WP[i])
       }
-    }
+    } ## end not first day
     
     # ------------------------------------------------
     # COMPUTE SOIL CONDITIONS
     # ------------------------------------------------
     
     # Irrigation + Precipitation
-    
-    irrigation_temp$ETca[j] <-
+    irrigation_temp$ETca[j] <- 
       irrigation_temp$ETc[j] * irrigation_temp$Ks[j]
     
     # SOIL WATER DEFICIT
-    # ------------------------------------------------
-    
-    irrigation_temp$SWD[j] <- FC - irrigation_temp$PHIc[j]
-    
-    
+    # ------------------------------------------------    
+    irrigation_temp$SWD[j] <- irrigation_sites$FC[i] - irrigation_temp$PHIc[j]
+        
     # ------------------------------------------------
     # COMPUTE IRRIGATION NEED
     # ------------------------------------------------
     
     water_balance <-
-      (irrigation_temp$SWD[j] / 100) * RD[j] * 1000 - (irrigation_temp$Precipitation[j] + irrigation_temp$Iapp[j])
+      (irrigation_temp$SWD[j] / 100) * this.RD * 1000 - (irrigation_temp$Precipitation[j] + irrigation_temp$Iapp[j]) 
     
     if (water_balance > 0) {
       irrigation_temp$Ineed[j] <- water_balance
@@ -284,18 +291,18 @@ for (i in 1:nrow(irrigation_sites)) {
             'REPLACE INTO Irrigation (siteID, date, irrigationNeed, irrigationApp, WP, FC, SWD, ETca, Ks, PHIc, PHIt, precipitation, ET0, ETc)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
           ),
-          params = list(
+          params = list( ## some of them are fixed in time, these come from the sites directly 
             irrigation_temp$siteID[j],
             irrigation_temp$date[j],
             irrigation_temp$Ineed[j],
             irrigation_temp$Iapp[j],
-            irrigation_temp$WP[j],
-            irrigation_temp$FC[j],
+            irrigation_sites$WP[i],
+            irrigation_sites$FC[i],
             irrigation_temp$SWD[j],
             irrigation_temp$ETca[j],
             irrigation_temp$Ks[j],
             irrigation_temp$PHIc[j],
-            irrigation_temp$PHIt[j],
+            irrigation_sites$PHIt[i],
             irrigation_temp$Precipitation[j],
             irrigation_temp$ET0[j],
             irrigation_temp$ETc[j]
