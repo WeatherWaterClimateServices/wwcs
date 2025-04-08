@@ -84,15 +84,15 @@ if (nrow(irrigation) > 0) {
 for (i in 1:nrow(irrigation_sites)) {
   # READ STATION DATA
   id <- irrigation_sites$siteID[i]
- 
+  
   # ------------------------------------------------
   # GET DATA FROM WWCS
   # ------------------------------------------------
   
   lowcost <-
     dbGetQuery(pool_stations,
-               paste0("SELECT * FROM v_machineobs WHERE siteID = '", id , "';")) %>%
-    mutate(across(siteID, ~ replace(., . ==  id,  irrigation_sites$siteID[i]))) %>%
+               paste0("SELECT * FROM v_machineobs WHERE siteID = '", id_station , "';")) %>%
+    mutate(across(siteID, ~ replace(., . ==  id_station,  irrigation_sites$siteID[i]))) %>%
     dplyr::filter(
       timestamp >= as.Date(irrigation_sites$StartDate[i]) &
         as.Date(timestamp) <= yesterday
@@ -157,11 +157,11 @@ for (i in 1:nrow(irrigation_sites)) {
   # ------------------------------------------------
   # CHECK IF DATES ARE MISSING IN THE STATION AND REPLACE WITH EMPTY VALUE
   # ------------------------------------------------  
-
+  
   full_dates <- seq(as.Date(irrigation_sites$StartDate[i]), as.Date(yesterday), by = "1 day")
   
   missing_dates <- data.frame("date" = full_dates[!full_dates %in% as.Date(station$date)]) %>% as_tibble()
-
+  
   missing_dates <- missing_dates %>%
     dplyr::mutate(
       Tmax = NA,
@@ -177,8 +177,8 @@ for (i in 1:nrow(irrigation_sites)) {
     dplyr::mutate(siteID = irrigation_sites$siteID[i])
   
   station <- rbind(station, missing_dates) %>%
-              dplyr::arrange(date) %>%
-              dplyr::left_join(irrigation)
+    dplyr::arrange(date) %>%
+    dplyr::left_join(irrigation)
   
   # ------------------------------------------------
   # COMPUTE EVAPOTRANSPIRATION VALUES
@@ -200,7 +200,7 @@ for (i in 1:nrow(irrigation_sites)) {
       ETc = ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)],  
       ETca = zoo::na.approx(ETc, na.rm=FALSE) ## if ever a trailing of heading value is NA, keep it
     )
-
+  
   # Only compute values which are not yet in the data base
   # could be done also by recalculating the entire series
   # -----------------------------------------------------------
@@ -213,7 +213,7 @@ for (i in 1:nrow(irrigation_sites)) {
     }
     
     
-    if (!"Precipitation" %in% names(irrigation_temp) || is.na(irrigation_temp$Precipitation[j])) { 
+    if (!"Precipitation" %in% names(irrigation_temp) || is.na(irrigation_temp$Precipitation[j])) {
       irrigation_temp$Precipitation[j] = irrigation_temp$PrecipitationStation[j]
     } 
     
@@ -324,4 +324,3 @@ for (i in 1:nrow(irrigation_sites)) {
     )
   }
 }
-

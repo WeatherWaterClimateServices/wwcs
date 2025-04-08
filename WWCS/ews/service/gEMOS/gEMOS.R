@@ -41,7 +41,7 @@ poi <- preproc_grid %>%
        dplyr::select(lon, lat)
 npoi <- nrow(poi)
 
-tj_gadm <- sf::st_read(paste0("/srv/shiny-server/dashboard/appdata/boundaries/gadm41_", gadm0, "_0.shp")) 
+tj_gadm <- sf::st_read(paste0("/opt/shiny-server/WWCS/boundaries/gadm41_", gadm0, "_0.shp")) 
 
 # Define NetCDF parameters for writing output
 # ------------------------------------------------
