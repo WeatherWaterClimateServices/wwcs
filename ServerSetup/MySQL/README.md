@@ -5,13 +5,11 @@ The project uses these databases:
 - Machines
 - SitesHumans
 - WWCServices
-- meteo
-- wwcs
 
 The initial SQL migration `0000_init.sql` was created in the production server with the
 following command:
 
-    mysqldump -u root -p --no-data --skip-add-drop-table --databases BeneficiarySupport Humans Machines SitesHumans WWCServices meteo wwcs > 0000_init.sql
+    mysqldump -u root -p --no-data --skip-add-drop-table --databases BeneficiarySupport Humans Machines SitesHumans WWCServices > 0000_init.sql
 
 Then this file can be used to create the databases this way:
 
@@ -34,8 +32,6 @@ statements:
     DROP DATABASE IF EXISTS Machines;
     DROP DATABASE IF EXISTS SitesHumans;
     DROP DATABASE IF EXISTS WWCServices;
-    DROP DATABASE IF EXISTS meteo;
-    DROP DATABASE IF EXISTS wwcs;
 
 In development it would be convenient to include these statements in the initial
 migration. But it would be dangerous as well if the file was accidentally run in
