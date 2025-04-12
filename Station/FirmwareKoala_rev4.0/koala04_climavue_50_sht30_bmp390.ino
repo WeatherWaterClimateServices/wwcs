@@ -68,7 +68,8 @@ const bool CLIMAVUE50 = false;                     // whether the climavue50 is 
 #include <LTC2942.h>                                // coulomb counter library
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP3XX.h>                        // BMP390 library
-#include <SDI12.h>                                 // SDI12 for the ClimaVue50#include "esp_err.h"                               
+#include <SDI12.h>                                 // SDI12 for the ClimaVue50
+#include "esp_err.h"                               
 #include "esp_task_wdt.h"                          // for hardware watchdog
 #include <StreamDebugger.h>
 #include <ArduinoJson.h>
