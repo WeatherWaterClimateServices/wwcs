@@ -167,19 +167,19 @@ server <- function(input, output, session) {
   
   output$api_request <- renderText({
     if (input$selected_api == "Weather Forecast Station") {
-      request$url <- paste("https://wwcs.tj/services/forecast6h?stationID=", selected$id, "&date=", input$selected_date, sep = "")
+      request$url <- paste("https://", domain, "/services/forecast6h?stationID=", selected$id, "&date=", input$selected_date, sep = "")
     } else if (input$selected_api == "Weather Forecast Map") {
-      request$url <- paste("https://wwcs.tj/services/map?lat=", rv$clickLat, "&lon=", rv$clickLng, sep = "")
+      request$url <- paste("https://", wwcs_domain,"/services/map?lat=", rv$clickLat, "&lon=", rv$clickLng, sep = "")
     } else if (input$selected_api == "Station Observation") {
-      request$url <- paste("https://wwcs.tj/observations?stationID=", selected$id, sep = "")
+      request$url <- paste("https://", wwcs_domain,"/observations?stationID=", selected$id, sep = "")
     } else if (input$selected_api == "Early Warning") {
-      request$url <- paste("https://wwcs.tj/services/warning?Name=", selected$name, "&date=", input$selected_date, "&type=heat", sep = "")
+      request$url <- paste("https://", wwcs_domain,"/services/warning?Name=", selected$name, "&date=", input$selected_date, "&type=heat", sep = "")
     } else if (input$selected_api == "Irrigation Advice") {
-      request$url <- paste("https://wwcs.tj/services/irrigationNeed?siteID=", selected$id, "&date=", input$selected_date, sep = "")
+      request$url <- paste("https://", wwcs_domain,"/services/irrigationNeed?siteID=", selected$id, "&date=", input$selected_date, sep = "")
     } else if (input$selected_api == "Planting Advice") {
-      request$url <- paste("https://wwcs.tj/services/planting?stationID=", selected$id, "&date=", input$selected_date, sep = "")
+      request$url <- paste("https://", wwcs_domain,"/services/planting?stationID=", selected$id, "&date=", input$selected_date, sep = "")
     } else if (input$selected_api == "Harvest Advice") {
-      request$url <- paste("https://wwcs.tj/services/harvest?stationID=", selected$id, "&date=", input$selected_date, sep = "")
+      request$url <- paste("https://", wwcs_domain,"/services/harvest?stationID=", selected$id, "&date=", input$selected_date, sep = "")
     }
 
     print(request$url)
