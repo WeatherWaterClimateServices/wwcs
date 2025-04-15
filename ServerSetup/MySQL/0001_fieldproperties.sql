@@ -6,6 +6,8 @@ SET DEFAULT JSON_OBJECT(
   'WP', 18,
   'WA', 0.5,
   'IE', 0.65,
+  'MAD', 0.4,
+  'PHIc', 22,
   'Crop', 'Potato',
   'area', 0,
   'type', 'channel',
