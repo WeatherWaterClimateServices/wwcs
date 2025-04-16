@@ -65,8 +65,7 @@ irrigation_sites <- dbReadTable(pool, "Sites")   %>%
     humanID
   )) %>% dplyr::mutate( ##compute constants
     TAW = FC - WP,
-    PHIt = FC - TAW*MAD ## was 21.8 hardcoded in here, but of different value in crop_parameters.R); t=threshold -> constant
-
+    PHIt = FC - TAW * MAD ## was 21.8 hardcoded in here, but of different value in crop_parameters.R); t=threshold -> constant
   )
 
 irrigation <- dbReadTable(pool_service, "Irrigation") 
@@ -83,7 +82,7 @@ if (nrow(irrigation) > 0) {
 
 for (i in 1:nrow(irrigation_sites)) {
   # READ STATION DATA
-  id <- irrigation_sites$siteID[i]
+  id_station <- irrigation_sites$siteID[i]
   
   # ------------------------------------------------
   # GET DATA FROM WWCS

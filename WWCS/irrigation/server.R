@@ -11,7 +11,6 @@ server <- function(input, output, session) {
   })
   
   irrigation_df <- reactive({
-    #make reactive to
     input$submit_edit
     
     sites <- dbReadTable(pool, "Sites")  %>%
@@ -31,6 +30,9 @@ server <- function(input, output, session) {
         irrigation,
         FC,
         WP,
+        IE,
+        WA,
+        PHIc,
         StartDate,
         Crop,
         area,
@@ -50,17 +52,13 @@ server <- function(input, output, session) {
         dplyr::filter(lubridate::year(date) == lubridate::year(Sys.Date())) %>%
         as_tibble() %>%
         dplyr::rename(Ineed = irrigationNeed,
-                    Iapp = irrigationApp,
-                    Precipitation = precipitation)
+                      Iapp = irrigationApp,
+                      Precipitation = precipitation)
     } 
     
     table_data
   })
   
-  # ------------------------------- Login Security
-  
-  # call the server part
-  # check_credentials returns a function to authenticate users
   res_auth <- secure_server(check_credentials = check_credentials(credentials))
   
   output$auth_output <- renderPrint({
@@ -68,15 +66,11 @@ server <- function(input, output, session) {
     updateTabItems(session, "sidebar", "overview")
   })
   
-  # your classic server logic
-  
-  # ------------------------------- Leaflet Map
-  
   output$map <- renderLeaflet({
     leaflet(options = leafletOptions(minZoom = 7, maxZoom = 17)) %>%
       setView(lng = default_station$longitude,
               lat = default_station$latitude,
-              zoom = 17)  %>%
+              zoom = 7)  %>%
       addTiles(group = i18n$t("Street View")) %>%
       addProviderTiles("Esri.WorldImagery", group = i18n$t("Satellite")) %>%
       addLayersControl(baseGroups = c(i18n$t("Satellite"), i18n$t("Street View")),
@@ -105,11 +99,7 @@ server <- function(input, output, session) {
       )
   })
   
-
-  # ------------------------------- Add plot polygons
-
   observe({
-
     if (exists("plot_polygons")) {
       leafletProxy("map") %>%
         addPolygons(
@@ -120,31 +110,22 @@ server <- function(input, output, session) {
           weight = 2
         )
     }
-
   })
-
-
-  # ------------------------------- Language Translation
-
+  
   observeEvent(input$selected_language, {
     update_lang(language = input$selected_language, session)
-
   })
-
-  # # ------------------------------- Station Selection
-
+  
   observeEvent(input$map_marker_click, {
     selected$id <- input$map_marker_click$id
     updateSelectInput(session, "selectid", selected = input$map_marker_click$id)
   })
-
+  
   observeEvent(input$selectid, {
     selected$id <- input$selectid
   })
-
+  
   observe({
-
-    # Assign advice only if irrigation_data is not empty
     if (nrow(irrigation_data()) == 0) {
       advice$irrigate <- "No data available"
       advice$ineed <- "No data available"
@@ -152,45 +133,35 @@ server <- function(input, output, session) {
       advice$irrigate <- irrigation_data() %>%
         dplyr::filter(siteID == selected$id & date == Sys.Date() - days(1)) %>%
         dplyr::summarise(dplyr::if_else(PHIt > PHIc, i18n$t("Irrigate"), i18n$t("Do not irrigate")))
-
+      
       advice$ineed <- irrigation_data() %>%
         dplyr::filter(siteID == selected$id & date == Sys.Date() - days(1)) %>%
         dplyr::summarise(paste0(round(Ineed), " mm"))
     }
-
   })
-
+  
   output$plot_soil <- renderPlotly({
     plot_soil_moisture(irrigation_data, selected$id)
   })
-
+  
   output$plot_balance <- renderPlotly({
     plot_water_balance(irrigation_data, selected$id)
   })
-
-  # ------------------------------- Irrigation Table
-
+  
   output$table <- DT::renderDataTable({
     table <- irrigation_df()
     DT::datatable(table,  options = list(pageLength = 20))
   })
-
-
-  # ------------------------------- Modification of Table
-
-  #Form for data entry
+  
   entry_form <- function(button_id) {
     showModal(modalDialog(div(
       id = ("entry_form"),
       tags$head(tags$style(".modal-dialog{ width:400px}")),
-      tags$head(tags$style(
-        HTML(".shiny-split-layout > div {overflow: visible}")
-      )),
+      tags$head(tags$style(HTML(".shiny-split-layout > div {overflow: visible}"))),
       fluidPage(
         fluidRow(
           splitLayout(
             cellWidths = c("175px", "175px"),
-            cellArgs = list(style = "vertical-align: top"),
             textInput("wp", "Wilting Point", placeholder = ""),
             textInput("fc", "Field Capacity", placeholder = "")
           ),
@@ -198,34 +169,32 @@ server <- function(input, output, session) {
           br(),
           splitLayout(
             cellWidths = c("175px", "175px"),
+            textInput("ie", "Irrigation Efficiency", placeholder = ""),
+            textInput("wa", "Wetted Area", placeholder = "")
+          ),
+          br(),
+          br(),
+          textInput("phic", "Initial Soil Moisture (PHIc)", placeholder = ""),
+          br(),
+          br(),
+          splitLayout(
+            cellWidths = c("175px", "175px"),
             dateInput("sd", "Start Date"),
-            selectInput(
-              "cr",
-              "Crop Type",
-              choices = c("Potato", "Wheat"),
-              selected = "Potato"
-            )
+            selectInput("cr", "Crop Type", choices = c("Potato", "Wheat"), selected = "Potato")
           ),
           br(),
           br(),
           splitLayout(
             cellWidths = c("175px", "175px"),
             textInput("area", "Plot Area", placeholder = ""),
-            selectInput(
-              "type",
-              "Irrigation Type",
-              choices = c("channel", "traditional", "pump", "counter"),
-              selected = "counter"
-            )
+            selectInput("type", "Irrigation Type", choices = c("channel", "traditional", "pump", "counter"), selected = "counter")
           ),
           br(),
           br(),
           splitLayout(
             cellWidths = c("175px", "175px"),
             textInput("humanID", "Responsible Farmer", placeholder = ""),
-            checkboxInput("irrigation",
-                          width = "200px",
-                          label = HTML("<b>Activate Service?</b>"))
+            checkboxInput("irrigation", width = "200px", label = HTML("<b>Activate Service?</b>"))
           ),
           br(),
           br(),
@@ -235,217 +204,74 @@ server <- function(input, output, session) {
       )
     )))
   }
-
-  # Irrigation control
-  # -----------------------------------------
-
-  output$irradvice <- renderValueBox({
-    valueBox(tags$p(advice$irrigate, style = "font-size: 60%;"),
-             paste(paste0(Sys.Date())), color = "yellow")
-  })
-
-  output$irrvalue <- renderValueBox({
-    valueBox(advice$ineed,
-             paste(i18n$t('Next Irrigation')), color = "blue")
-  })
-
-  output$apiOutput <- renderText({
-    paste0(
-          "curl -X POST -H \"Content-Type: application/json\" -d '{\"siteID\":\"",
-          selected$id,
-          "\", \"irrigationApp\":",
-          input$irrigationingest,
-          ", \"precip\":",
-          input$precipingest,
-          ", \"date\":\"",
-          input$dateingest,
-          "\"}' https://",
-          wwcs_domain,
-          "/services/irrigationApp"
-    )
-  })
-
-  output$api2Output <- renderText({
-    paste0(
-      "https://",
-      wwcs_domain,
-      "/services/irrigationNeed?siteID=",
-      input$selectid,
-      "&date=",
-      input$dateingest
-    )
-
-  })
-
-  observeEvent(input$submit_data, {
-    output$apiresponse <- renderText({
-      "Submitting ... "
-    })
-
-    out <-
-      system(
-        paste0(
-          "curl -X POST -H \"Content-Type: application/json\" -d '{\"siteID\":\"",
-          selected$id,
-          "\", \"irrigationApp\":",
-          input$irrigationingest,
-          ", \"precip\":",
-          input$precipingest,
-          ", \"date\":\"",
-          input$dateingest,
-          "\"}' https://wwcs.tj/services/irrigationApp"
-        ),
-        intern = TRUE
-      )
-
-    source(
-      "/opt/shiny-server/WWCS/irrigation/service/irrigation_calculation.R"
-    )
-    
-    irrigation_data <- reactive({
-      
-      table_data <- dbReadTable(pool_service, "Irrigation") 
-      
-      if (nrow(table_data) > 0) {
-        table_data <- table_data %>% 
-          dplyr::filter(lubridate::year(date) == lubridate::year(Sys.Date())) %>%
-          as_tibble() %>%
-          dplyr::rename(Ineed = irrigationNeed,
-                        Iapp = irrigationApp,
-                        Precipitation = precipitation)
-      } 
-      
-      table_data
-    })
-    
-    output$plot_soil <- renderPlotly({
-      plot_soil_moisture(irrigation_data, selected$id)
-    })
-    
-    output$plot_balance <- renderPlotly({
-      plot_water_balance(irrigation_data, selected$id)
-    })
-
-    # output$apiresponse <- renderText({"Values inserted successfully"})
-    output$apiresponse <- renderText(out)
-    
-   })
-
-
-  # Edit Data
-  # -----------------------------------------
   
   observeEvent(input$edit_button, priority = 20, {
-    sites <- dbReadTable(pool, "Sites")  %>%
-      dplyr::as_tibble() %>%
-      dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
-
-    SQL_df <- dbReadTable(pool, "Sites")   %>%
-      dplyr::select(fieldproperties) %>%
-      unlist() %>%
-      spread_all %>%
-      dplyr::bind_cols(sites) %>%
-      dplyr::as_tibble() %>%
-      dplyr::select(c(
-        siteID,
-        siteName,
-        altitude,
-        irrigation,
-        FC,
-        WP,
-        StartDate,
-        Crop,
-        area,
-        type,
-        humanID
-      ))
-
+    SQL_df <- irrigation_df()
+    
     showModal(if (length(input$table_rows_selected) > 1) {
-      modalDialog(title = "Warning",
-                  paste("Please select only one row."),
-                  easyClose = TRUE)
+      modalDialog(title = "Warning", paste("Please select only one row."), easyClose = TRUE)
     } else if (length(input$table_rows_selected) < 1) {
-      modalDialog(title = "Warning",
-                  paste("Please select a row."),
-                  easyClose = TRUE)
+      modalDialog(title = "Warning", paste("Please select a row."), easyClose = TRUE)
     })
-
+    
     if (length(input$table_rows_selected) == 1) {
       entry_form("submit_edit")
-
+      
       updateTextInput(session, "wp", value = unlist(SQL_df[input$table_rows_selected, "WP"], use.names = FALSE))
       updateTextInput(session, "fc", value = unlist(SQL_df[input$table_rows_selected, "FC"], use.names = FALSE))
+      updateTextInput(session, "ie", value = unlist(SQL_df[input$table_rows_selected, "IE"], use.names = FALSE))
+      updateTextInput(session, "wa", value = unlist(SQL_df[input$table_rows_selected, "WA"], use.names = FALSE))
+      updateTextInput(session, "phic", value = unlist(SQL_df[input$table_rows_selected, "PHIc"], use.names = FALSE))
       updateTextInput(session, "sd", value = unlist(SQL_df[input$table_rows_selected, "StartDate"], use.names = FALSE))
       updateSelectInput(session, "cr", selected = unlist(SQL_df[input$table_rows_selected, "Crop"], use.names = FALSE))
       updateTextInput(session, "area", value = unlist(SQL_df[input$table_rows_selected, "area"], use.names = FALSE))
       updateSelectInput(session, "type", selected = unlist(SQL_df[input$table_rows_selected, "type"], use.names = FALSE))
       updateTextInput(session, "humanID", value = unlist(SQL_df[input$table_rows_selected, "humanID"], use.names = FALSE))
-      updateCheckboxInput(session, "irrigation", value = as.logical(unlist(SQL_df[input$table_rows_selected, "irrigation"]), use.names = FALSE))
+      updateCheckboxInput(session, "irrigation", value = as.logical(unlist(SQL_df[input$table_rows_selected, "irrigation"], use.names = FALSE)))
     }
   })
-
-
+  
   observeEvent(input$submit_edit, priority = 20, {
-    sites <- dbReadTable(pool, "Sites")  %>%
-      dplyr::as_tibble() %>%
-      dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
-
-    SQL_df <- dbReadTable(pool, "Sites")   %>%
-      dplyr::select(fieldproperties) %>%
-      unlist() %>%
-      spread_all %>%
-      dplyr::bind_cols(sites) %>%
-      dplyr::as_tibble() %>%
-      dplyr::select(c(
-        siteID,
-        siteName,
-        altitude,
-        irrigation,
-        FC,
-        WP,
-        StartDate,
-        Crop,
-        area,
-        type,
-        humanID
-      ))
-
-    station_selection <-
-      SQL_df[input$table_row_last_clicked, "siteID"]
-
+    SQL_df <- irrigation_df()
+    station_selection <- SQL_df[input$table_row_last_clicked, "siteID"]
+    
     pool::dbExecute(
       pool,
       sprintf(
-        'UPDATE Sites SET fieldproperties = JSON_SET(fieldproperties, "$.StartDate", ?, "$.WP", ?, "$.FC", ?, "$.Crop", ?, "$.area", ?, "$.type", ?, "$.humanID", ?) WHERE siteID = ("%s")',
+        'UPDATE Sites SET fieldproperties = JSON_SET(fieldproperties,
+          "$.StartDate", ?,
+          "$.WP", ?,
+          "$.FC", ?,
+          "$.IE", ?,
+          "$.WA", ?,
+          "$.PHIc", ?,
+          "$.Crop", ?,
+          "$.area", ?,
+          "$.type", ?,
+          "$.humanID", ?
+        ) WHERE siteID = ("%s")',
         station_selection
       ),
       params = list(
         as.Date(input$sd),
         as.numeric(input$wp),
         as.numeric(input$fc),
+        as.numeric(input$ie),
+        as.numeric(input$wa),
+        as.numeric(input$phic),
         as.character(input$cr),
         as.numeric(input$area),
         as.character(input$type),
         as.numeric(input$humanID)
       )
     )
-
+    
     pool::dbExecute(
       pool,
-      sprintf(
-        'UPDATE Sites SET irrigation = ? WHERE siteID = ("%s")',
-        station_selection
-      ),
+      sprintf('UPDATE Sites SET irrigation = ? WHERE siteID = ("%s")', station_selection),
       params = list(as.numeric(input$irrigation))
     )
-
-    sites_map <- reactive({
-      sites_map <- dbReadTable(pool, "Sites")  %>%
-        filter(irrigation == 1) %>%
-        dplyr::select(c(siteID, siteName, latitude, longitude))
-    })
-
-    removeModal()
     
+    removeModal()
   })
-}
+} 
