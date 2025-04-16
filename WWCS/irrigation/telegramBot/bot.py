@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 
 # Configuration
 load_dotenv()
-ENV = os.environ.get('ENV')
 USERNAME = os.environ.get('USERNAME', 'wwcs')
 PASSWORD = os.environ.get('PASSWORD')
 BOT_TOKEN = os.environ['BOT_TOKEN']

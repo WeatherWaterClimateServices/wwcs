@@ -1,9 +1,46 @@
+# Environment variables
+
+A deployment of the irrigation bot is configured with a number of environemnet variables:
+
+    USERNAME    -- Username to connect to MySQL (defaults to "wwcs")
+    PASSWORD    -- Password to connect to MySQL (required)
+    BOT_TOKEN   -- Token to connect to Telegram (required)
+    LANGUAGE    -- Language to use (defaults to "en")
+
+The environment variables should be defined in a file with the name ".env", located in the
+directory where the bot runs. For example:
+
+    ./WWCS/irrigation/telegramBot/.env
+
+    USERNAME=wwcs
+    PASSWORD=XXX
+    BOT_TOKEN=XXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    LANGUAGE=tg
+
+Since this file contains sensitive information, set restrictive permissions, only the user
+should be able to read/write it:
+
+    chmod 600 ./WWCS/irrigation/telegramBot/.env
+
+To register your bot and receive its authentication token start a converation with
+@BotFather, then create a new bot, choose a bot name, and a username:
+
+    /newbot
+    [...]
+    wwwc_test
+    [...]
+    wwcs_test_bot
+
+@BotFather will reply with the token. To delete the bot send `/deletebot` to @BotFather.
+
 # Translations
 
 We only support one language per installation, and this should be defined by a
 environement variable. When deployed, set the language in the .env file like this:
 
     LANGUAGE=tg
+
+The source language is English (en), and there are translations available for Tajik (tg).
 
 ## Introduction
 
