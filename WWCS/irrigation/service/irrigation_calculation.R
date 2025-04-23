@@ -8,7 +8,7 @@ source('/opt/shiny-server/WWCS/.Rprofile')
 source("/srv/shiny-server/irrigation/R/calc_et0.R")
 crop.parameters <- readr::read_csv(file = "/srv/shiny-server/irrigation/appdata/CropParameters.csv", show_col_types = FALSE)
 
-yesterday <- Sys.Date()
+yesterday <- Sys.Date() - 1
 
 pool <-
   dbPool(
@@ -102,7 +102,7 @@ for (i in 1:nrow(irrigation_sites)) {
   # CHECK IF CURRENTLY RUNNING
   # ------------------------------------------------  
   
-  # Check if last date of data in the data frame station is today
+  # Check if last date of data in the data frame station is from yesterday
   
   if (nrow(lowcost) == 0) {
     print(paste("The station", irrigation_sites$siteID[i], "has no data"))
@@ -110,10 +110,10 @@ for (i in 1:nrow(irrigation_sites)) {
     
   } else {
     
-    if (as.Date(lowcost$timestamp[nrow(lowcost)]) == today()) {
-      print(paste("The station", irrigation_sites$siteID[i], "is currently running"))
+    if (as.Date(lowcost$timestamp[nrow(lowcost)]) == yesterday) {
+      print(paste("The station", irrigation_sites$siteID[i], "was running yesterday"))
     } else {
-      print(paste("The station", irrigation_sites$siteID[i], "is not currently running"))
+      print(paste("The station", irrigation_sites$siteID[i], "was not running yesterday"))
       next
     }
     
