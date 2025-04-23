@@ -102,21 +102,17 @@ for (i in 1:nrow(irrigation_sites)) {
   # CHECK IF CURRENTLY RUNNING
   # ------------------------------------------------  
   
-  # Check if last date of data in the data frame station is from yesterday
-  
+  # Check if last date of data in the data frame station is from yesterday  
   if (nrow(lowcost) == 0) {
     print(paste("The station", irrigation_sites$siteID[i], "has no data"))
-    next
-    
-  } else {
-    
+    next    
+  } else {    
     if (as.Date(lowcost$timestamp[nrow(lowcost)]) == yesterday) {
       print(paste("The station", irrigation_sites$siteID[i], "was running yesterday"))
     } else {
       print(paste("The station", irrigation_sites$siteID[i], "was not running yesterday"))
       next
-    }
-    
+    }    
   }
   
   meta_site <- irrigation_sites %>%
@@ -321,6 +317,6 @@ for (i in 1:nrow(irrigation_sites)) {
           )
         return(out)
       }
-    )
+    ) ## end trycatch insert into WWCServices.Irrigation
   }
 }
