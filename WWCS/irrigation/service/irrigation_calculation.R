@@ -54,6 +54,7 @@ irrigation_sites <- dbReadTable(pool, "Sites")   %>%
     latitude,
     longitude,
     irrigation,
+    Station, ## siteID of where the relevant weather station sits
     FC, ## field capacity
     WP, ## wilting point
     MAD, ## to come from the Sites table! (was .4 in crop_parameters.R)
@@ -82,7 +83,7 @@ if (nrow(irrigation) > 0) {
 
 for (i in 1:nrow(irrigation_sites)) {
   # READ STATION DATA
-  id_station <- irrigation_sites$siteID[i]
+  id_station <- irrigation_sites$Station[i]
   
   # ------------------------------------------------
   # GET DATA FROM WWCS
