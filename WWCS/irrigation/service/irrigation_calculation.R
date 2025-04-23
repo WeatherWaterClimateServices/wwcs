@@ -196,8 +196,9 @@ for (i in 1:nrow(irrigation_sites)) {
   
   irrigation_temp <- irrigation_temp %>% 
     dplyr::mutate(
-      ETc = ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)],  
-      ETca = zoo::na.approx(ETc, na.rm=FALSE) ## if ever a trailing of heading value is NA, keep it
+             ETc = zoo::na.approx(ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)],
+                               na.rm=FALSE),  ## if ever a trailing of heading value is NA, keep it; interpolate NA gaps 
+      ETca = ETc
     )
   
   # Only compute values which are not yet in the data base
