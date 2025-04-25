@@ -1,15 +1,16 @@
+import collections
 import contextlib
 import datetime
 import hashlib
+import os
 
 # Requirements
 import httpx
 import MySQLdb
 import pytest
+import dotenv
 
 
-# The tests are run in the local environment, first run the application with:
-# flask --app api run --debug
 URL = 'http://localhost:8000'
 
 # In the whole test suite we will use fake site and loggers
@@ -18,8 +19,12 @@ siteID = 'test-site'
 loggerID = 'test-logger'
 
 
+dotenv.load_dotenv()
+USERNAME = os.environ.get('USERNAME', 'wwcs')
+PASSWORD = os.environ.get('PASSWORD')
+
 def connect():
-    return MySQLdb.connect("localhost", "wwcs", "EnterMySQLPassword")
+    return MySQLdb.connect("localhost", USERNAME, PASSWORD)
 
 
 @contextlib.contextmanager
@@ -50,8 +55,8 @@ def cleanup():
             sql = f'DELETE FROM {table} WHERE loggerID = %s'
             execute(cursor, sql, [loggerID])
 
-        assert get_siteID(cursor, loggerID) is None
-        assert get_git_version(cursor, loggerID) is None
+        assert get_machine_at_site(cursor, loggerID) == []
+        assert get_metadata(cursor, loggerID) == []
 
 def count(cursor, table):
     sql = f"SELECT COUNT(*) FROM {table};"
@@ -70,23 +75,11 @@ def get_last_reject(cursor):
 
     return rows[0]
 
-def get_siteID(cursor, loggerID, table='Machines.MachineAtSite'):
-    rows = select(cursor, table, loggerID=loggerID)
-    if len(rows) == 0:
-        return None
+def get_machine_at_site(cursor, loggerID):
+    return select(cursor, 'Machines.MachineAtSite', loggerID=loggerID)
 
-    assert len(rows) == 1
-    row = rows[0]
-    return row[0] # siteID
-
-def get_git_version(cursor, loggerID, table='Machines.Metadata'):
-    rows = select(cursor, table, ['git_version'], loggerID=loggerID)
-    if len(rows) == 0:
-        return None
-
-    assert len(rows) == 1
-    row = rows[0]
-    return row[0]
+def get_metadata(cursor, loggerID):
+    return select(cursor, 'Machines.Metadata', loggerID=loggerID)
 
 
 def select(cursor, table, columns=None, **kwargs):
@@ -99,17 +92,23 @@ def select(cursor, table, columns=None, **kwargs):
     where = ' AND '.join(where)
     sql = f'SELECT {columns} FROM {table} WHERE {where};'
     execute(cursor, sql, values)
-    return cursor.fetchall()
+    rows = cursor.fetchall()
+
+    # Return list of namedtuples
+    column_names = [col[0] for col in cursor.description]
+    Result = collections.namedtuple('Result', column_names)
+    return [Result(*row) for row in rows]
+
 
 def test_register():
+    today = datetime.date.today()
+
     # Start clean
     cleanup()
 
     with get_cursor() as cursor:
-        d = count(cursor, 'Machines.MachineAtSite')
-        m = count(cursor, 'Machines.Metadata')
-        assert get_siteID(cursor, loggerID) is None
-        assert get_git_version(cursor, loggerID) is None
+        assert get_machine_at_site(cursor, loggerID) == []
+        assert get_metadata(cursor, loggerID) == []
 
     # Register
     git_version = 'test-git-version'
@@ -118,10 +117,19 @@ def test_register():
     assert response.status_code in [200, 201]
     assert response.headers['content-type'] == 'application/json'
     with get_cursor() as cursor:
-        assert count(cursor, 'Machines.MachineAtSite') == d + 1
-        assert count(cursor, 'Machines.Metadata') == m + 1
-        assert get_siteID(cursor, loggerID) == siteID
-        assert get_git_version(cursor, loggerID) == git_version
+        rows = get_machine_at_site(cursor, loggerID)
+        assert len(rows) == 1
+        row = rows[0]
+        assert row.siteID == siteID
+        assert row.startDate.date() == today
+        assert row.endDate == datetime.datetime(2100, 1, 1)
+
+        rows = get_metadata(cursor, loggerID)
+        assert len(rows) == 1
+        row = rows[0]
+        assert row.git_version == git_version
+        assert row.startDate.date() == today
+        assert row.endDate == datetime.datetime(2100, 1, 1)
 
     # Cleanup
     cleanup()

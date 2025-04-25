@@ -42,3 +42,21 @@ Routes:
 
 The /services prefix is added by the Nginx configuration, when testing without
 Nginx remove it.
+
+
+# Tests
+
+To run the tests locally first setup a virtual environment:
+
+    make install
+    ./venv/bin/pip install -r requirements-test.txt
+
+Then start the API in one terminal:
+
+    source venv/bin/activate
+    USERNAME=wwcs uvicorn api_station:app
+
+And run the tests in another terminal:
+
+    source venv/bin/activate
+    USERNAME=wwcs pytest
