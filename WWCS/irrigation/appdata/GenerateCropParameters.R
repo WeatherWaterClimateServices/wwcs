@@ -1,9 +1,27 @@
 library(dplyr)
+library(xlsx)
+
 ## raw data.frame
 crop.parameters <- data.frame(Index=1:300)
 
+## winter wheat from ICARDA
+Kc <- read.xlsx("WinterWheat/Winter_Wheat_Kc_Tadjikistan_Updated.xlsx", sheetIndex=1)
+RD <- read.xlsx("WinterWheat/Winter_Wheat_Rooting_Depth_Tadjikistan_Updated.xlsx", sheetIndex=1)
+winterwheat <- data.frame(Index=crop.parameters$Index,
+                     WinterWheat_Kc=c(Kc[, 1], rep(Kc[nrow(Kc), 1], nrow(crop.parameters) - nrow(Kc))),
+                     WinterWheat_RD=c(RD[, 1], rep(RD[nrow(RD), 1], nrow(crop.parameters) - nrow(RD))))
+crop.parameters <- full_join(crop.parameters, winterwheat, by="Index")
+
+## cotton from ICARDA
+Kc <- read.xlsx("Cotton/Cotton_Kc_Only.xlsx", sheetIndex=1)
+RD <- read.csv("Cotton/Estimated_Rooting_Depths.csv")
+cotton <- data.frame(Index=crop.parameters$Index,
+                     Cotton_Kc=c(Kc[, 1], rep(Kc[nrow(Kc), 1], nrow(crop.parameters) - nrow(Kc))),
+                     Cotton_RD=c(RD[, 1], rep(RD[nrow(RD), 1], nrow(crop.parameters) - nrow(RD))))
+crop.parameters <- full_join(crop.parameters, cotton, by="Index")
+
 ## potato from ICARDA
-Kc <- read.csv("Kc.csv", header=F)
+Kc <- read.csv("Potato/Kc.csv", header=F)
 RD <- 0.0043 * seq(1, nrow(Kc)) + 0.1957
 potato <- data.frame(Index=1:length(RD), Potato_Kc=Kc[,1], Potato_RD=RD)
 ## fill up the remaining empty rows and join
