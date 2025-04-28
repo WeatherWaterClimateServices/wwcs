@@ -6,6 +6,18 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.date import DateTrigger
 from datetime import datetime, timedelta
+import gettext
+import pathlib
+
+# Initialize gettext
+root = pathlib.Path(__file__).parent
+translation = gettext.translation(
+    'messages',                 # The domain, messages is the default
+    localedir=root / 'locale',  # Where the translation files are stored
+    languages=[LANGUAGE],       # We only support one language at a time
+    fallback=True,              # Return the source id if not translation file is found
+)
+_ = translation.gettext
 
 
 class NotificationManager:
@@ -24,7 +36,7 @@ class NotificationManager:
             try:
                 self.jobs[job_id].remove()
             except Exception as e:
-                print(f"Ошибка при удалении задания {job_id}: {e}")
+                print (f"Error deleting task {job_id}: {e}")
             finally:
                 self.jobs.pop(job_id, None)
 
@@ -83,7 +95,7 @@ def get_db_connection():
         host="localhost",
         user="user",
         password="password",
-        db="dbname",
+        db="db",
         cursorclass=pymysql.cursors.DictCursor
     )
 
@@ -143,7 +155,7 @@ async def start_irrigation_notifications(chat_id):
         chat_id,
         'water_check',
         send_water_check_notification,
-        trigger=IntervalTrigger(minutes=30),
+        trigger=IntervalTrigger(minutes=5),
         args=[chat_id]
     )
 
@@ -157,7 +169,7 @@ async def stop_irrigation_notifications(chat_id):
             job.remove()
             del notification_jobs[job_id]
     except Exception as e:
-        print(f"Ошибка при удалении задания: {e}")
+        print(f"Error deleting task: {e}")
 
 
 
@@ -166,7 +178,7 @@ async def send_water_check_notification(chat_id):
     if chat_id in user_irrigation_data:
         await bot.send_message(
             chat_id,
-            "🔄 Пожалуйста, проверьте текущий уровень воды в канале и отправьте его значение"
+            _("🔄 Please check the current water level in the channel and send its value")
         )
 
 
@@ -192,7 +204,7 @@ async def stop_polyv_completion_notification(chat_id):
             job.remove()
             del notification_jobs[job_id]
     except Exception as e:
-        print(f"Ошибка при удалении задания: {e}")  # Логируем ошибку, но не прерываем выполнение
+        print(f"Error deleting task: {e}")  # Логируем ошибку, но не прерываем выполнение
 
 
 
@@ -200,7 +212,7 @@ async def notify_polyv_completion(chat_id):
     if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
         await bot.send_message(
             chat_id,
-            "⏰ Время полива завершено! Пожалуйста, нажмите кнопку 'Save data' для сохранения результатов."
+            _("⏰ Watering time is over! Please click the 'Save data' button to save the results.")
         )
         await notification_manager.remove_job(chat_id, 'water_check')
 
@@ -211,11 +223,23 @@ async def check_irrigation(chat_id):
         if str(chat_id) == str(row['telegramID']) and row['irrigation'] == 1:
             markup = create_reply_keyboard()
             m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['ie'])) / float(row['wa'])
+            # await bot.send_message(
+            #     chat_id,
+            #     f"🌤 Good morning, {row['firstName']}!\n"
+            #     f"Your plot is ready for irrigation.\n"
+            #     f"💧 Water required: {round(m3_needed, 2)} m³",
+            #
+            #     reply_markup=markup
+            # )
+
+            text = _(
+                "🌤 Good morning, {first_name}!\n"
+                "Your plot is ready for irrigation.\n"
+                "💧 Water required: {water:.2f} m³"
+            )
             await bot.send_message(
                 chat_id,
-                f"🌤 Good morning, {row['firstName']}!\n"
-                f"Your plot is ready for irrigation.\n"
-                f"💧 Water required: {round(m3_needed, 2)} m³",
+                text.format(first_name=row['firstName'], water=round(m3_needed, 2)),
                 reply_markup=markup
             )
             return True
@@ -232,7 +256,7 @@ async def check_all_users():
                 await check_irrigation(chat_id)
                 notified_users.add(chat_id)
             except Exception as e:
-                print(f"Ошибка уведомления для {chat_id}: {e}")
+                print(f"Notification error for {chat_id}: {e}")
 
 
 async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, wa):
@@ -284,7 +308,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
 @bot.message_handler(commands=['start'])
 async def start(message):
     markup = create_reply_keyboard()
-    await bot.send_message(message.chat.id, "Выберите действие:", reply_markup=markup)
+    await bot.send_message(message.chat.id, "Select action:", reply_markup=markup)
     await check_irrigation(message.chat.id)
 
 
@@ -296,7 +320,7 @@ async def handle_recommendation(message):
         if str(chat_id) == str(row['telegramID']):
             if row['type'] == "channel":
                 user_states[chat_id] = "waiting_for_water_level"
-                await bot.send_message(chat_id, "Enter the current water level in the channel (in cm):")
+                await bot.send_message (chat_id, _("Enter the current water level in the channel (in cm):"))
             else:
                 await send_recommendation(
                     chat_id,
@@ -307,7 +331,7 @@ async def handle_recommendation(message):
                     float(row['wa'])
                 )
             return
-    await bot.send_message(chat_id, "❌ Your data was not found in the system")
+    await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_water_level')
@@ -320,8 +344,8 @@ async def handle_water_level(message):
         if water_level < 1 or water_level > 25:
             await bot.send_message(
                 chat_id,
-                "⚠️ Некорректный уровень воды! Допустимые значения от 1 до 25 см.\n"
-                "Пожалуйста, введите правильное значение:"
+                _("⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
+                "Please enter the correct value:")
             )
             return  # Не продолжаем обработку
 
@@ -338,22 +362,34 @@ async def handle_water_level(message):
                 )
 
                 if calculation['is_completed']:
-                    msg = "✅ Irrigation completed! Enough water."
+                    msg = _("✅ Irrigation completed! Enough water.")
                 else:
                     hours = int(calculation['remaining_time'])
                     minutes = int((calculation['remaining_time'] - hours) * 60)
-                    msg = (
-                        f"💦 Current level: {water_level} cm\n"
-                        f"⏱ Time left: {hours}h {minutes}m\n"
-                        f"📊 Used: {round(calculation['used_m3'], 2)} m³ of {round(calculation['used_m3'] + calculation['remaining_m3'], 2)} m³"
+                    # msg = (
+                    #     f"💦 Current level: {water_level} cm\n"
+                    #     f"⏱ Time left: {hours}h {minutes}m\n"
+                    #     f"📊 Used: {round(calculation['used_m3'], 2)} m³ of {round(calculation['used_m3'] + calculation['remaining_m3'], 2)} m³"
+                    # )
+
+                    msg = _(
+                        "💦 Current level: {water_level} cm\n"
+                        "⏱ Time left: {hours}h {minutes}m\n"
+                        "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
+                    ).format(
+                        water_level=water_level,
+                        hours=hours,
+                        minutes=minutes,
+                        used_m3=calculation['used_m3'],
+                        total_m3=calculation['used_m3'] + calculation['remaining_m3']
                     )
 
                 await bot.send_message(chat_id, msg)
                 user_states[chat_id] = None
                 return
-        await bot.send_message(chat_id, "❌ Your data was not found in the system")
+        await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
     except ValueError:
-        await bot.send_message(chat_id, "⚠️ Please enter a valid number (water level in cm)")
+        await bot.send_message(chat_id, _("⚠️ Please enter a valid number (water level in cm)"))
 
 
 
@@ -388,17 +424,17 @@ async def handle_send_data(message):
 
                     await bot.send_message(
                         chat_id,
-                        f"✅ Данные сохранены! Использовано: {round(data['total_used_m3'], 2)} м³"
+                        f"✅ Data saved! Used: {round(data['total_used_m3'], 2)} m³"
                     )
                     data['is_active'] = False
                     return
 
-            await bot.send_message(chat_id, "❌ Ваши данные не найдены в системе")
+            await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
         except Exception as e:
-            print(f"Ошибка при сохранении: {str(e)}")
-            await bot.send_message(chat_id, "⚠️ Ошибка при сохранении данных")
+            print(f"Error while saving: {str(e)}")
+            await bot.send_message(chat_id, _("⚠️ Error saving data"))
     else:
-        await bot.send_message(chat_id, "Введите фактический расход воды (м³):")
+        await bot.send_message(chat_id, _("Enter actual water consumption (m³):"))
         user_states[chat_id] = "waiting_for_actual_data"
 
 
@@ -430,9 +466,9 @@ async def handle_actual_data(message):
                 )
                 break
         else:
-            await bot.send_message(chat_id, "❌ Your data was not found in the system")
+            await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
     except ValueError:
-        await bot.send_message(chat_id, "⚠️ Please enter a valid number (e.g. 150 or 75.5)")
+        await bot.send_message(chat_id, _("⚠️ Please enter a valid number (e.g. 150 or 75.5)"))
     finally:
         user_states[chat_id] = None
 
@@ -443,24 +479,36 @@ async def send_recommendation(chat_id, fieldtype, irrigation_need, area, ie, wa,
             calculation = await calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, wa)
 
             if calculation['is_completed']:
-                msg = "✅ Irrigation completed! Enough water."
+                msg = _("✅ Irrigation completed! Enough water.")
             else:
                 hours = int(calculation['remaining_time'])
                 minutes = int((calculation['remaining_time'] - hours) * 60)
-                msg = (
-                    f"💦 Current level: {water_level} cm\n"
-                    f"⏱ Time left: {hours}h {minutes}m\n"
-                    f"📊 Used: {round(calculation['used_m3'], 2)} m³ of {round(calculation['used_m3'] + calculation['remaining_m3'], 2)} m³"
+                # msg = (
+                #     f"💦 Current level: {water_level} cm\n"
+                #     f"⏱ Time left: {hours}h {minutes}m\n"
+                #     f"📊 Used: {round(calculation['used_m3'], 2)} m³ of {round(calculation['used_m3'] + calculation['remaining_m3'], 2)} m³"
+                # )
+
+                msg = _(
+                    "💦 Current level: {water_level} cm\n"
+                    "⏱ Time left: {hours}h {minutes}m\n"
+                    "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
+                ).format(
+                    water_level=water_level,
+                    hours=hours,
+                    minutes=minutes,
+                    used_m3=calculation['used_m3'],
+                    total_m3=calculation['used_m3'] + calculation['remaining_m3']
                 )
         elif fieldtype in ['pump', 'counter']:
             m3_need = (irrigation_need * 10 * area * ie) / wa
             msg = f"🔢 Required: {round(m3_need, 2)} m³ water"
         else:
-            msg = "❌ Unsupported field type"
+            msg = _("❌ Unsupported field type")
 
         await bot.send_message(chat_id, msg)
     except (ValueError, TypeError):
-        await bot.send_message(chat_id, "⚠️ Input data error")
+        await bot.send_message(chat_id, _("⚠️ Input data error"))
 
 
 async def main():
