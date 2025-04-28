@@ -64,6 +64,7 @@ def download(url, path, content_type=None):
         headers = None
 
     response = httpx.get(url, headers=headers)
+    response.raise_for_status()
     if response.status_code == 200:
         headers = response.headers
         if content_type is not None:
@@ -74,9 +75,8 @@ def download(url, path, content_type=None):
         last_modified = dateutil.parser.parse(headers['last-modified'])
         last_modified = last_modified.timestamp()
         os.utime(path, (last_modified, last_modified))
-        return True
 
-    return False
+    return response.status_code
 
 def get_arduino():
     if platform.system() == 'Windows' and (basedir / 'arduino-cli.exe').exists():
@@ -206,7 +206,7 @@ class Widget(QWidget):
         self.FlashButton = QPushButton(self)
         self.FlashButton.setObjectName("FlashButton")
         self.FlashButton.setGeometry(QRect(50, 470, 170, 32))
-        self.FlashButton.clicked.connect(self.clicked)
+        self.FlashButton.clicked.connect(self.flash)
 
         # Console and monitor output
         self.TitleConsole = QLabel(self)
@@ -265,15 +265,27 @@ class Widget(QWidget):
 
         # Download
         zip_file = self.Downloads / 'Firmware.zip'
+        self.message('Downloading firmware...')
         try:
-            download('https://wwcs.tj/downloads/Ij6iez6u/Firmware.zip', zip_file, 'application/zip')
-            self.message('Downloading firmware...')
+            status_code = download('https://wwcs.tj/downloads/Ij6iez6u/Firmware.zip',
+                                   zip_file, 'application/zip')
         except Exception:
-            self.message("Failed to download the firmware from the server\n")
+            if zip_file.exists():
+                self.message("Download failed.")
+            else:
+                self.message("ERROR: Download failed, verify your network connection.")
+                return
+        else:
+            if status_code == 200:
+                self.message('Done.')
+            elif status_code == 304:
+                self.message('No new version available.')
+            else:
+                self.message(f'Unexpected server response: {status_code}')
 
-        if not zip_file.exists():
-            self.message("Firmware.zip file does not exist\n")
-            return
+            if not zip_file.exists():
+                self.message("ERROR: Firmware.zip file does not exist\n")
+                return
 
         # Unpack
         shutil.unpack_archive(zip_file, 'Firmware', 'zip')
@@ -429,24 +441,19 @@ class Widget(QWidget):
             text = text.rstrip('\r\n')
             self.message(text)
 
-    def install(self): # Install core and libraries
-        self.core_installed = False
-        desired_core_version = "3.0.5"
-        # Get the list of installed cores
-        corelist = self.arduino.core.list()
-
+    def install_core(self):
         # Check if the ESP32 core is installed with the desired version
+        desired_core_version = "3.0.5"
+        corelist = self.arduino.core.list()
         for core in corelist['result']:
             core_id = core['id']
             if core_id == "esp32:esp32":
                 if core['installed'] == desired_core_version:  # Check installed version
-                    self.core_installed = True
+                    print(f"ESP32 core version {desired_core_version} is already installed.")
                     break
-
-        # If the core is not installed or the version does not match, install it
-        if not self.core_installed:
+        else:
+            # If the core is not installed or the version does not match, install it
             print(f"Installing ESP32 core version {desired_core_version}...")
-
             # Write to arduino-cli.yaml if it doesn't exist
             yaml_file_path = 'arduino-cli.yaml'
             if not os.path.exists(yaml_file_path):
@@ -458,9 +465,8 @@ class Widget(QWidget):
             # Update the core index and install the desired version
             self.arduino.core.update_index()
             self.arduino.core.install(installs=["esp32:esp32@" + desired_core_version])
-        else:
-            print(f"ESP32 core version {desired_core_version} is already installed.")
     
+    def install_libraries(self):
         # Check and install required libraries
         liblist = self.arduino.lib.list()
 
@@ -478,20 +484,18 @@ class Widget(QWidget):
                 print(f"Installing {lib_name} version {lib_version}...")
                 self.arduino.lib.install(f"{lib_name}@{lib_version}")
 
-    def clicked(self):
+    def flash(self):
         try:
-            self.__clicked()
+            self.__flash()
         except Exception as exc:
             self.message_exc(exc)
 
-    def __clicked(self):
+    def __flash(self):
 
         # CLEAN START
-        # -----------------
         self.Console.clear()
 
         # CONFIGURE SKETCH
-        # -----------------
         boardtype = self.Boardtype.currentText()
         self.message(f"Preparing sketch for {boardtype} ...\n")
         self.config()
@@ -499,9 +503,7 @@ class Widget(QWidget):
             self.message("Exit: Climavue sensor is only compatible with the Koala board \n")
             return
 
-
         # ARDUINO INSTANCE
-        # -----------------
         self.message("Detecting connected board ...\n")
         self.detectport()
         if self.Port is None:
@@ -509,13 +511,11 @@ class Widget(QWidget):
             return
 
         # INSTALL LIBRARIES
-        # -----------------
-        self.message("Installing libraries ...\n")
-        self.install()
+        self.message("Installing core and libraries ...\n")
+        self.install_core()
+        self.install_libraries()
 
         # COMPILING SKETCH
-        # -----------------
-
         self.message("Compiling sketch ...\n")
         os.chdir(self.PathSketchConfig)
         out = self.arduino.compile(sketch = self.Sketch + ".ino",
@@ -526,9 +526,7 @@ class Widget(QWidget):
             return
 
         # UPLOADING SKETCH
-        # -----------------
         self.message("Uploading sketch ...\n")
-        
         out = self.arduino.upload(port = self.Port, 
                                   fqbn = "esp32:esp32:esp32wrover",
                                   board_options = {"EraseFlash": "all"})
