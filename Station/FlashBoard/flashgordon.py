@@ -462,19 +462,17 @@ class Widget(QWidget):
             print(f"ESP32 core version {desired_core_version} is already installed.")
     
         # Check and install required libraries
-        libinstalled = []
         liblist = self.arduino.lib.list()
-        numlist = len(liblist['result'])
 
-            # Populate the installed libraries list
-        for i in range(numlist):
-            library = liblist['result'][i]['library']
+        # Populate the installed libraries list
+        libinstalled = {}
+        for library in liblist['result']:
+            library = library['library']
             name = library['name']
-            version = library.get('version', 'N/A')
-            libinstalled.append({'name': name, 'version': version})
+            libinstalled[name] = library.get('version', 'N/A')
 
         for lib_name, lib_version in required_libraries.items():
-            if any(lib['name'] == lib_name and lib['version'] == lib_version for lib in libinstalled):
+            if lib_name in libinstalled and libinstalled[lib_name] == lib_version:
                 print(f"{lib_name} version {lib_version} is already installed.")
             else:
                 print(f"Installing {lib_name} version {lib_version}...")
@@ -497,7 +495,7 @@ class Widget(QWidget):
         boardtype = self.Boardtype.currentText()
         self.message(f"Preparing sketch for {boardtype} ...\n")
         self.config()
-        if self.configout == False:
+        if self.configout is False:
             self.message("Exit: Climavue sensor is only compatible with the Koala board \n")
             return
 
@@ -506,7 +504,7 @@ class Widget(QWidget):
         # -----------------
         self.message("Detecting connected board ...\n")
         self.detectport()
-        if  self.Port == None:
+        if self.Port is None:
             self.message("Exit: No Arduino board detected on USB port\n")
             return
 
@@ -523,7 +521,7 @@ class Widget(QWidget):
         out = self.arduino.compile(sketch = self.Sketch + ".ino",
                                    fqbn="esp32:esp32:esp32wrover")
 
-        if out['result']['success'] == False:
+        if not out['result']['success']:
             self.message("Exit: Compilation of sketch failed \n")
             return
 

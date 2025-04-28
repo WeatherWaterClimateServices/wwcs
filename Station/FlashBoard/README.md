@@ -16,7 +16,7 @@ install:
   wheels for Python 3.7)
 - The Qt libraries, since the GUI is built with Qt
 
-Thne create a virtual environment and install the requirements.
+Then create a virtual environment and install the requirements.
 
     python3 -m venv venv
     source venv/bin/activate
@@ -77,14 +77,14 @@ First install Python 3.7 and the requirements:
 
 Now to bundle the application type:
 
-    pyinstaller flashgordon.py --add-binary="arduino-cli.exe;." --add-data="src;src" -i src/flashgordon.ico -w
+    pyinstaller flashgordon.py --add-binary="arduino-cli.exe:." --add-data="src:src" -i src/flashgordon.ico -w
 
 To run this command for Linux or macOS just replace `src;src` by `src:src`.
 
 Explanation of the options:
 
-    --add-binary="arduino-cli.exe;."    Adds the arduino-cli.exe binary
-    --add-data="src;src"                Adds the src folder to the distribution
+    --add-binary="arduino-cli.exe:."    Adds the arduino-cli.exe binary
+    --add-data="src:src"                Adds the src folder to the distribution
     -i src/flashgordon.ico              Sets the icon for the application
     -w                                  Avoids opening a console window
 
