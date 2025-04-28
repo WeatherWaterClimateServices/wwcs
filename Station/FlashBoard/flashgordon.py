@@ -64,7 +64,6 @@ def download(url, path, content_type=None):
         headers = None
 
     response = httpx.get(url, headers=headers)
-    response.raise_for_status()
     if response.status_code == 200:
         headers = response.headers
         if content_type is not None:
@@ -75,7 +74,11 @@ def download(url, path, content_type=None):
         last_modified = dateutil.parser.parse(headers['last-modified'])
         last_modified = last_modified.timestamp()
         os.utime(path, (last_modified, last_modified))
+        return response.status_code
+    elif response.status_code == 304:
+        return response.status_code
 
+    response.raise_for_status()
     return response.status_code
 
 def get_arduino():
@@ -265,23 +268,23 @@ class Widget(QWidget):
 
         # Download
         zip_file = self.Downloads / 'Firmware.zip'
-        self.message('Downloading firmware...')
+        self.message('Firmware...')
         try:
             status_code = download('https://wwcs.tj/downloads/Ij6iez6u/Firmware.zip',
                                    zip_file, 'application/zip')
         except Exception:
             if zip_file.exists():
-                self.message("Download failed.")
+                self.message("Firmware download failed, will use version from cache.")
             else:
-                self.message("ERROR: Download failed, verify your network connection.")
+                self.message("ERROR: Firmware download failed, verify your network connection.")
                 return
         else:
             if status_code == 200:
-                self.message('Done.')
+                self.message('Firmware downloaded.')
             elif status_code == 304:
-                self.message('No new version available.')
+                self.message('Firmware already up to date.')
             else:
-                self.message(f'Unexpected server response: {status_code}')
+                self.message(f'Firmware download failed with unexpected server response: {status_code}')
 
             if not zip_file.exists():
                 self.message("ERROR: Firmware.zip file does not exist\n")
@@ -467,12 +470,9 @@ class Widget(QWidget):
             self.arduino.core.install(installs=["esp32:esp32@" + desired_core_version])
     
     def install_libraries(self):
-        # Check and install required libraries
-        liblist = self.arduino.lib.list()
-
-        # Populate the installed libraries list
+        # Install required libraries
         libinstalled = {}
-        for library in liblist['result']:
+        for library in self.arduino.lib.list()['result']:
             library = library['library']
             name = library['name']
             libinstalled[name] = library.get('version', 'N/A')
@@ -482,7 +482,27 @@ class Widget(QWidget):
                 print(f"{lib_name} version {lib_version} is already installed.")
             else:
                 print(f"Installing {lib_name} version {lib_version}...")
-                self.arduino.lib.install(f"{lib_name}@{lib_version}")
+                self.arduino.lib.install([f"{lib_name}@{lib_version}"])
+
+        # Check for conflicts, and remove offending libraries
+        liblist = self.arduino.lib.list()['result']
+
+        provides = set()
+        for library in liblist:
+            library = library['library']
+            name = library['name']
+            if name in required_libraries:
+                provides_includes = library.get('provides_includes', [])
+                provides.update(provides_includes)
+
+        for library in liblist:
+            library = library['library']
+            name = library['name']
+            provides_includes = library.get('provides_includes', [])
+            if name not in required_libraries and provides & set(provides_includes):
+                print(f"Removing library {name}")
+                self.arduino.lib.uninstall([name])
+
 
     def flash(self):
         try:
