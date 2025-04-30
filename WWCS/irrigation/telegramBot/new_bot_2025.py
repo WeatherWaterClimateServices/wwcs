@@ -422,9 +422,18 @@ async def handle_send_data(message):
                         (actual_mm, row['siteID'])
                     )
 
+                    # await bot.send_message(
+                    #     chat_id,
+                    #     f"✅ Data saved! Used: {round(data['total_used_m3'], 2)} m³"
+                    # )
+
                     await bot.send_message(
                         chat_id,
-                        f"✅ Data saved! Used: {round(data['total_used_m3'], 2)} m³"
+                        _(
+                            "✅ Data saved! Used: {used_m3:.2f} m³"
+                        ).format(
+                            used_m3=data['total_used_m3']
+                        )
                     )
                     data['is_active'] = False
                     return
@@ -458,11 +467,23 @@ async def handle_actual_data(message):
                     (actual_mm, row['siteID'])
                 )
 
+                # await bot.send_message(
+                #     chat_id,
+                #     f"✅ Data saved!\n"
+                #     f"Water used: {round(actual_m3, 2)} m³\n"
+                #     f"Equivalent to: {round(actual_mm, 2)} mm"
+                # )
+
                 await bot.send_message(
                     chat_id,
-                    f"✅ Data saved!\n"
-                    f"Water used: {round(actual_m3, 2)} m³\n"
-                    f"Equivalent to: {round(actual_mm, 2)} mm"
+                    _(
+                        "✅ Data saved!\n"
+                        "Water used: {used_m3:.2f} m³\n"
+                        "Equivalent to: {equivalent_mm:.2f} mm"
+                    ).format(
+                        used_m3=actual_m3,
+                        equivalent_mm=actual_mm
+                    )
                 )
                 break
         else:
