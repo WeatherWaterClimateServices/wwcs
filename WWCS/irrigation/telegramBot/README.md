@@ -6,6 +6,7 @@ A deployment of the irrigation bot is configured with a number of environemnet v
     PASSWORD    -- Password to connect to MySQL (required)
     BOT_TOKEN   -- Token to connect to Telegram (required)
     LANGUAGE    -- Language to use (defaults to "en")
+    TIMEZONE    -- Timezone (defaults to Asia/Tashkent)
 
 The environment variables should be defined in a file with the name ".env", located in the
 directory where the bot runs. For example:
