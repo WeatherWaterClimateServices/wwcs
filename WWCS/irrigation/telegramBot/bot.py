@@ -19,6 +19,7 @@ USERNAME = os.environ.get('USERNAME', 'wwcs')
 PASSWORD = os.environ.get('PASSWORD')
 BOT_TOKEN = os.environ['BOT_TOKEN']
 LANGUAGE = os.environ.get('LANGUAGE', 'en')
+TIMEZONE = os.environ.get('TIMEZONE', 'Asia/Tashkent')
 
 # Initialize gettext
 root = pathlib.Path(__file__).parent
@@ -553,7 +554,7 @@ async def main():
         'cron',
         hour=datetime.now().hour,
         minute=datetime.now().minute + 1,  # Через 1 минуту от текущего времени
-        timezone='Asia/Tashkent'
+        timezone=TIMEZONE,
     )
     scheduler.start()
 
