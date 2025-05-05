@@ -463,7 +463,7 @@ class Widget(QWidget):
                 with open(yaml_file_path, 'w') as f:
                     f.write('board_manager:\n')
                     f.write('  additional_urls:\n')
-                    f.write('    - https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json')
+                    f.write('    - https://espressif.github.io/arduino-esp32/package_esp32_index.json')
 
             # Update the core index and install the desired version
             self.arduino.core.update_index()
