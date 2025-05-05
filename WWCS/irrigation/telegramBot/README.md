@@ -2,8 +2,8 @@
 
 A deployment of the irrigation bot is configured with a number of environemnet variables:
 
-    USERNAME    -- Username to connect to MySQL (defaults to "wwcs")
-    PASSWORD    -- Password to connect to MySQL (required)
+    DB_USERNAME -- Username to connect to MySQL (defaults to "wwcs")
+    DB_PASSWORD -- Password to connect to MySQL (required)
     BOT_TOKEN   -- Token to connect to Telegram (required)
     LANGUAGE    -- Language to use (defaults to "en")
     TIMEZONE    -- Timezone (defaults to Asia/Tashkent)

@@ -15,8 +15,8 @@ import pymysql
 
 # Configuration
 load_dotenv()
-USERNAME = os.environ.get('USERNAME', 'wwcs')
-PASSWORD = os.environ.get('PASSWORD')
+DB_USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
 BOT_TOKEN = os.environ['BOT_TOKEN']
 LANGUAGE = os.environ.get('LANGUAGE', 'en')
 TIMEZONE = os.environ.get('TIMEZONE', 'Asia/Tashkent')
@@ -105,8 +105,8 @@ WATER_FLOW_RATES = {
 def get_db_connection():
     return pymysql.connect(
         host="localhost",
-        user=USERNAME,
-        password=PASSWORD,
+        user=DB_USERNAME,
+        password=DB_PASSWORD,
         db="db",
         cursorclass=pymysql.cursors.DictCursor
     )
