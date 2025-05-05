@@ -63,7 +63,7 @@ notification_manager = NotificationManager()
 
 
 # Инициализация бота
-bot = AsyncTeleBot("TOKEN")
+bot = AsyncTeleBot(BOT_TOKEN)
 scheduler = AsyncIOScheduler()
 
 # Словари для хранения состояний
@@ -105,8 +105,8 @@ WATER_FLOW_RATES = {
 def get_db_connection():
     return pymysql.connect(
         host="localhost",
-        user="user",
-        password="password",
+        user=USERNAME,
+        password=PASSWORD,
         db="db",
         cursorclass=pymysql.cursors.DictCursor
     )
