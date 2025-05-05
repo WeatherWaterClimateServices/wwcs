@@ -531,18 +531,23 @@ class Widget(QWidget):
             return
 
         # INSTALL LIBRARIES
-        self.message("Installing core and libraries ...\n")
-        self.install_core()
-        self.install_libraries()
+        sketch_yaml = Path(self.PathSketchConfig) / "sketch.yaml"
+        if sketch_yaml.exists():
+            kwargs = {"profile": "default"}
+        else:
+            self.message("Installing core and libraries ...\n")
+            self.install_core()
+            self.install_libraries()
+            kwargs = {"fqbn": "esp32:esp32:esp32wrover"}
 
         # COMPILING SKETCH
-        self.message("Compiling sketch ...\n")
+        self.message("Compiling sketch...")
         os.chdir(self.PathSketchConfig)
-        out = self.arduino.compile(sketch = self.Sketch + ".ino",
-                                   fqbn="esp32:esp32:esp32wrover")
-
-        if not out['result']['success']:
-            self.message("Exit: Compilation of sketch failed \n")
+        out = self.arduino.compile(sketch = self.Sketch + ".ino", **kwargs)
+        if out['result']['success']:
+            self.message("Sketch compiled.\n")
+        else:
+            self.message("ERROR: Compilation of sketch failed\n")
             return
 
         # UPLOADING SKETCH
