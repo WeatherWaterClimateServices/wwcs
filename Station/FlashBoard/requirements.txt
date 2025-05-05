@@ -1,5 +1,6 @@
 httpx
 pyduinocli
+pyserial
 PySide6
 python-dateutil
 qrcode
