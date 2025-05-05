@@ -1,89 +1,117 @@
-# Tajik translations for PACKAGE package.
-# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2025.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-17 13:26+0100\n"
-"PO-Revision-Date: 2025-01-17 13:33+0100\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"POT-Creation-Date: 2025-04-30 22:04+0500\n"
+"PO-Revision-Date: 2025-04-30 22:13+0500\n"
+"Last-Translator: \n"
+"Language-Team: \n"
 "Language: tg\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.5\n"
+"X-Generator: Poedit 3.6\n"
 
-#: bot.py:123
-msgid "Please send the current water level"
-msgstr "Лутфан сатҳи ҳозираи обро фиристед"
-
-#: bot.py:130 bot.py:135
+#: test_bot6.py:181
 msgid ""
-"Hello. Please start irrigating your land today. Send your water meter "
-"reading before irrigating your land."
+"🔄 Please check the current water level in the channel and send its value"
 msgstr ""
-"Салом. Лутфан имруз ба обёрии замин бояд шуруъ намоед. Нишондиҳандаи "
-"ҳисобкунаки обатонро пеш аз обёрии замин фиристед."
+"🔄 Лутфан сатҳи ҳозираи обро дар обченкунак санҷед ва арзиши онро равон  "
+"кунед."
 
-#: bot.py:142
+#: test_bot6.py:215
 msgid ""
-"Hello. When the irrigation of the land is finished, please send me the "
-"actual M3 irrigation?"
+"⏰ Watering time is over! Please click the 'Save data' button to save "
+"the results."
 msgstr ""
-"Салом. Вақте ки обёрии замин анҷом ёфт, лутфан бифиристед, ки шумо воқеан M3 "
-"обёрӣ кардед?"
+"⏰ Вақти обёрӣ ба охир расид! Лутфан тугмачаи 'Сабти маълумот' -ро пахш "
+"кунед, то натиҷаҳо сабт карда шаванд."
 
-#: bot.py:170 bot.py:193 bot.py:230 bot.py:249 bot.py:271 bot.py:290
-msgid "Please write the number, not the text."
-msgstr "Лутфан рақамро нависед, на матн."
-
-#: bot.py:177
+#: test_bot6.py:236
 #, python-brace-format
 msgid ""
-"Please start watering now, you need to irrigate the land for "
-"{irrigation_time} minutes."
+"🌤 Good morning, {first_name}!\n"
+"Your plot is ready for irrigation.\n"
+"💧 Water required: {water:.2f} m³"
 msgstr ""
-"Please start watering now, you need to irrigate the land for "
-"{irrigation_time} minutes."
+"🌤 Салом, {first_name}!\\n\"\n"
+"Имрӯз Шумо бояд заминро дар ҳаҷми 💧{water:.2f} m³ обёрӣ кунед.\n"
+"Барои муаян кардани давомнокии вақти обмонӣ шумо бояд ба обёрии замин "
+"шурӯ кунед ва сатҳи обро сари вақт дар ништак ба ман муаян кунед."
 
-#: bot.py:182
+#: test_bot6.py:323
+msgid "Enter the current water level in the channel (in cm):"
+msgstr "Лутфан, ҳозир сатҳи обро аз руи обченкунак равон кунед (см):"
+
+#: test_bot6.py:334 test_bot6.py:390 test_bot6.py:441 test_bot6.py:490
+msgid "❌ Your data was not found in the system"
+msgstr "❌ Маълумоти шумо дар система ёфт нашуд"
+
+#: test_bot6.py:347
 msgid ""
-"When the irrigation of the land is finished, please send how many minutes "
-"you actually irrigated?"
+"⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
+"Please enter the correct value:"
 msgstr ""
-"Вақте ки обёрии замин анҷом ёфт, лутфан бифиристед, ки шумо воқеан чанд "
-"дақиқа обёрӣ кардед?"
+"⚠️ Сатҳи об нодуруст! Арзишҳои қобили қабул аз 1 то 25 см.\n"
+"Лутфан арзиши дурустро ворид кунед:"
 
-#: bot.py:199
-msgid "Thank you for your cooperation! Your irrigation data has been recorded."
-msgstr "Ташаккур барои ҳамкорӣ! Маълумоти обёрии шумо сабт шуд."
+#: test_bot6.py:365 test_bot6.py:503
+msgid "✅ Irrigation completed! Enough water."
+msgstr "✅ Обёрӣ анҷом ёфт! Оби кофӣ."
 
-#: bot.py:216
+#: test_bot6.py:376 test_bot6.py:514
 #, python-brace-format
 msgid ""
-"You should irrigate the land until your water meter reading reaches "
-"{cubic_metres} M3."
+"💦 Current level: {water_level} cm\n"
+"⏱ Time left: {hours}h {minutes}m\n"
+"📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
 msgstr ""
-"Шумо бояд то даме заминро обёрӣ кунед, ки нишондиҳандаи ҳисобкунаки оби шумо "
-"ба {cubic_metres} M3 баробар шавад."
+"💦 Сатҳи ҳозира:  {water_level} см\n"
+"⏱ Мӯҳлати обёрӣ: {hours} соат {minutes} дакика\n"
+"📊 Истифода шуд: {used_m3:.2f} м³ аз {total_m3:.2f} м³"
 
-#: bot.py:220 bot.py:261
-msgid "What was the water meter reading after the land was irrigated?"
-msgstr "Нишондиҳандаи ҳисобкунаки об пас аз обёрии замин ба чанд баробар шуд?"
+#: test_bot6.py:392
+msgid "⚠️ Please enter a valid number (water level in cm)"
+msgstr "⚠️ Лутфан рақами дурустро ворид кунед (сатҳи об дар см)"
 
-#: bot.py:238 bot.py:279 bot.py:301
+#: test_bot6.py:433
 #, python-brace-format
-msgid "The {value} indicator has been recorded in the database."
-msgstr "Нишондиҳандаи {value} дар махзани маълумот сабт шуд."
+msgid "✅ Data saved! Used: {used_m3:.2f} m³"
+msgstr "✅ Натиҷаҳо сабт шуданд! Ҳамагӣ об истифода шуд:  {used_m3:.2f} м³"
 
-#: bot.py:257
+#: test_bot6.py:444
+msgid "⚠️ Error saving data"
+msgstr "⚠️ Хато ҳангоми сабти маълумот"
+
+#: test_bot6.py:446
+msgid "Enter actual water consumption (m³):"
+msgstr "Истеъмоли воқеии обро ворид кунед (м³):"
+
+#: test_bot6.py:480
 #, python-brace-format
 msgid ""
-"You should irrigate the land until your water meter reads {cubic_metres} M3."
+"✅ Data saved!\n"
+"Water used: {used_m3:.2f} m³\n"
+"Equivalent to: {equivalent_mm:.2f} mm"
 msgstr ""
-"Шумо бояд то даме заминро обёрӣ кунед, ки нишондиҳандаи ҳисобкунаки оби шумо "
-"ба {cubic_metres} M3 баробар шавад."
+"✅ Натиҷаҳо сабт шуданд!\n"
+"Истифода щуд: {used_m3:.2f} м³\n"
+"Баробар аст ба: {equivalent_mm:.2f} мм"
+
+#: test_bot6.py:492
+msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
+msgstr "⚠️ Лутфан рақами дурустро ворид кунед (масалан, 150 ё 75,5)"
+
+#: test_bot6.py:528
+msgid "❌ Unsupported field type"
+msgstr ""
+
+#: test_bot6.py:532
+msgid "⚠️ Input data error"
+msgstr ""
