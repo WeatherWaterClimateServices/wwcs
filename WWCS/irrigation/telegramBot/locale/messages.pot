@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-17 13:26+0100\n"
+"POT-Creation-Date: 2025-05-05 19:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,61 +17,84 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: bot.py:123
-msgid "Please send the current water level"
-msgstr ""
-
-#: bot.py:130 bot.py:135
+#: bot.py:192
 msgid ""
-"Hello. Please start irrigating your land today. Send your water meter "
-"reading before irrigating your land."
+"🔄 Please check the current water level in the channel and send its value"
 msgstr ""
 
-#: bot.py:142
+#: bot.py:226
 msgid ""
-"Hello. When the irrigation of the land is finished, please send me the "
-"actual M3 irrigation?"
+"⏰ Watering time is over! Please click the 'Save data' button to save the "
+"results."
 msgstr ""
 
-#: bot.py:170 bot.py:193 bot.py:230 bot.py:249 bot.py:271 bot.py:290
-msgid "Please write the number, not the text."
-msgstr ""
-
-#: bot.py:177
+#: bot.py:247
 #, python-brace-format
 msgid ""
-"Please start watering now, you need to irrigate the land for "
-"{irrigation_time} minutes."
+"🌤 Good morning, {first_name}!\n"
+"Your plot is ready for irrigation.\n"
+"💧 Water required: {water:.2f} m³"
 msgstr ""
 
-#: bot.py:182
+#: bot.py:334
+msgid "Enter the current water level in the channel (in cm):"
+msgstr ""
+
+#: bot.py:345 bot.py:401 bot.py:452 bot.py:501
+msgid "❌ Your data was not found in the system"
+msgstr ""
+
+#: bot.py:358
 msgid ""
-"When the irrigation of the land is finished, please send how many minutes "
-"you actually irrigated?"
+"⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
+"Please enter the correct value:"
 msgstr ""
 
-#: bot.py:199
-msgid "Thank you for your cooperation! Your irrigation data has been recorded."
+#: bot.py:376 bot.py:514
+msgid "✅ Irrigation completed! Enough water."
 msgstr ""
 
-#: bot.py:216
+#: bot.py:387 bot.py:525
 #, python-brace-format
 msgid ""
-"You should irrigate the land until your water meter reading reaches "
-"{cubic_metres} M3."
+"💦 Current level: {water_level} cm\n"
+"⏱ Time left: {hours}h {minutes}m\n"
+"📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
 msgstr ""
 
-#: bot.py:220 bot.py:261
-msgid "What was the water meter reading after the land was irrigated?"
+#: bot.py:403
+msgid "⚠️ Please enter a valid number (water level in cm)"
 msgstr ""
 
-#: bot.py:238 bot.py:279 bot.py:301
+#: bot.py:444
 #, python-brace-format
-msgid "The {value} indicator has been recorded in the database."
+msgid "✅ Data saved! Used: {used_m3:.2f} m³"
 msgstr ""
 
-#: bot.py:257
+#: bot.py:455
+msgid "⚠️ Error saving data"
+msgstr ""
+
+#: bot.py:457
+msgid "Enter actual water consumption (m³):"
+msgstr ""
+
+#: bot.py:491
 #, python-brace-format
 msgid ""
-"You should irrigate the land until your water meter reads {cubic_metres} M3."
+"✅ Data saved!\n"
+"Water used: {used_m3:.2f} m³\n"
+"Equivalent to: {equivalent_mm:.2f} mm"
+msgstr ""
+
+#: bot.py:503
+msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
+msgstr ""
+
+#: bot.py:539
+msgid "❌ Unsupported field type"
+msgstr ""
+
+#: bot.py:543
+msgid "⚠️ Input data error"
 msgstr ""
