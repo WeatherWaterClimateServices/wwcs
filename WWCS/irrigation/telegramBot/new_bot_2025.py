@@ -1,13 +1,24 @@
-from telebot.async_telebot import AsyncTeleBot
-from telebot import types
-import pymysql
+from datetime import datetime, timedelta
 import asyncio
+import gettext
+import os
+import pathlib
+
+# Requirements
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.date import DateTrigger
-from datetime import datetime, timedelta
-import gettext
-import pathlib
+from dotenv import load_dotenv
+from telebot import types
+from telebot.async_telebot import AsyncTeleBot
+import pymysql
+
+
+# Configuration
+load_dotenv()
+USERNAME = os.environ.get('USERNAME', 'wwcs')
+PASSWORD = os.environ.get('PASSWORD')
+BOT_TOKEN = os.environ['BOT_TOKEN']
+LANGUAGE = os.environ.get('LANGUAGE', 'en')
 
 # Initialize gettext
 root = pathlib.Path(__file__).parent
