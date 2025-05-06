@@ -1,4 +1,5 @@
 aiohttp
-mysqlclient
+APScheduler
+PyMySQL
 pyTelegramBotAPI
 python-dotenv
