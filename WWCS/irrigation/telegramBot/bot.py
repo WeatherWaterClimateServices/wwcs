@@ -142,8 +142,8 @@ async def get_irrigation_data():
         JSON_EXTRACT(s.fieldproperties, '$.area') AS area,
         JSON_EXTRACT(s.fieldproperties, '$.IE') AS ie,
         JSON_EXTRACT(s.fieldproperties, '$.WA') AS wa
-    FROM Sites s
-        JOIN Humans h ON JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.humanID')) = h.humanID
+    FROM SitesHumans.Sites s
+        JOIN SitesHumans.Humans h ON JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.humanID')) = h.humanID
         JOIN WWCServices.Irrigation i ON i.siteID = s.siteID
     WHERE s.irrigation = 1 AND i.PHIc < i.PHIt AND i.irrigationApp = 0
     AND i.date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
