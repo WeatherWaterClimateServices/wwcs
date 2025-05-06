@@ -82,8 +82,21 @@ if (nrow(irrigation) > 0) {
 
 
 for (i in 1:nrow(irrigation_sites)) {
+  
   # READ STATION DATA
+  
   id_station <- irrigation_sites$Station[i]
+  
+  start_year <- lubridate::year(as.Date(irrigation_sites$StartDate[i]))
+  current_year <- lubridate::year(Sys.Date())
+  
+  if (start_year != current_year) {
+    message <- paste("Station", irrigation_sites$siteID[i], 
+                     "has StartDate in", start_year, 
+                     "which is not the current year. Skipping.")
+    print(message)
+    next
+  }
   
   # ------------------------------------------------
   # GET DATA FROM WWCS
