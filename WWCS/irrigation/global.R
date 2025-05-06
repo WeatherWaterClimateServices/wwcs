@@ -63,7 +63,6 @@ if (nrow(sites_map_ui) == 0) {
   sites_map_ui <- default_station %>% select(siteID)
 }
 
-source("./appdata/GenerateCropParameters.R")
 source("./R/calc_et0.R")
 
 

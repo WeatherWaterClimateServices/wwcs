@@ -69,4 +69,5 @@ crop.parameters <- full_join(crop.parameters, rbind(DryRice, DryRice.end), by = 
 
 ## write out
 write.csv(crop.parameters, "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/CropParameters.csv", row.names = FALSE)
+Sys.chmod("/opt/shiny-server/wwcs/WWCS/irrigation/appdata/CropParameters.csv", mode = "0666", use_umask = FALSE)
 

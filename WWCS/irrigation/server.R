@@ -45,8 +45,6 @@ server <- function(input, output, session) {
     input$submit_data
     table_data <- dbReadTable(pool_service, "Irrigation") 
     
-    print(table_data)
-    
     if (nrow(table_data) > 0) {
       table_data <- table_data %>% 
         dplyr::filter(lubridate::year(date) == lubridate::year(Sys.Date())) %>%
