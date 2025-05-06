@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-05 19:47+0200\n"
+"POT-Creation-Date: 2025-05-05 20:05+0200\n"
 "PO-Revision-Date: 2025-04-30 22:13+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -18,14 +18,26 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.6\n"
 
-#: bot.py:192
+#: bot.py:157
+msgid "Send recommendation"
+msgstr ""
+
+#: bot.py:158
+msgid "No water"
+msgstr ""
+
+#: bot.py:159
+msgid "Save data"
+msgstr ""
+
+#: bot.py:193
 msgid ""
 "🔄 Please check the current water level in the channel and send its value"
 msgstr ""
 "🔄 Лутфан сатҳи ҳозираи обро дар обченкунак санҷед ва арзиши онро равон  "
 "кунед."
 
-#: bot.py:226
+#: bot.py:227
 msgid ""
 "⏰ Watering time is over! Please click the 'Save data' button to save the "
 "results."
@@ -33,7 +45,7 @@ msgstr ""
 "⏰ Вақти обёрӣ ба охир расид! Лутфан тугмачаи 'Сабти маълумот' -ро пахш "
 "кунед, то натиҷаҳо сабт карда шаванд."
 
-#: bot.py:247
+#: bot.py:248
 #, python-brace-format
 msgid ""
 "🌤 Good morning, {first_name}!\n"
@@ -45,15 +57,15 @@ msgstr ""
 "Барои муаян кардани давомнокии вақти обмонӣ шумо бояд ба обёрии замин шурӯ "
 "кунед ва сатҳи обро сари вақт дар ништак ба ман муаян кунед."
 
-#: bot.py:334
+#: bot.py:335
 msgid "Enter the current water level in the channel (in cm):"
 msgstr "Лутфан, ҳозир сатҳи обро аз руи обченкунак равон кунед (см):"
 
-#: bot.py:345 bot.py:401 bot.py:452 bot.py:501
+#: bot.py:346 bot.py:402 bot.py:453 bot.py:502
 msgid "❌ Your data was not found in the system"
 msgstr "❌ Маълумоти шумо дар система ёфт нашуд"
 
-#: bot.py:358
+#: bot.py:359
 msgid ""
 "⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
 "Please enter the correct value:"
@@ -61,11 +73,11 @@ msgstr ""
 "⚠️ Сатҳи об нодуруст! Арзишҳои қобили қабул аз 1 то 25 см.\n"
 "Лутфан арзиши дурустро ворид кунед:"
 
-#: bot.py:376 bot.py:514
+#: bot.py:377 bot.py:515
 msgid "✅ Irrigation completed! Enough water."
 msgstr "✅ Обёрӣ анҷом ёфт! Оби кофӣ."
 
-#: bot.py:387 bot.py:525
+#: bot.py:388 bot.py:526
 #, python-brace-format
 msgid ""
 "💦 Current level: {water_level} cm\n"
@@ -76,24 +88,24 @@ msgstr ""
 "⏱ Мӯҳлати обёрӣ: {hours} соат {minutes} дакика\n"
 "📊 Истифода шуд: {used_m3:.2f} м³ аз {total_m3:.2f} м³"
 
-#: bot.py:403
+#: bot.py:404
 msgid "⚠️ Please enter a valid number (water level in cm)"
 msgstr "⚠️ Лутфан рақами дурустро ворид кунед (сатҳи об дар см)"
 
-#: bot.py:444
+#: bot.py:445
 #, python-brace-format
 msgid "✅ Data saved! Used: {used_m3:.2f} m³"
 msgstr "✅ Натиҷаҳо сабт шуданд! Ҳамагӣ об истифода шуд:  {used_m3:.2f} м³"
 
-#: bot.py:455
+#: bot.py:456
 msgid "⚠️ Error saving data"
 msgstr "⚠️ Хато ҳангоми сабти маълумот"
 
-#: bot.py:457
+#: bot.py:458
 msgid "Enter actual water consumption (m³):"
 msgstr "Истеъмоли воқеии обро ворид кунед (м³):"
 
-#: bot.py:491
+#: bot.py:492
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
@@ -104,14 +116,14 @@ msgstr ""
 "Истифода щуд: {used_m3:.2f} м³\n"
 "Баробар аст ба: {equivalent_mm:.2f} мм"
 
-#: bot.py:503
+#: bot.py:504
 msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
 msgstr "⚠️ Лутфан рақами дурустро ворид кунед (масалан, 150 ё 75,5)"
 
-#: bot.py:539
+#: bot.py:540
 msgid "❌ Unsupported field type"
 msgstr ""
 
-#: bot.py:543
+#: bot.py:544
 msgid "⚠️ Input data error"
 msgstr ""

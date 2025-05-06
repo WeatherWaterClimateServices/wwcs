@@ -154,9 +154,9 @@ async def get_irrigation_data():
 def create_reply_keyboard():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     buttons = [
-        types.KeyboardButton('Send recommendation'),
-        types.KeyboardButton('No water'),
-        types.KeyboardButton('Save data')
+        types.KeyboardButton(_('Send recommendation')),
+        types.KeyboardButton(_('No water')),
+        types.KeyboardButton(_('Save data'))
     ]
     markup.add(*buttons)
     return markup
