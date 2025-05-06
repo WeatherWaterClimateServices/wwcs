@@ -552,8 +552,8 @@ async def main():
     scheduler.add_job(
         check_all_users,
         'cron',
-        hour=datetime.now().hour,
-        minute=datetime.now().minute + 1,  # Через 1 минуту от текущего времени
+        hour=7,
+        minute=0,  # Every day at 7 am 
         timezone=TIMEZONE,
     )
     scheduler.start()
