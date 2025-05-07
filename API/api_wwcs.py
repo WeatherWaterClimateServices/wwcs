@@ -442,7 +442,7 @@ async def get_ecmwf(siteID):
     return results
 
 @app.get("/ecmwf/")
-async def get_obs(response: Response, siteID: str):
+async def app_ecmwf(response: Response, siteID: str):
     try:
         response.headers['Access-Control-Allow-Origin'] = '*'
         return await get_ecmwf(siteID)
@@ -453,7 +453,7 @@ async def get_obs(response: Response, siteID: str):
                             
                             
 @app.get("/smartmet/")
-async def get_obs(response: Response, siteID: str):
+async def app_smartmet(response: Response, siteID: str):
     try:
         response.headers['Access-Control-Allow-Origin'] = '*'
         return await get_smartmet(siteID)
@@ -563,7 +563,7 @@ class data_irrigation(BaseModel):
     date: str | None = None
     
 @app.post('/irrigationApp')
-async def app_irrgation(data_irrigation: data_irrigation):
+async def app_irrigation(data_irrigation: data_irrigation):
   
     siteID = data_irrigation.siteID
     irrigationApp = data_irrigation.irrigationApp
@@ -575,7 +575,8 @@ async def app_irrgation(data_irrigation: data_irrigation):
     """
     
     try:
-        await database_services.execute(query=query, values={"date": date, "siteID": siteID, "irrigationApp": irrigationApp, "precip": precip})
+        values = {"date": date, "siteID": siteID, "irrigationApp": irrigationApp, "precip": precip}
+        await database_services.execute(query=query, values=values)
         return 'Data inserted successfully!'
     except IntegrityError as e:
         traceback.print_exc()
@@ -691,4 +692,3 @@ def convert_timestamp(original_timestamp: str) -> str:
     """Convert ISO timestamp to RFC 1123 format."""
     dt = datetime.datetime.fromisoformat(original_timestamp)
     return dt.strftime("%a, %d %b %Y %H:%M:%S GMT+5")
-      
