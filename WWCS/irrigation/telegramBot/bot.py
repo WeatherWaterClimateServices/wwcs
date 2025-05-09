@@ -107,7 +107,6 @@ def get_db_connection():
         host="localhost",
         user=DB_USERNAME,
         password=DB_PASSWORD,
-        db="db",
         cursorclass=pymysql.cursors.DictCursor
     )
 
