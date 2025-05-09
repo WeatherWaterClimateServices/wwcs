@@ -13,8 +13,8 @@ directory where the bot runs. For example:
 
     ./WWCS/irrigation/telegramBot/.env
 
-    USERNAME=wwcs
-    PASSWORD=XXX
+    DB_USERNAME=wwcs
+    DB_PASSWORD=XXX
     BOT_TOKEN=XXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     LANGUAGE=tg
 
