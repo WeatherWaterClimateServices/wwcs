@@ -31,7 +31,7 @@ MachineAtSite = sa.Table(
     "MachineAtSite",
     metadata,
     sa.Column("siteID", sa.String(50), nullable=False),
-    sa.Column("loggerID", sa.String(50), nullable=False, primary_key=True),
+    sa.Column("loggerID", sa.String(50), nullable=False),
     sa.Column("startDate", sa.DateTime, nullable=False, server_default="2000-01-01 00:00:00"),
     sa.Column("endDate", sa.DateTime, nullable=False, server_default="2100-01-01 00:00:00"),
     sa.PrimaryKeyConstraint("loggerID", "startDate"),
