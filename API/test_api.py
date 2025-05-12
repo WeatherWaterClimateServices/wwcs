@@ -3,6 +3,9 @@ import contextlib
 import datetime
 import hashlib
 import os
+import random
+import string
+import time
 
 # Requirements
 import httpx
@@ -20,11 +23,11 @@ loggerID = 'test-logger'
 
 
 dotenv.load_dotenv()
-USERNAME = os.environ.get('USERNAME', 'wwcs')
-PASSWORD = os.environ.get('PASSWORD')
+DB_USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
 
 def connect():
-    return MySQLdb.connect("localhost", USERNAME, PASSWORD)
+    return MySQLdb.connect("localhost", DB_USERNAME, DB_PASSWORD)
 
 
 @contextlib.contextmanager
@@ -76,13 +79,13 @@ def get_last_reject(cursor):
     return rows[0]
 
 def get_machine_at_site(cursor, loggerID):
-    return select(cursor, 'Machines.MachineAtSite', loggerID=loggerID)
+    return select(cursor, 'Machines.MachineAtSite', loggerID=loggerID, order_by='startDate')
 
 def get_metadata(cursor, loggerID):
     return select(cursor, 'Machines.Metadata', loggerID=loggerID)
 
 
-def select(cursor, table, columns=None, **kwargs):
+def select(cursor, table, columns=None, order_by=None, **kwargs):
     columns = ', '.join(columns) if columns else '*'
     where = []
     values = []
@@ -90,7 +93,10 @@ def select(cursor, table, columns=None, **kwargs):
         where.append(f'{col} = %s')
         values.append(val)
     where = ' AND '.join(where)
-    sql = f'SELECT {columns} FROM {table} WHERE {where};'
+    sql = f'SELECT {columns} FROM {table} WHERE {where}'
+    if order_by:
+        sql += f' ORDER BY {order_by}'
+    sql += ';'
     execute(cursor, sql, values)
     rows = cursor.fetchall()
 
@@ -100,9 +106,18 @@ def select(cursor, table, columns=None, **kwargs):
     return [Result(*row) for row in rows]
 
 
-def test_register():
-    today = datetime.date.today()
+def cmp_machine_at_site(row, siteID, startDate, endDate):
+    assert row.siteID == siteID
+    assert abs(row.startDate - startDate) < datetime.timedelta(seconds=1)
+    assert abs(row.endDate - endDate) < datetime.timedelta(seconds=1)
 
+def cmp_metadata(row, startDate, endDate, git_version):
+    assert abs(row.startDate - startDate) < datetime.timedelta(seconds=1)
+    assert abs(row.endDate - endDate) < datetime.timedelta(seconds=1)
+    assert row.git_version == git_version
+
+
+def test_register():
     # Start clean
     cleanup()
 
@@ -112,24 +127,49 @@ def test_register():
 
     # Register
     git_version = 'test-git-version'
-    json = {'siteID': siteID, 'loggerID': loggerID, 'git_version': git_version}
+    json = {'loggerID': loggerID, 'siteID': siteID, 'git_version': git_version}
+    t0 = datetime.datetime.now()
     response = httpx.post(f'{URL}/register', json=json)
     assert response.status_code in [200, 201]
     assert response.headers['content-type'] == 'application/json'
     with get_cursor() as cursor:
         rows = get_machine_at_site(cursor, loggerID)
         assert len(rows) == 1
-        row = rows[0]
-        assert row.siteID == siteID
-        assert row.startDate.date() == today
-        assert row.endDate == datetime.datetime(2100, 1, 1)
+        cmp_machine_at_site(rows[0], siteID, t0, datetime.datetime(2100, 1, 1))
 
         rows = get_metadata(cursor, loggerID)
         assert len(rows) == 1
-        row = rows[0]
-        assert row.git_version == git_version
-        assert row.startDate.date() == today
-        assert row.endDate == datetime.datetime(2100, 1, 1)
+        cmp_metadata(rows[0], t0, datetime.datetime(2100, 1, 1), git_version)
+
+    # Register again (n times)
+    n = 2
+    expected = [(t0, siteID, git_version)]
+    for i in range(n):
+        time.sleep(2)
+        site_id = f'test-site-{i}'
+        commit_id = ''.join(random.sample(string.hexdigits, 8))
+        expected.append((datetime.datetime.now(), site_id, commit_id))
+
+        json = {'loggerID': loggerID, 'siteID': site_id, 'git_version': commit_id}
+        response = httpx.post(f'{URL}/register', json=json)
+        assert response.status_code in [200, 201]
+        assert response.headers['content-type'] == 'application/json'
+
+    n = len(expected)
+    with get_cursor() as cursor:
+        rows = get_machine_at_site(cursor, loggerID)
+        assert len(rows) == n
+        for i in range(n):
+            tstart, site_id, commit_id = expected[i]
+            tend = expected[i+1][0] if (i + 1) < n else datetime.datetime(2100, 1, 1)
+            cmp_machine_at_site(rows[i], site_id, tstart, tend)
+
+        rows = get_metadata(cursor, loggerID)
+        assert len(rows) == n
+        for i in range(n):
+            tstart, site_id, commit_id = expected[i]
+            tend = expected[i+1][0] if (i + 1) < n else datetime.datetime(2100, 1, 1)
+            cmp_metadata(rows[i], tstart, tend, commit_id)
 
     # Cleanup
     cleanup()
@@ -162,23 +202,23 @@ def test_insert(logger):
     key = f"{siteID}; {loggerID}; {timestamp}"
     sign = hashlib.sha256(key.encode('utf-8')).hexdigest()
     json = {
-      "sign": sign,
-      "timestamp": timestamp,
-      "ta": -999.9899902,
-      "rh": -999.9899902,
-      "p": 963.1785889,
-      "ts10cm": -999.9899902,
-      "logger_ta": 24.53011513,
-      "U_Battery1": 4.165347099,
-      "Temp_Battery1": 27.00457764,
-      "Charge_Battery1": 2013.512451,
-      "U_Battery2": 4.18915081,
-      "Temp_Battery2": 24.6607914,
-      "Charge_Battery2": 2016.806274,
-      "U_Solar": 0,
-      "loggerID": loggerID,
-      "git_version": "FlashGIT",
-      "signalStrength": 20
+        "sign": sign,
+        "timestamp": timestamp,
+        "ta": -999.9899902,
+        "rh": -999.9899902,
+        "p": 963.1785889,
+        "ts10cm": -999.9899902,
+        "logger_ta": 24.53011513,
+        "U_Battery1": 4.165347099,
+        "Temp_Battery1": 27.00457764,
+        "Charge_Battery1": 2013.512451,
+        "U_Battery2": 4.18915081,
+        "Temp_Battery2": 24.6607914,
+        "Charge_Battery2": 2016.806274,
+        "U_Solar": 0,
+        "loggerID": loggerID,
+        "git_version": "FlashGIT",
+        "signalStrength": 20,
     }
     response = httpx.post(f'{URL}/insert', json=json)
     assert response.status_code == 200 # TODO Change to 201 next year

@@ -14,15 +14,15 @@ from pydantic import BaseModel
 # Configuration
 load_dotenv()
 ENV = os.environ.get('ENV')
-USERNAME = os.environ.get('USERNAME', 'wwcs')
-PASSWORD = os.environ.get('PASSWORD')
+DB_USERNAME = os.environ.get('USERNAME', 'wwcs')
+DB_PASSWORD = os.environ.get('PASSWORD')
 
 # Database connection settings
 
-DATABASE_URL_MACHINES = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/Machines'
+DATABASE_URL_MACHINES = f'mysql+asyncmy://{DB_USERNAME}:{DB_PASSWORD}@localhost:3306/Machines'
 database_machines = Database(DATABASE_URL_MACHINES)
 
-DATABASE_URL_SERVICES = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/WWCServices'
+DATABASE_URL_SERVICES = f'mysql+asyncmy://{DB_USERNAME}:{DB_PASSWORD}@localhost:3306/WWCServices'
 database_services = Database(DATABASE_URL_SERVICES)
 
 root_path = "./" if ENV else None
