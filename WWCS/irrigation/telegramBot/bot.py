@@ -233,7 +233,7 @@ async def check_irrigation(chat_id):
     for row in rows:
         if str(chat_id) == str(row['telegramID']) and row['irrigation'] == 1:
             markup = create_reply_keyboard()
-            m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['ie'])) / float(row['wa'])
+            m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
             # await bot.send_message(
             #     chat_id,
             #     f"🌤 Good morning, {row['firstName']}!\n"
@@ -271,7 +271,7 @@ async def check_all_users():
 
 
 async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, wa):
-    total_needed_m3 = (irrigation_need * area * 10 * ie) / wa
+    total_needed_m3 = (irrigation_need * area * 10 * wa) / ie
 
     if chat_id not in user_irrigation_data:
         user_irrigation_data[chat_id] = {
@@ -423,7 +423,7 @@ async def handle_send_data(message):
             for row in rows:
                 if str(chat_id) == str(row['telegramID']):
                     area = float(row['area'])
-                    actual_mm = (data['total_used_m3'] * float(row['wa'])) / (10 * area * float(row['ie']))
+                    actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
 
                     await execute_query(
                         """UPDATE WWCServices.Irrigation 
@@ -468,7 +468,7 @@ async def handle_actual_data(message):
         for row in rows:
             if str(chat_id) == str(row['telegramID']):
                 area = float(row['area'])
-                actual_mm = (actual_m3 * float(row['wa'])) / (10 * area * float(row['ie']))
+                actual_mm = (actual_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
                 await execute_query(
                     """UPDATE WWCServices.Irrigation 
@@ -533,7 +533,7 @@ async def send_recommendation(chat_id, fieldtype, irrigation_need, area, ie, wa,
                     total_m3=calculation['used_m3'] + calculation['remaining_m3']
                 )
         elif fieldtype in ['pump', 'counter']:
-            m3_need = (irrigation_need * 10 * area * ie) / wa
+            m3_need = (irrigation_need * 10 * area * wa) / ie
             msg = f"🔢 Required: {round(m3_need, 2)} m³ water"
         else:
             msg = _("❌ Unsupported field type")
