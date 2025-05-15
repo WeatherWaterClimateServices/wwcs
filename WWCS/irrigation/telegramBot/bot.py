@@ -150,12 +150,19 @@ async def get_irrigation_data():
     return await execute_query(query)
 
 
+BUTTONS = {
+    "send_recommendation": _("Send recommendation"),
+    "no_water": _("No water"),
+    "save_data": _("Save data")
+}
+
+
 def create_reply_keyboard():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     buttons = [
-        types.KeyboardButton(_('Send recommendation')),
-        types.KeyboardButton(_('No water')),
-        types.KeyboardButton(_('Save data'))
+        types.KeyboardButton(BUTTONS["send_recommendation"]),
+        types.KeyboardButton(BUTTONS["no_water"]),
+        types.KeyboardButton(BUTTONS["save_data"]),
     ]
     markup.add(*buttons)
     return markup
@@ -323,7 +330,7 @@ async def start(message):
     await check_irrigation(message.chat.id)
 
 
-@bot.message_handler(func=lambda message: message.text == 'Send recommendation')
+@bot.message_handler(func=lambda message: message.text == BUTTONS["send_recommendation"])
 async def handle_recommendation(message):
     chat_id = message.chat.id
     rows = await get_irrigation_data()
@@ -404,7 +411,7 @@ async def handle_water_level(message):
 
 
 
-@bot.message_handler(func=lambda message: message.text == 'Save data')
+@bot.message_handler(func=lambda message: message.text == BUTTONS["save_data"])
 async def handle_send_data(message):
     chat_id = message.chat.id
 
