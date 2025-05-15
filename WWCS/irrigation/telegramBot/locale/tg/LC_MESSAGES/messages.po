@@ -20,15 +20,15 @@ msgstr ""
 
 #: bot.py:157
 msgid "Send recommendation"
-msgstr ""
+msgstr "Сатҳи об ва тавсия"
 
 #: bot.py:158
 msgid "No water"
-msgstr ""
+msgstr "Об нест"
 
 #: bot.py:159
 msgid "Save data"
-msgstr ""
+msgstr "Сабти маълумот"
 
 #: bot.py:193
 msgid ""
