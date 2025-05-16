@@ -4,6 +4,25 @@ library(xlsx)
 ## raw data.frame
 crop.parameters <- data.frame(Index = 1:300)
 
+## cucumber for cambodia - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
+## fresh market, summer variety, shortened to 60 days
+## rooting depth: additionally here: https://soilandhealth.org/wp-content/uploads/01aglibrary/010137veg.roots/010137ch29.html
+Ls <- round(c(ini=20, dev=30, mid=40, late=15) / 105 * 60)
+Kc <- c(ini=0.6, mid=1, end=.75)
+Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
+         seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
+         rep(Kc[["mid"]], Ls[["mid"]]),
+         seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
+RDs <- c(seq(.1, 1, length=Ls[["ini"]]), rep(1, 60 - Ls[["ini"]]))
+CucumberCambodia <-
+  data.frame(Index=1:nrow(crop.parameters),
+             CucumberCambodia_Kc=c(Kcs,
+                                   rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             CucumberCambodia_RD=c(RDs,
+                                   rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, CucumberCambodia, by = "Index")
+                       
+
 ## winter wheat from ICARDA
 kc_path <- "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/WinterWheat/Winter_Wheat_Kc_Tadjikistan_Updated.xlsx"
 rd_path <- "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/WinterWheat/Winter_Wheat_Rooting_Depth_Tadjikistan_Updated.xlsx"
