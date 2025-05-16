@@ -24,8 +24,8 @@ crop.parameters <- full_join(crop.parameters, CucumberCambodia, by = "Index")
                        
 
 ## winter wheat from ICARDA
-kc_path <- "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/WinterWheat/Winter_Wheat_Kc_Tadjikistan_Updated.xlsx"
-rd_path <- "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/WinterWheat/Winter_Wheat_Rooting_Depth_Tadjikistan_Updated.xlsx"
+kc_path <- "WinterWheat/Winter_Wheat_Kc_Tadjikistan_Updated.xlsx"
+rd_path <- "WinterWheat/Winter_Wheat_Rooting_Depth_Tadjikistan_Updated.xlsx"
 
 if (file.exists(kc_path) && file.exists(rd_path)) {
   Kc <- read.xlsx(kc_path, sheetIndex = 1)
@@ -39,8 +39,8 @@ if (file.exists(kc_path) && file.exists(rd_path)) {
 }
 
 ## cotton from ICARDA
-kc_path <- "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/Cotton/Cotton_Kc_Only.xlsx"
-rd_path <- "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/Cotton/Estimated_Rooting_Depths.csv"
+kc_path <- "Cotton/Cotton_Kc_Only.xlsx"
+rd_path <- "Cotton/Estimated_Rooting_Depths.csv"
 
 if (file.exists(kc_path) && file.exists(rd_path)) {
   Kc <- read.xlsx(kc_path, sheetIndex = 1)
@@ -54,7 +54,7 @@ if (file.exists(kc_path) && file.exists(rd_path)) {
 }
 
 ## potato from ICARDA
-kc_path <- "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/Potato/Kc.csv"
+kc_path <- "Potato/Kc.csv"
 
 if (file.exists(kc_path)) {
   Kc <- read.csv(kc_path, header = FALSE)
@@ -87,6 +87,6 @@ DryRice.end <- data.frame(
 crop.parameters <- full_join(crop.parameters, rbind(DryRice, DryRice.end), by = "Index")
 
 ## write out
-write.csv(crop.parameters, "/opt/shiny-server/wwcs/WWCS/irrigation/appdata/CropParameters.csv", row.names = FALSE)
-Sys.chmod("/opt/shiny-server/wwcs/WWCS/irrigation/appdata/CropParameters.csv", mode = "0666", use_umask = FALSE)
+write.csv(crop.parameters, "CropParameters.csv", row.names = FALSE)
+Sys.chmod("CropParameters.csv", mode = "0666", use_umask = FALSE)
 
