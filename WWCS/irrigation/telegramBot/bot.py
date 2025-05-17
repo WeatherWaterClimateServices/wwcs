@@ -173,7 +173,7 @@ async def start_irrigation_notifications(chat_id):
         chat_id,
         'water_check',
         send_water_check_notification,
-        trigger=IntervalTrigger(minutes=5),
+        trigger=IntervalTrigger(minutes=15),
         args=[chat_id]
     )
 
