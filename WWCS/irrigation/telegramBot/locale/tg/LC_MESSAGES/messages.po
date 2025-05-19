@@ -106,7 +106,7 @@ msgstr "⚠️ Хато ҳангоми сабти маълумот"
 
 #: bot.py:464
 msgid "Enter actual water consumption (m³):"
-msgstr "Истеъмоли воқеии обро ворид кунед (м³):"
+msgstr "Истифодаи воқеии обро ворид кунед (м³):"
 
 #: bot.py:498
 #, python-brace-format
