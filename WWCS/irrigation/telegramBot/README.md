@@ -41,7 +41,7 @@ environement variable. When deployed, set the language in the .env file like thi
 
     LANGUAGE=tg
 
-The source language is English (en), and there are translations available for Tajik (tg).
+The source language is English (en), and there are translations available for Tajik (tg), Uzbek (uz) and Khmer (kh) - a growing list.
 
 ## Introduction
 
@@ -97,10 +97,10 @@ All locale files should be commited, so don't forget to:
 # Add a new language
 
 To add a new language you need first to initialize the PO file. This is the procedure, for
-example for the Khmer (km) language:
+example for the Khmer (kh) language:
 
-    mkdir locale/km/LC_MESSAGES -p
-    msginit -l km -o locale/km/LC_MESSAGES/messages.po -i locale/messages.pot --no-translator
+    mkdir locale/kh/LC_MESSAGES -p
+    msginit -l kh -o locale/kh/LC_MESSAGES/messages.po -i locale/messages.pot --no-translator
 
 Now edit the Makefile and add the km language to the list of locales, for example:
 
