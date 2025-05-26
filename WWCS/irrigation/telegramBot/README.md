@@ -9,7 +9,7 @@ A deployment of the irrigation bot is configured with a number of environemnet v
     TIMEZONE    -- Timezone (defaults to Asia/Tashkent)
 
 The environment variables should be defined in a file with the name ".env", located in the
-directory where the bot runs. For example:
+directory where the bot runs. See [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for timezones. For example:
 
     ./WWCS/irrigation/telegramBot/.env
 
@@ -17,6 +17,7 @@ directory where the bot runs. For example:
     DB_PASSWORD=XXX
     BOT_TOKEN=XXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     LANGUAGE=tg
+    TIMEZONE=Asia/Dushanbe
 
 Since this file contains sensitive information, set restrictive permissions, only the user
 should be able to read/write it:
@@ -34,6 +35,24 @@ To register your bot and receive its authentication token start a converation wi
 
 @BotFather will reply with the token. To delete the bot send `/deletebot` to @BotFather.
 
+# Registering a user for interaction with the telegram bot
+
+For a site which receives irrigation advice, in the SitesHumans.Sites table, set the `irrigation` column to 1. 
+In the `fieldproperties` column of that site, configure the humanID to point to the user as registered in the 
+SitesHumans.Humans table. In that table, enter the user's into the `telegramID`
+
+That user must search for the bot in the telegram application (e.g., wwcs_test) and refresh it to the current 
+setting by typing `/start` at the prompt of the bot.
+
+# After updates of language (see below) or the source code of the bot, or anything, restart the related service:
+
+    wwcs@myServer: git pull
+    ...
+    root@myServer# systemctl restart irrigationbot.service
+
+Then open the telegram bot and refresh it by entering `/start` at the promt.
+    
+
 # Translations
 
 We only support one language per installation, and this should be defined by a
@@ -41,7 +60,8 @@ environement variable. When deployed, set the language in the .env file like thi
 
     LANGUAGE=tg
 
-The source language is English (en), and there are translations available for Tajik (tg), Uzbek (uz) and Khmer (kh) - a growing list.
+The source language is English (en), and there are translations available for Tajik (tg), 
+Uzbek (uz) and Khmer (kh) - a growing list.
 
 ## Introduction
 
@@ -62,7 +82,8 @@ be compiled to the MO binary format, which will be used when running the program
 
 ## Required software
 
-We use the following software for development (none of this is required in deployment):
+We use the following software for development (none of this is required in deployment; 
+the idea is that the required translation files are provided through the git):
 
 - gettext: used to update the translation (PO) files and to compile them to MO files
 - make: we use make to simplify the management of the files
