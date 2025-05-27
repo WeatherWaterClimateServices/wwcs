@@ -3,6 +3,9 @@ __pycache__
 venv/
 *~
 
+# Local config.yaml
+config.yaml
+
 # Vim swap files
 .*.swp
 
@@ -36,4 +39,5 @@ WWCS/map_dev/
 WWCS/dashboard_dev/
 WWCS/dashboard/service/cronjob_tjhm_data.sh
 WWCS/dashboard/service/get_hydromet_data/
+
 
