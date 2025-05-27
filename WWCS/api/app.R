@@ -167,7 +167,7 @@ server <- function(input, output, session) {
   
   output$api_request <- renderText({
     if (input$selected_api == "Weather Forecast Station") {
-      request$url <- paste("https://", domain, "/services/forecast6h?stationID=", selected$id, "&date=", input$selected_date, sep = "")
+      request$url <- paste("https://", wwcs_domain, "/services/forecast6h?stationID=", selected$id, "&date=", input$selected_date, sep = "")
     } else if (input$selected_api == "Weather Forecast Map") {
       request$url <- paste("https://", wwcs_domain,"/services/map?lat=", rv$clickLat, "&lon=", rv$clickLng, sep = "")
     } else if (input$selected_api == "Station Observation") {
