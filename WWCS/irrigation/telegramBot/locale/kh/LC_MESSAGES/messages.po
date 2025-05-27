@@ -1,0 +1,133 @@
+# Language kh translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-20 10:45+0200\n"
+"PO-Revision-Date: 2025-05-20 10:56+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: kh\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#: bot.py:154
+msgid "Send recommendation"
+msgstr "ផ្ញើអនុសាសន៍/ មតិយោបល់ / Send recommendation"
+
+#: bot.py:155
+msgid "No water"
+msgstr "គ្មានទឹក / No water"
+
+#: bot.py:156
+msgid "Save data"
+msgstr "រក្សាទុកទិន្នន័យ / Save data"
+
+#: bot.py:199
+msgid ""
+"🔄 Please check the current water level in the channel and send its value"
+msgstr ""
+"សូមពិនិត្យមើលកម្រិតទឹកបច្ចុប្បន្ននៅក្នុងឆានែល ហើយផ្ញើតម្លៃរបស់វា / Please check the "
+"current water level in the channel and send its value"
+
+#: bot.py:233
+msgid ""
+"⏰ Watering time is over! Please click the 'Save data' button to save "
+"the results."
+msgstr ""
+"ដល់ម៉ោងស្រោចទឹកហើយ! សូមចុចប៊ូតុង 'រក្សាទុកទិន្នន័យ' ដើម្បីរក្សាទុក 'លទ្ធផល' / Watering time "
+"is over - click 'Save data'"
+
+#: bot.py:254
+#, python-brace-format
+msgid ""
+"🌤 Good morning, {first_name}!\n"
+"Your plot is ready for irrigation.\n"
+"💧 Water required: {water:.2f} m³"
+msgstr ""
+"អរុណសួស្តី {first_name}\n"
+"ដីរបស់អ្នករួចរាល់សម្រាប់ប្រព័ន្ធធារាសាស្រ្ត\n"
+"ទឹកដែលត្រូវការ៖ {water:.2f} m³ / ready for irrigation, amount of water "
+"required"
+
+#: bot.py:341
+msgid "Enter the current water level in the channel (in cm):"
+msgstr ""
+"បញ្ចូលកម្រិតទឹកបច្ចុប្បន្ននៅក្នុងឆានែល (គិតជាសង់ទីម៉ែត្រ)៖ / Enter the current water "
+"level in the channel (in cm):"
+
+#: bot.py:352 bot.py:408 bot.py:459 bot.py:508
+msgid "❌ Your data was not found in the system"
+msgstr ""
+"ទិន្នន័យរបស់អ្នកមិនត្រូវបានរកឃើញនៅក្នុងប្រព័ន្ធទេ / your data not found in the system"
+
+#: bot.py:365
+msgid ""
+"⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
+"Please enter the correct value:"
+msgstr ""
+"កម្រិតទឹកមិនត្រឹមត្រូវ! តម្លៃដែលអាចទទួលយកបានពី ១ ទៅ ២៥សង់ទីម៉ែត្រ\n"
+"សូមបញ្ចូលតម្លៃត្រឹមត្រូវ៖ / must be 1-25cm; enter correct value:"
+
+#: bot.py:383 bot.py:521
+msgid "✅ Irrigation completed! Enough water."
+msgstr "ស្រោចស្រពរួចរាល់ហើយ! ទឹកគ្រប់គ្រាន់ /  Irrigation completed! Enough water."
+
+#: bot.py:394 bot.py:532
+#, python-brace-format
+msgid ""
+"💦 Current level: {water_level} cm\n"
+"⏱ Time left: {hours}h {minutes}m\n"
+"📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
+msgstr ""
+"កម្រិតបច្ចុប្បន្ន៖ {water_level} សង់ទីម៉ែត្រ / current water level\n"
+"ពេលវេលានៅសល់៖ {hours}h {minutes}m / time left to irrigate\n"
+"បានប្រើ៖ {used_m3:.2f} m³ នៃ {total_m3:.2f} m³ / water used of total"
+
+#: bot.py:410
+msgid "⚠️ Please enter a valid number (water level in cm)"
+msgstr ""
+"សូមបញ្ចូលលេខត្រឹមត្រូវ (កម្រិតទឹកគិតជាសង់ទីម៉ែត្រ) / please enter valid number in cm"
+
+#: bot.py:451
+#, python-brace-format
+msgid "✅ Data saved! Used: {used_m3:.2f} m³"
+msgstr "ទិន្នន័យត្រូវបានរក្សាទុក! បានប្រើ៖ {used_m3:.2f} m³  / data saved!"
+
+#: bot.py:462
+msgid "⚠️ Error saving data"
+msgstr "កំហុសក្នុងការរក្សាទុកទិន្នន័យ / error saving data"
+
+#: bot.py:464
+msgid "Enter actual water consumption (m³):"
+msgstr ""
+"បញ្ចូលការប្រើប្រាស់ទឹកជាក់ស្តែង (m³)៖ / Enter actual water consumption (m³):"
+
+#: bot.py:498
+#, python-brace-format
+msgid ""
+"✅ Data saved!\n"
+"Water used: {used_m3:.2f} m³\n"
+"Equivalent to: {equivalent_mm:.2f} mm"
+msgstr ""
+"ទិន្នន័យត្រូវបានរក្សាទុក! / data saved\n"
+"ទឹកប្រើប្រាស់៖ {used_m3:.2f} m³ / water used\n"
+"ស្មើនឹង៖ {equivalent_mm:.2f} mm / mm-equivalent"
+
+#: bot.py:510
+msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
+msgstr "សូមបញ្ចូលលេខដែលត្រឹមត្រូវ (ឧ. 150 ឬ 75.5) / enter valid number"
+
+#: bot.py:546
+msgid "❌ Unsupported field type"
+msgstr "ទិន្នន័យដែលបានបញ្ចូលមិនត្រឹមត្រូវ / unsupported field type"
+
+#: bot.py:550
+msgid "⚠️ Input data error"
+msgstr "កំហុសក្នុងការបញ្ចូលទិន្នន័យ / input data error"

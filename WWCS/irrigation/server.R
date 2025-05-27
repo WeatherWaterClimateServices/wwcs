@@ -1,4 +1,9 @@
+library(stringr)
 server <- function(input, output, session) {
+  ## read available crops from csv file
+  crops <- names(read.csv("appdata/CropParameters.csv", nrows=1))
+  crops <- unique(stringr::str_remove(crops[2:length(crops)], "_[KR][cD]"))
+  
   selected <- reactiveValues(id = irrigation_default_station)
   
   advice <- reactiveValues(irrigate = "Do not irrigate",
@@ -211,14 +216,14 @@ server <- function(input, output, session) {
           splitLayout(
             cellWidths = c("175px", "175px"),
             dateInput("sd", "Start Date"),
-            selectInput("cr", "Crop Type", choices = c("Potato", "Wheat"), selected = "Potato")
+            selectInput("cr", "Crop Type", choices = crops)
           ),
           br(),
           br(),
           splitLayout(
             cellWidths = c("175px", "175px"),
             textInput("area", "Plot Area", placeholder = ""),
-            selectInput("type", "Irrigation Type", choices = c("channel", "traditional", "pump", "counter"), selected = "counter")
+            selectInput("type", "Irrigation Type", choices = c("channel", "traditional", "pump", "counter"))
           ),
           br(),
           br(),

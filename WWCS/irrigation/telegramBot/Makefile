@@ -1,6 +1,6 @@
 .PHONY: install update_po update_mo
 
-LOCALES = tg
+LOCALES = tg uz kh
 PO_FILES = $(foreach loc,$(LOCALES),locale/$(loc)/LC_MESSAGES/messages.po)
 
 install:
