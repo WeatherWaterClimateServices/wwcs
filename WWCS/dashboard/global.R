@@ -100,10 +100,7 @@ if (!file.exists("/srv/shiny-server/dashboard/appdata/gemos_raster/raster_merged
 sites <-
   sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
   distinct(siteID, .keep_all = TRUE)  %>%
-  filter(!stringr::str_detect(siteID, pattern = "-S")) %>%
-  filter(!stringr::str_detect(siteID, pattern = "MS")) %>%
-  filter(!stringr::str_detect(siteID, pattern = "GP")) %>%
-  filter(!stringr::str_detect(siteID, pattern = "MC")) %>%
+  dplyr::filter(forecast == 1) %>% 
   as_tibble() # Do not include soil moisture measurements
 
 deployments <-
