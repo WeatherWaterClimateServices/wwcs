@@ -188,7 +188,7 @@ async def get_smartmet(siteID):
             sh.longitude
         FROM v_machineobs mo
         JOIN SitesHumans.Sites sh ON mo.siteID = sh.siteID
-        WHERE mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 WEEK)
+        WHERE mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
         AND mo.siteID = :siteID
         ORDER BY mo.timestamp DESC
     """
