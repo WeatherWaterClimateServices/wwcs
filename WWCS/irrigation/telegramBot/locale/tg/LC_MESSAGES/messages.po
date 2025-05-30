@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-17 15:21+0500\n"
+"POT-Creation-Date: 2025-05-30 16:49+0200\n"
 "PO-Revision-Date: 2025-05-18 13:44+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -32,22 +32,20 @@ msgstr "Сабти маълумот"
 
 #: bot.py:199
 msgid ""
-"🔄 Please check the current water level in the channel and send its "
-"value"
+"🔄 Please check the current water level in the channel and send its value"
 msgstr ""
-"🔄 Лутфан сатҳи ҳозираи обро дар обченкунак санҷед ва арзиши онро "
-"равон\n"
+"🔄 Лутфан сатҳи ҳозираи обро дар обченкунак санҷед ва арзиши онро равон\n"
 "кунед"
 
 #: bot.py:233
 msgid ""
-"⏰ Watering time is over! Please click the 'Save data' button to "
-"save the results."
+"⏰ Watering time is over! Please click the 'Save data' button to save the "
+"results."
 msgstr ""
-"⏰ Вақти обёрӣ ба охир расид! Лутфан тугмачаи 'Сабти маълумот' -ро "
-"пахш кунед, то натиҷаҳо сабт карда шаванд."
+"⏰ Вақти обёрӣ ба охир расид! Лутфан тугмачаи 'Сабти маълумот' -ро пахш "
+"кунед, то натиҷаҳо сабт карда шаванд."
 
-#: bot.py:254
+#: bot.py:255 bot.py:262
 #, python-brace-format
 msgid ""
 "🌤 Good morning, {first_name}!\n"
@@ -59,15 +57,35 @@ msgstr ""
 "Барои муаян кардани давомнокии вақти обмонӣ сатҳи обро сари \n"
 "вақт дар ништак ба ман муаян кунед"
 
-#: bot.py:341
+#: bot.py:269
+msgid "ERROR!"
+msgstr ""
+
+#: bot.py:360
 msgid "Enter the current water level in the channel (in cm):"
 msgstr "Лутфан, ҳозир сатҳи обро аз руи обченкунак равон кунед (см):"
 
-#: bot.py:352 bot.py:408 bot.py:459 bot.py:508
+#: bot.py:364
+msgid "Please, send the counter value before irrigation (m³):"
+msgstr ""
+
+#: bot.py:376 bot.py:409 bot.py:467 bot.py:490 bot.py:530 bot.py:589 bot.py:641
 msgid "❌ Your data was not found in the system"
 msgstr "❌ Маълумоти шумо дар система ёфт нашуд"
 
-#: bot.py:365
+#: bot.py:394
+#, python-brace-format
+msgid ""
+"Irrigate untill you counter is: {target_counter:.2f} m³\n"
+"Water need: {m3_needed:.2f} m³"
+msgstr ""
+
+#: bot.py:411
+#, fuzzy
+msgid "⚠️ Please, type number (125.5)"
+msgstr "⚠️ Лутфан рақами дурустро ворид кунед (масалан, 150 ё 75,5)"
+
+#: bot.py:424
 msgid ""
 "⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
 "Please enter the correct value:"
@@ -75,11 +93,11 @@ msgstr ""
 "⚠️ Сатҳи об нодуруст! Арзишҳои қобили қабул аз 1 то 25 см.\n"
 "Лутфан арзиши дурустро ворид кунед:"
 
-#: bot.py:383 bot.py:521
+#: bot.py:442 bot.py:654
 msgid "✅ Irrigation completed! Enough water."
 msgstr "✅ Обёрӣ анҷом ёфт! Оби кофӣ."
 
-#: bot.py:394 bot.py:532
+#: bot.py:453 bot.py:665
 #, python-brace-format
 msgid ""
 "💦 Current level: {water_level} cm\n"
@@ -90,25 +108,58 @@ msgstr ""
 "⏱ Мӯҳлати обёрӣ: {hours} соат {minutes} дакика\n"
 "📊 Истифода шуд: {used_m3:.2f} м³ аз {total_m3:.2f} м³"
 
-#: bot.py:410
+#: bot.py:469
 msgid "⚠️ Please enter a valid number (water level in cm)"
 msgstr "⚠️ Лутфан рақами дурустро ворид кунед (сатҳи об дар см)"
 
-#: bot.py:451
+#: bot.py:484
+msgid "Please, send your counter number after irrigation (m³):"
+msgstr ""
+
+#: bot.py:488
+msgid "Wrong fieldtype"
+msgstr ""
+
+#: bot.py:522
 #, python-brace-format
 msgid "✅ Data saved! Used: {used_m3:.2f} m³"
-msgstr ""
-"✅ Натиҷаҳо сабт шуданд! Ҳамагӣ об истифода шуд:  {used_m3:.2f} м³"
+msgstr "✅ Натиҷаҳо сабт шуданд! Ҳамагӣ об истифода шуд:  {used_m3:.2f} м³"
 
-#: bot.py:462
+#: bot.py:533
 msgid "⚠️ Error saving data"
 msgstr "⚠️ Хато ҳангоми сабти маълумот"
 
-#: bot.py:464
+#: bot.py:535
 msgid "Enter actual water consumption (m³):"
 msgstr "Истифодаи воқеии обро ворид кунед (м³):"
 
-#: bot.py:498
+#: bot.py:547
+msgid "❌ Error: No start data found"
+msgstr ""
+
+#: bot.py:554
+msgid ""
+"⚠️ Error: The initial value of the counter cannot be greater than the final "
+"value!\n"
+"Please enter correct data."
+msgstr ""
+
+#: bot.py:577
+#, fuzzy, python-brace-format
+msgid ""
+"✅ Data saved!\n"
+"Water used: {used_m3:.2f} m³\n"
+"Equivalent to: {actual_mm:.2f} mm"
+msgstr ""
+"✅ Натиҷаҳо сабт шуданд!\n"
+"Истифода щуд: {used_m3:.2f} м³\n"
+"Баробар аст ба: {equivalent_mm:.2f} мм"
+
+#: bot.py:593
+msgid "⚠️ Type correct number (like 125.5)"
+msgstr ""
+
+#: bot.py:631
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
@@ -119,14 +170,14 @@ msgstr ""
 "Истифода щуд: {used_m3:.2f} м³\n"
 "Баробар аст ба: {equivalent_mm:.2f} мм"
 
-#: bot.py:510
+#: bot.py:643
 msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
 msgstr "⚠️ Лутфан рақами дурустро ворид кунед (масалан, 150 ё 75,5)"
 
-#: bot.py:546
+#: bot.py:679
 msgid "❌ Unsupported field type"
 msgstr ""
 
-#: bot.py:550
+#: bot.py:683
 msgid "⚠️ Input data error"
 msgstr ""
