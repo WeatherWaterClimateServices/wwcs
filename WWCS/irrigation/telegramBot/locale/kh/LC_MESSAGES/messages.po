@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-06-01 14:55+0200\n"
-"PO-Revision-Date: 2025-06-01 15:28+0200\n"
+"PO-Revision-Date: 2025-06-01 16:24+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: kh\n"
@@ -86,7 +86,7 @@ msgid "❌ Your data was not found in the system"
 msgstr "❌ទិន្នន័យរបស់អ្នកមិនត្រូវបានរកឃើញនៅក្នុងប្រព័ន្ធទេ / Your data was not found in the system"
 
 #: bot.py:388
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Irrigate untill you counter is: {target_counter:.2f} m³\n"
 "Water need: {m3_needed:.2f} m³"
@@ -169,10 +169,10 @@ msgstr "⚠️ សូមបញ្ចូលតួរលេខកុងទ័រ�
 
 #: bot.py:562
 msgid "⚠️ Error: start value is greater than end value!"
-msgstr "⚠️ Error: start value is greater than end value!\""
+msgstr "⚠️ Error: start value is greater than end value!"
 
 #: bot.py:584 bot.py:645
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
