@@ -1,7 +1,7 @@
 # Configuration file for the WWCS application
 
 servicepass: "wwcs1234" # Password for service applications
-wwcs_domain: "206.189.145.20" # Domain name of the server
+wwcs_domain: "wwcs-cambodia.net" # Domain name of the server
 
 # Define area of WWCS application                                                  
 
