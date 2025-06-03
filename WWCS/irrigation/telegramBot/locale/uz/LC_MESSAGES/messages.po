@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-01 14:55+0200\n"
-"PO-Revision-Date: 2025-05-19 10:24+0500\n"
+"POT-Creation-Date: 2025-06-03 09:16+0500\n"
+"PO-Revision-Date: 2025-06-03 10:37+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: uz\n"
@@ -57,16 +57,21 @@ msgstr ""
 "💧 Kerakli suv: {water:.2f}  m³"
 
 #: bot.py:261
+#, python-brace-format
 msgid ""
-"Hello, {row['firstName']}!\n"
+"Hello, {first_name}!\n"
 "If your irrigation complete please push Save data button and enter you "
 "counter numbers Before and After irrigation\n"
 "and save your data"
 msgstr ""
+"Salom, {first_name}!\n"
+"Agar sug'orish tugallangan bo'lsa, \"Ma'lumotlarni saqlash\" tugmasini "
+"bosing va sug'orishdan oldin va keyin hisoblagich raqamlarini kiriting va "
+"ma'lumotlaringizni saqlang"
 
 #: bot.py:268
 msgid "ERROR!"
-msgstr ""
+msgstr "XATO!"
 
 #: bot.py:354
 msgid "Enter the current water level in the channel (in cm):"
@@ -74,7 +79,7 @@ msgstr "Kanaldagi joriy suv darajasini kiriting (sm bilan):"
 
 #: bot.py:358
 msgid "Please, send the counter value before irrigation (m³):"
-msgstr ""
+msgstr "Iltimos, sug'orishdan oldin hisoblagich qiymatini yuboring (m³):"
 
 #: bot.py:370 bot.py:403 bot.py:456 bot.py:485 bot.py:520 bot.py:556 bot.py:595
 #: bot.py:657 bot.py:702
@@ -87,11 +92,12 @@ msgid ""
 "Irrigate untill you counter is: {target_counter:.2f} m³\n"
 "Water need: {m3_needed:.2f} m³"
 msgstr ""
+"Hisoblagich: {target_counter:.2f} m³ bo'lguncha sug'oring\n"
+"Suvga bo'lgan ehtiyoj: {m3_needed:.2f} m³"
 
 #: bot.py:405
-#, fuzzy
 msgid "⚠️ Please, type number (125.5)"
-msgstr "⚠️ Yaroqli raqamni kiriting (masalan, 150 yoki 75,5)"
+msgstr "⚠️ Iltimos, raqam kiriting (125.5)"
 
 #: bot.py:418
 msgid ""
@@ -122,15 +128,15 @@ msgstr "⚠️ Iltimos, to‘g‘ri raqamni kiriting (suv darajasi sm)"
 
 #: bot.py:473
 msgid "Please, send your counter number after irrigation (m³):"
-msgstr ""
+msgstr "Iltimos, sug'orishdan keyin hisoblagich raqamingizni yuboring (m³):"
 
 #: bot.py:478
 msgid "Please, send your counter number BEFORE irrigation (m³)"
-msgstr ""
+msgstr "Iltimos, sug'orishdan oldin hisoblagich raqamingizni yuboring (m³)"
 
 #: bot.py:483
 msgid "Wrong fieldtype"
-msgstr ""
+msgstr "Noto'g'ri maydon turi"
 
 #: bot.py:512
 #, python-brace-format
@@ -147,18 +153,18 @@ msgstr "Haqiqiy suv sarfini kiriting (m³)"
 
 #: bot.py:541
 msgid "Now send counter value AFTER irrigation (m³)"
-msgstr ""
+msgstr "Endi hisoblagich qiymatini sug'orishdan keyin yuboring (m³)"
 
 #: bot.py:544 bot.py:598 bot.py:661
 msgid "⚠️ Type correct number (like 125.5)"
-msgstr ""
+msgstr "⚠️ To'g'ri raqamni kiriting (masalan, 125,5)"
 
 #: bot.py:562
 msgid "⚠️ Error: start value is greater than end value!"
-msgstr ""
+msgstr "⚠️ Xato: boshlang'ich qiymati yakuniy qiymatdan kattaroq!"
 
 #: bot.py:584 bot.py:645
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
@@ -166,11 +172,11 @@ msgid ""
 msgstr ""
 "✅  Maʼlumotlar saqlandi!\n"
 "Ishlatilgan suv: {used_m3:.2f} m³\n"
-"Ekvivalent: {equivalent_mm:.2f} mm"
+"Ekvivalent: {actual_mm:.2f} mm"
 
 #: bot.py:615
 msgid "❌ Error: No start data found"
-msgstr ""
+msgstr "❌ Xato: Boshlanish maʼlumotlari topilmadi"
 
 #: bot.py:622
 msgid ""
@@ -178,6 +184,9 @@ msgid ""
 "value!\n"
 "Please enter correct data."
 msgstr ""
+"⚠️ Xato: Hisoblagichning dastlabki qiymati yakuniy qiymatdan katta boʻlishi "
+"mumkin emas!\n"
+"Iltimos, toʻgʻri maʼlumotlarni kiriting."
 
 #: bot.py:692
 #, python-brace-format
