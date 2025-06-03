@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-06-03 10:37+0200\n"
-"PO-Revision-Date: 2025-06-03 10:54+0200\n"
+"PO-Revision-Date: 2025-06-03 15:31+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: kh\n"
@@ -32,14 +32,14 @@ msgstr "រក្សាទុកទិន្នន័យ / Save data"
 #: bot.py:199
 msgid "🔄 Please check the current water level in the channel and send its value"
 msgstr ""
-"🔄 សូមពិនិត្យមើលតួរលេខនៅក្នុងកុងទ័រទឹកចំការពិសោធរបស់អ្នក / Please check the current water level in the "
-"channel and send its value"
+"🔄 សូមពិនិត្យមើលតួរលេខនៅក្នុងកុងទ័រទឹកចំការពិសោធរបស់អ្នក / Please check the current water level in the channel and send its "
+"value"
 
 #: bot.py:233
 msgid "⏰ Watering time is over! Please click the 'Save data' button to save the results."
 msgstr ""
-"⏰ បន្ទាប់ពីស្រោចទឹកហើយ! សូមចុចពាក្យ 'រក្សាទុកទិន្នន័យ' ដើម្បីរក្សាទុក 'លទ្ធផល' / Watering time is over! Please "
-"click the 'Save data' button to save the results."
+"⏰ បន្ទាប់ពីស្រោចទឹកហើយ! សូមចុចពាក្យ 'រក្សាទុកទិន្នន័យ' ដើម្បីរក្សាទុក 'លទ្ធផល' / Watering time is over! Please click the 'Save "
+"data' button to save the results."
 
 #: bot.py:247 bot.py:254
 #, python-brace-format
@@ -53,17 +53,18 @@ msgstr ""
 " ទឹកដែលត្រូវការ៖ {water:.2f} m³ / Water required: {water:.2f} m³"
 
 #: bot.py:261
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Hello, {first_name}!\n"
-"If your irrigation complete please push Save data button and enter you counter numbers Before "
-"and After irrigation\n"
+"If your irrigation complete please push Save data button and enter you counter numbers Before and After "
+"irrigation\n"
 "and save your data"
 msgstr ""
-"Hello, {row['firstName']}!\n"
-"If your irrigation complete please push Save data button and enter you \n"
-"counter numbers Before and After irrigation\n"
-"and save your data"
+"សួស្ដ/Hello, {first_name}!\n"
+"ប្រសិនជាអ្នកបានស្រោចស្រពរួចរាល់ហើយ សូមចុចលើពាក្យរក្សាទុកទិន្នន័យនិងវាយ / If your irrigation complete please push Save data button "
+"and enter your \n"
+"លេខកុងទ័រទឹកមុនពេលស្រោចស្រព និងបន្ទាប់ពីស្រោចស្រពរួច / counter numbers Before and After irrigation\n"
+"និងចុចរក្សាទុកទិន្នន័យ / and save your data"
 
 #: bot.py:268
 msgid "ERROR!"
@@ -72,17 +73,13 @@ msgstr "មិនបានសម្រេច / ERROR!"
 #: bot.py:354
 msgid "Enter the current water level in the channel (in cm):"
 msgstr ""
-"សូមបញ្ចូលតួរលេខបច្ចុប្បន្ននៅក្នុងកុងទ័រទឹកចំការពិសោធរបស់អ្នក (សង់ទីម៉ែត្រ) / Enter the current water level in the "
-"channel (in cm):"
+"សូមបញ្ចូលតួរលេខបច្ចុប្បន្ននៅក្នុងកុងទ័រទឹកចំការពិសោធរបស់អ្នក (សង់ទីម៉ែត្រ) / Enter the current water level in the channel (in cm):"
 
 #: bot.py:358
 msgid "Please, send the counter value before irrigation (m³):"
-msgstr ""
-"សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកមុនពេលស្រោចស្រព (m³): / Please, send the counter value before "
-"irrigation (m³):"
+msgstr "សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកមុនពេលស្រោចស្រព (m³): / Please, send the counter value before irrigation (m³):"
 
-#: bot.py:370 bot.py:403 bot.py:456 bot.py:485 bot.py:520 bot.py:556 bot.py:595 bot.py:657
-#: bot.py:702
+#: bot.py:370 bot.py:403 bot.py:456 bot.py:485 bot.py:520 bot.py:556 bot.py:595 bot.py:657 bot.py:702
 msgid "❌ Your data was not found in the system"
 msgstr "❌ទិន្នន័យរបស់អ្នកមិនត្រូវបានរកឃើញនៅក្នុងប្រព័ន្ធទេ / Your data was not found in the system"
 
@@ -105,8 +102,8 @@ msgid ""
 "⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
 "Please enter the correct value:"
 msgstr ""
-"⚠️ តួរលេខមិនត្រឹមត្រូវ! តួរលេខដែលអាចបញ្ចូលបានគឺពី 1 ទៅ 25 សង់ទីម៉ែត្រ / Incorrect water level! Acceptable "
-"values from 1 to 25 cm.\n"
+"⚠️ តួរលេខមិនត្រឹមត្រូវ! តួរលេខដែលអាចបញ្ចូលបានគឺពី 1 ទៅ 25 សង់ទីម៉ែត្រ / Incorrect water level! Acceptable values from 1 to 25 "
+"cm.\n"
 "\"សូមបញ្ចូលតួរលេខ៖ / Please enter the correct value:"
 
 #: bot.py:436 bot.py:715
@@ -126,20 +123,16 @@ msgstr ""
 
 #: bot.py:458
 msgid "⚠️ Please enter a valid number (water level in cm)"
-msgstr ""
-"⚠️ សូមបញ្ចូលតួរលេខដែលត្រឹមត្រូវ (កម្រិតទឹកគិតជាសង់ទីម៉ែត្រ) / Please enter a valid number (water level in cm)"
+msgstr "⚠️ សូមបញ្ចូលតួរលេខដែលត្រឹមត្រូវ (កម្រិតទឹកគិតជាសង់ទីម៉ែត្រ) / Please enter a valid number (water level in cm)"
 
 #: bot.py:473
 msgid "Please, send your counter number after irrigation (m³):"
 msgstr ""
-"សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកបន្ទាប់ពីស្រោចស្រពរួច (m³): / Please, send your counter number after "
-"irrigation (m³):"
+"សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកបន្ទាប់ពីស្រោចស្រពរួច (m³): / Please, send your counter number after irrigation (m³):"
 
 #: bot.py:478
 msgid "Please, send your counter number BEFORE irrigation (m³)"
-msgstr ""
-"សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកមុនពេលស្រោចស្រព (m³): / Please, send your counter number BEFORE "
-"irrigation (m³)"
+msgstr "សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកមុនពេលស្រោចស្រព (m³): / Please, send your counter number BEFORE irrigation (m³)"
 
 #: bot.py:483
 msgid "Wrong fieldtype"
@@ -160,9 +153,7 @@ msgstr "បញ្ចូលតួរលេខការប្រើប្រាស
 
 #: bot.py:541
 msgid "Now send counter value AFTER irrigation (m³)"
-msgstr ""
-"សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកបន្ទាប់ពីស្រោចស្រពរួច (m³): / Now send counter value AFTER irrigation "
-"(m³)"
+msgstr "សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកបន្ទាប់ពីស្រោចស្រពរួច (m³): / Now send counter value AFTER irrigation (m³)"
 
 #: bot.py:544 bot.py:598 bot.py:661
 msgid "⚠️ Type correct number (like 125.5)"
@@ -170,7 +161,7 @@ msgstr "⚠️ សូមបញ្ចូលតួរលេខកុងទ័រ�
 
 #: bot.py:562
 msgid "⚠️ Error: start value is greater than end value!"
-msgstr "⚠️ Error: start value is greater than end value!"
+msgstr "⚠️ មិនត្រឹមត្រូវ៖ តួរលេខចាប់ផ្ដើមនៃកុងទ័រទឹកធំជាងតួលេខចុងក្រោយ! / Error: start value is greater than end value!"
 
 #: bot.py:584 bot.py:645 bot.py:692
 #, python-brace-format
@@ -192,8 +183,8 @@ msgid ""
 "⚠️ Error: The initial value of the counter cannot be greater than the final value!\n"
 "Please enter correct data."
 msgstr ""
-"⚠️ មិនបានសម្រេច៖ តួរលេខកុងទ័រទឹកចាប់ផ្ដើមមិនអាចធំជាងតួរលេខកុងទ័រទឹកចុងក្រោយនោះទេ! / Error: The initial value of "
-"the counter cannot be greater than the final value!\n"
+"⚠️ មិនបានសម្រេច៖ តួរលេខកុងទ័រទឹកចាប់ផ្ដើមមិនអាចធំជាងតួរលេខកុងទ័រទឹកចុងក្រោយនោះទេ! / Error: The initial value of the counter cannot "
+"be greater than the final value!\n"
 "សូមបញ្ចូលតួរលេខកុងទ័រទឹកដែលត្រឹមត្រូវ / Please enter correct data."
 
 #: bot.py:704
