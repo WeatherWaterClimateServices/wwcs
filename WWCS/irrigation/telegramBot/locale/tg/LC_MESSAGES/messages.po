@@ -193,11 +193,11 @@ msgstr ""
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {equivalent_mm:.2f} mm"
+"Equivalent to: {actual_mm:.2f} mm"
 msgstr ""
 "✅ Натиҷаҳо сабт шуданд!\n"
 "Истифода шуд: {used_m3:.2f} м³\n"
-"Баробар аст ба: {equivalent_mm:.2f} мм"
+"Баробар аст ба: {actual_mm:.2f} мм"
 
 #: bot.py:704
 msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
