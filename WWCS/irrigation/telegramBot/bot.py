@@ -258,7 +258,7 @@ async def check_irrigation(chat_id):
 
             elif row['type'] == "traditional":
                 text = _(
-                    "Hello, {row['firstName']}!\n"
+                    "Hello, {first_name}!\n"
                     "If your irrigation complete please push Save data button and enter you counter numbers Before and After irrigation\n"
                     "and save your data"
                 )
