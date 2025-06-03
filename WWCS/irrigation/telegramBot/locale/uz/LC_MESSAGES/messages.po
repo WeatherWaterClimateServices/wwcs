@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-03 09:16+0500\n"
-"PO-Revision-Date: 2025-06-03 10:37+0500\n"
+"POT-Creation-Date: 2025-06-03 10:00+0500\n"
+"PO-Revision-Date: 2025-06-03 14:21+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: uz\n"
@@ -66,8 +66,8 @@ msgid ""
 msgstr ""
 "Salom, {first_name}!\n"
 "Agar sug'orish tugallangan bo'lsa, \"Ma'lumotlarni saqlash\" tugmasini "
-"bosing va sug'orishdan oldin va keyin hisoblagich raqamlarini kiriting va "
-"ma'lumotlaringizni saqlang"
+"bosing va sug'orishdan oldin va keyin hisoblagich raqamlarini kiriting \n"
+"va ma'lumotlaringizni saqlang"
 
 #: bot.py:268
 msgid "ERROR!"
@@ -105,7 +105,7 @@ msgid ""
 "Please enter the correct value:"
 msgstr ""
 "⚠️ Suv darajasi noto'g'ri! Qabul qilinadigan qiymatlar 1 dan 25 sm.\n"
-"Iltimos, to'g'ri qiymatni kiriting:"
+"\"Iltimos, to'g'ri qiymatni kiriting:"
 
 #: bot.py:436 bot.py:715
 msgid "✅ Irrigation completed! Enough water."
@@ -163,7 +163,7 @@ msgstr "⚠️ To'g'ri raqamni kiriting (masalan, 125,5)"
 msgid "⚠️ Error: start value is greater than end value!"
 msgstr "⚠️ Xato: boshlang'ich qiymati yakuniy qiymatdan kattaroq!"
 
-#: bot.py:584 bot.py:645
+#: bot.py:584 bot.py:645 bot.py:692
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
@@ -187,17 +187,6 @@ msgstr ""
 "⚠️ Xato: Hisoblagichning dastlabki qiymati yakuniy qiymatdan katta boʻlishi "
 "mumkin emas!\n"
 "Iltimos, toʻgʻri maʼlumotlarni kiriting."
-
-#: bot.py:692
-#, python-brace-format
-msgid ""
-"✅ Data saved!\n"
-"Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {actual_mm:.2f} mm"
-msgstr ""
-"✅  Maʼlumotlar saqlandi!\n"
-"Ishlatilgan suv: {used_m3:.2f} m³\n"
-"Ekvivalent: {actual_mm:.2f} mm"
 
 #: bot.py:704
 msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
