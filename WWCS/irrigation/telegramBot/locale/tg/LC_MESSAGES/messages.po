@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-01 14:55+0200\n"
-"PO-Revision-Date: 2025-05-18 13:44+0500\n"
+"POT-Creation-Date: 2025-06-03 09:16+0500\n"
+"PO-Revision-Date: 2025-06-03 09:58+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: tg\n"
@@ -34,8 +34,7 @@ msgstr "Сабти маълумот"
 msgid ""
 "🔄 Please check the current water level in the channel and send its value"
 msgstr ""
-"🔄 Лутфан сатҳи ҳозираи обро дар обченкунак санҷед ва арзиши онро равон\n"
-"кунед"
+"🔄 Лутфан сатҳи ҳозираи обро дар обченкунак санҷед ва арзиши онро равон кунед"
 
 #: bot.py:233
 msgid ""
@@ -53,21 +52,25 @@ msgid ""
 "💧 Water required: {water:.2f} m³"
 msgstr ""
 "🌤 Салом, {first_name}!\n"
-"Имрӯз Шумо бояд заминро дар ҳаҷми 💧{water:.2f} m³ обёрӣ кунед.\n"
-"Барои муаян кардани давомнокии вақти обмонӣ сатҳи обро сари \n"
-"вақт дар ништак ба ман муаян кунед"
+"Имрӯз Шумо бояд заминро обёрӣ кунед. \n"
+"💧Ҳаҷми зарурии об: {water:.2f} м³"
 
 #: bot.py:261
+#, python-brace-format
 msgid ""
-"Hello, {row['firstName']}!\n"
+"Hello, {first_name}!\n"
 "If your irrigation complete please push Save data button and enter you "
 "counter numbers Before and After irrigation\n"
 "and save your data"
 msgstr ""
+"Салом, {first_name}!\n"
+"Агар обёрии шумо ба итмом расад, лутфан тугмаи Сабти маълумотро пахш кунед "
+"ва рақамҳои ҳисобкуниро пеш аз обёрӣ ва пас аз обёрӣ ворид кунед ва "
+"маълумоти худро сабт кунед"
 
 #: bot.py:268
 msgid "ERROR!"
-msgstr ""
+msgstr "Хато!"
 
 #: bot.py:354
 msgid "Enter the current water level in the channel (in cm):"
@@ -75,7 +78,7 @@ msgstr "Лутфан, ҳозир сатҳи обро аз руи обченку�
 
 #: bot.py:358
 msgid "Please, send the counter value before irrigation (m³):"
-msgstr ""
+msgstr "Лутфан, арзиши ҳисобкунакро пеш аз обёрӣ фиристед (м³):"
 
 #: bot.py:370 bot.py:403 bot.py:456 bot.py:485 bot.py:520 bot.py:556 bot.py:595
 #: bot.py:657 bot.py:702
@@ -88,11 +91,13 @@ msgid ""
 "Irrigate untill you counter is: {target_counter:.2f} m³\n"
 "Water need: {m3_needed:.2f} m³"
 msgstr ""
+"Обёрӣ кунед, то он даме, ки ҳисобкунаки шумо баробар шавад ба: "
+"{target_counter:.2f} м³\n"
+"Ҳаҷми зарурии об : {m3_needed:.2f} м³"
 
 #: bot.py:405
-#, fuzzy
 msgid "⚠️ Please, type number (125.5)"
-msgstr "⚠️ Лутфан рақами дурустро ворид кунед (масалан, 150 ё 75,5)"
+msgstr "⚠️ Лутфан рақам нависед (125.5)"
 
 #: bot.py:418
 msgid ""
@@ -123,15 +128,15 @@ msgstr "⚠️ Лутфан рақами дурустро ворид кунед 
 
 #: bot.py:473
 msgid "Please, send your counter number after irrigation (m³):"
-msgstr ""
+msgstr "Лутфан, рақами ҳисобкунаки худро пас аз обёрӣ фиристед (м³):"
 
 #: bot.py:478
 msgid "Please, send your counter number BEFORE irrigation (m³)"
-msgstr ""
+msgstr "Лутфан, рақами ҳисобкунаки худро пеш аз обёрӣ фиристед (м³)"
 
 #: bot.py:483
 msgid "Wrong fieldtype"
-msgstr ""
+msgstr "Навъи майдони нодуруст"
 
 #: bot.py:512
 #, python-brace-format
@@ -144,34 +149,34 @@ msgstr "⚠️ Хато ҳангоми сабти маълумот"
 
 #: bot.py:525
 msgid "Enter actual water consumption (m³):"
-msgstr "Истифодаи воқеии обро ворид кунед (м³):"
+msgstr "Истеъмоли воқеии обро ворид кунед (м³):"
 
 #: bot.py:541
 msgid "Now send counter value AFTER irrigation (m³)"
-msgstr ""
+msgstr "Акнун арзиши ҳисобкунакро баъд аз обёрӣ фиристед (м³)"
 
 #: bot.py:544 bot.py:598 bot.py:661
 msgid "⚠️ Type correct number (like 125.5)"
-msgstr ""
+msgstr "⚠️ Рақами дурустро нависед (масъалан 125,5)"
 
 #: bot.py:562
 msgid "⚠️ Error: start value is greater than end value!"
-msgstr ""
+msgstr "⚠️ Хатогӣ: арзиши ибтидоӣ аз арзиши ниҳоӣ бузургтар аст!"
 
 #: bot.py:584 bot.py:645
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
 "Equivalent to: {actual_mm:.2f} mm"
 msgstr ""
 "✅ Натиҷаҳо сабт шуданд!\n"
-"Истифода щуд: {used_m3:.2f} м³\n"
-"Баробар аст ба: {equivalent_mm:.2f} мм"
+"Истифода шуд: {used_m3:.2f} м³\n"
+"Баробар аст ба: {actual_mm:.2f} мм"
 
 #: bot.py:615
 msgid "❌ Error: No start data found"
-msgstr ""
+msgstr "❌ Хатогӣ: Маълумоти  ёфт нашуд"
 
 #: bot.py:622
 msgid ""
@@ -179,6 +184,9 @@ msgid ""
 "value!\n"
 "Please enter correct data."
 msgstr ""
+"⚠️ Хатогӣ: Қимати ибтидоии ҳисобкунак наметавонад аз арзиши ниҳоӣ зиёд "
+"бошад!\n"
+"Лутфан маълумоти дурустро ворид кунед."
 
 #: bot.py:692
 #, python-brace-format
@@ -188,7 +196,7 @@ msgid ""
 "Equivalent to: {equivalent_mm:.2f} mm"
 msgstr ""
 "✅ Натиҷаҳо сабт шуданд!\n"
-"Истифода щуд: {used_m3:.2f} м³\n"
+"Истифода шуд: {used_m3:.2f} м³\n"
 "Баробар аст ба: {equivalent_mm:.2f} мм"
 
 #: bot.py:704
