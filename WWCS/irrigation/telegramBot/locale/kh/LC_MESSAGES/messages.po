@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-01 14:55+0200\n"
-"PO-Revision-Date: 2025-06-01 16:24+0200\n"
+"POT-Creation-Date: 2025-06-03 10:37+0200\n"
+"PO-Revision-Date: 2025-06-03 10:54+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: kh\n"
@@ -53,8 +53,9 @@ msgstr ""
 " ទឹកដែលត្រូវការ៖ {water:.2f} m³ / Water required: {water:.2f} m³"
 
 #: bot.py:261
+#, fuzzy, python-brace-format
 msgid ""
-"Hello, {row['firstName']}!\n"
+"Hello, {first_name}!\n"
 "If your irrigation complete please push Save data button and enter you counter numbers Before "
 "and After irrigation\n"
 "and save your data"
@@ -171,7 +172,7 @@ msgstr "⚠️ សូមបញ្ចូលតួរលេខកុងទ័រ�
 msgid "⚠️ Error: start value is greater than end value!"
 msgstr "⚠️ Error: start value is greater than end value!"
 
-#: bot.py:584 bot.py:645
+#: bot.py:584 bot.py:645 bot.py:692
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
@@ -195,17 +196,6 @@ msgstr ""
 "the counter cannot be greater than the final value!\n"
 "សូមបញ្ចូលតួរលេខកុងទ័រទឹកដែលត្រឹមត្រូវ / Please enter correct data."
 
-#: bot.py:692
-#, python-brace-format
-msgid ""
-"✅ Data saved!\n"
-"Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {equivalent_mm:.2f} mm"
-msgstr ""
-"✅ ទិន្នន័យត្រូវបានរក្សាទុក! / Data saved!\n"
-"ទឹកប្រើប្រាស់៖ {used_m3:.2f} m³ / Water used: {used_m3:.2f} m³\n"
-"ស្មើនឹង៖ {equivalent_mm:.2f} mm / Equivalent to: {equivalent_mm:.2f} mm"
-
 #: bot.py:704
 msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
 msgstr "⚠️ សូមបញ្ចូលតួរលេខដែលត្រឹមត្រូវ (ឧ. 150 ឬ 75.5) / Please enter a valid number (e.g. 150 or 75.5)"
@@ -217,3 +207,13 @@ msgstr "❌ ទិន្នន័យដែលបានបញ្ចូលមិ�
 #: bot.py:739
 msgid "⚠️ Input data error"
 msgstr "⚠️ កំហុសក្នុងការបញ្ចូលទិន្នន័យ / Input data error"
+
+#, python-brace-format
+#~ msgid ""
+#~ "✅ Data saved!\n"
+#~ "Water used: {used_m3:.2f} m³\n"
+#~ "Equivalent to: {equivalent_mm:.2f} mm"
+#~ msgstr ""
+#~ "✅ ទិន្នន័យត្រូវបានរក្សាទុក! / Data saved!\n"
+#~ "ទឹកប្រើប្រាស់៖ {used_m3:.2f} m³ / Water used: {used_m3:.2f} m³\n"
+#~ "ស្មើនឹង៖ {equivalent_mm:.2f} mm / Equivalent to: {equivalent_mm:.2f} mm"

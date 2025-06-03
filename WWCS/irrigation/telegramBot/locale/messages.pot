@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-01 14:55+0200\n"
+"POT-Creation-Date: 2025-06-03 10:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,6 +49,7 @@ msgid ""
 msgstr ""
 
 #: bot.py:261
+#, python-brace-format
 msgid ""
 "Hello, {first_name}!\n"
 "If your irrigation complete please push Save data button and enter you "
@@ -143,7 +144,7 @@ msgstr ""
 msgid "⚠️ Error: start value is greater than end value!"
 msgstr ""
 
-#: bot.py:584 bot.py:645
+#: bot.py:584 bot.py:645 bot.py:692
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
@@ -160,14 +161,6 @@ msgid ""
 "⚠️ Error: The initial value of the counter cannot be greater than the final "
 "value!\n"
 "Please enter correct data."
-msgstr ""
-
-#: bot.py:692
-#, python-brace-format
-msgid ""
-"✅ Data saved!\n"
-"Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {actual_mm:.2f} mm"
 msgstr ""
 
 #: bot.py:704
