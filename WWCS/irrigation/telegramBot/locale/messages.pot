@@ -167,7 +167,7 @@ msgstr ""
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {equivalent_mm:.2f} mm"
+"Equivalent to: {actual_mm:.2f} mm"
 msgstr ""
 
 #: bot.py:704
