@@ -691,7 +691,7 @@ async def handle_actual_data(message):
                     _(
                         "✅ Data saved!\n"
                         "Water used: {used_m3:.2f} m³\n"
-                        "Equivalent to: {equivalent_mm:.2f} mm"
+                        "Equivalent to: {actual_mm:.2f} mm"
                     ).format(
                         used_m3=actual_m3,
                         equivalent_mm=actual_mm
