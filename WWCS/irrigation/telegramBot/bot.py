@@ -581,7 +581,7 @@ async def handle_traditional_end(message):
 
                 await bot.send_message(
                     chat_id,
-                    _(f"✅ Data saved!\n"
+                    _("✅ Data saved!\n"
                       "Water used: {used_m3:.2f} m³\n"
                       "Equivalent to: {actual_mm:.2f} mm"
                       ).format(
@@ -642,7 +642,7 @@ async def handle_counter_end(message):
 
                 await bot.send_message(
                     chat_id,
-                    _(f"✅ Data saved!\n"
+                    _("✅ Data saved!\n"
                       "Water used: {used_m3:.2f} m³\n"
                       "Equivalent to: {actual_mm:.2f} mm"
                       ).format(
