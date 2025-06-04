@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-20 10:45+0200\n"
-"PO-Revision-Date: 2025-05-20 10:56+0200\n"
+"POT-Creation-Date: 2025-06-03 10:37+0200\n"
+"PO-Revision-Date: 2025-06-03 15:31+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: kh\n"
@@ -19,7 +19,7 @@ msgstr ""
 
 #: bot.py:154
 msgid "Send recommendation"
-msgstr "ផ្ញើអនុសាសន៍/ មតិយោបល់ / Send recommendation"
+msgstr "សូមផ្ដល់ការណែនាំ / Send recommendation"
 
 #: bot.py:155
 msgid "No water"
@@ -30,104 +30,181 @@ msgid "Save data"
 msgstr "រក្សាទុកទិន្នន័យ / Save data"
 
 #: bot.py:199
-msgid ""
-"🔄 Please check the current water level in the channel and send its value"
+msgid "🔄 Please check the current water level in the channel and send its value"
 msgstr ""
-"សូមពិនិត្យមើលកម្រិតទឹកបច្ចុប្បន្ននៅក្នុងឆានែល ហើយផ្ញើតម្លៃរបស់វា / Please check the "
-"current water level in the channel and send its value"
+"🔄 សូមពិនិត្យមើលតួរលេខនៅក្នុងកុងទ័រទឹកចំការពិសោធរបស់អ្នក / Please check the current water level in the channel and send its "
+"value"
 
 #: bot.py:233
-msgid ""
-"⏰ Watering time is over! Please click the 'Save data' button to save "
-"the results."
+msgid "⏰ Watering time is over! Please click the 'Save data' button to save the results."
 msgstr ""
-"ដល់ម៉ោងស្រោចទឹកហើយ! សូមចុចប៊ូតុង 'រក្សាទុកទិន្នន័យ' ដើម្បីរក្សាទុក 'លទ្ធផល' / Watering time "
-"is over - click 'Save data'"
+"⏰ បន្ទាប់ពីស្រោចទឹកហើយ! សូមចុចពាក្យ 'រក្សាទុកទិន្នន័យ' ដើម្បីរក្សាទុក 'លទ្ធផល' / Watering time is over! Please click the 'Save "
+"data' button to save the results."
 
-#: bot.py:254
+#: bot.py:247 bot.py:254
 #, python-brace-format
 msgid ""
 "🌤 Good morning, {first_name}!\n"
 "Your plot is ready for irrigation.\n"
 "💧 Water required: {water:.2f} m³"
 msgstr ""
-"អរុណសួស្តី {first_name}\n"
-"ដីរបស់អ្នករួចរាល់សម្រាប់ប្រព័ន្ធធារាសាស្រ្ត\n"
-"ទឹកដែលត្រូវការ៖ {water:.2f} m³ / ready for irrigation, amount of water "
-"required"
+"🌤 អរុណសួស្តី / Good morning, {first_name}!\n"
+"ចំការពិសោធរបស់អ្នកដល់ពេលស្រោចទឹកហើយ ។ / Your plot is ready for irrigation.\n"
+" ទឹកដែលត្រូវការ៖ {water:.2f} m³ / Water required: {water:.2f} m³"
 
-#: bot.py:341
+#: bot.py:261
+#, python-brace-format
+msgid ""
+"Hello, {first_name}!\n"
+"If your irrigation complete please push Save data button and enter you counter numbers Before and After "
+"irrigation\n"
+"and save your data"
+msgstr ""
+"សួស្ដ/Hello, {first_name}!\n"
+"ប្រសិនជាអ្នកបានស្រោចស្រពរួចរាល់ហើយ សូមចុចលើពាក្យរក្សាទុកទិន្នន័យនិងវាយ / If your irrigation complete please push Save data button "
+"and enter your \n"
+"លេខកុងទ័រទឹកមុនពេលស្រោចស្រព និងបន្ទាប់ពីស្រោចស្រពរួច / counter numbers Before and After irrigation\n"
+"និងចុចរក្សាទុកទិន្នន័យ / and save your data"
+
+#: bot.py:268
+msgid "ERROR!"
+msgstr "មិនបានសម្រេច / ERROR!"
+
+#: bot.py:354
 msgid "Enter the current water level in the channel (in cm):"
 msgstr ""
-"បញ្ចូលកម្រិតទឹកបច្ចុប្បន្ននៅក្នុងឆានែល (គិតជាសង់ទីម៉ែត្រ)៖ / Enter the current water "
-"level in the channel (in cm):"
+"សូមបញ្ចូលតួរលេខបច្ចុប្បន្ននៅក្នុងកុងទ័រទឹកចំការពិសោធរបស់អ្នក (សង់ទីម៉ែត្រ) / Enter the current water level in the channel (in cm):"
 
-#: bot.py:352 bot.py:408 bot.py:459 bot.py:508
+#: bot.py:358
+msgid "Please, send the counter value before irrigation (m³):"
+msgstr "សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកមុនពេលស្រោចស្រព (m³): / Please, send the counter value before irrigation (m³):"
+
+#: bot.py:370 bot.py:403 bot.py:456 bot.py:485 bot.py:520 bot.py:556 bot.py:595 bot.py:657 bot.py:702
 msgid "❌ Your data was not found in the system"
-msgstr ""
-"ទិន្នន័យរបស់អ្នកមិនត្រូវបានរកឃើញនៅក្នុងប្រព័ន្ធទេ / your data not found in the system"
+msgstr "❌ទិន្នន័យរបស់អ្នកមិនត្រូវបានរកឃើញនៅក្នុងប្រព័ន្ធទេ / Your data was not found in the system"
 
-#: bot.py:365
+#: bot.py:388
+#, python-brace-format
+msgid ""
+"Irrigate untill you counter is: {target_counter:.2f} m³\n"
+"Water need: {m3_needed:.2f} m³"
+msgstr ""
+"ស្រោចស្រពរហូតដល់កុងទ័រទឹកចំការពិសោធគ្រប់ចំនួនកំណត់៖ {target_counter:.2f} m³ / Irrigate until your counter is: "
+"{target_counter:.2f} m³\n"
+"ចំនួនទឹកដែលត្រូវការស្រោចស្រព៖ {m3_needed:.2f} m³ / Water need: {m3_needed:.2f} m³"
+
+#: bot.py:405
+msgid "⚠️ Please, type number (125.5)"
+msgstr "⚠️ សូមបញ្ចូលតួរលេខកុងទ័រទឹកដែលត្រឹមត្រូវ / Please, type number (125.5)"
+
+#: bot.py:418
 msgid ""
 "⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
 "Please enter the correct value:"
 msgstr ""
-"កម្រិតទឹកមិនត្រឹមត្រូវ! តម្លៃដែលអាចទទួលយកបានពី ១ ទៅ ២៥សង់ទីម៉ែត្រ\n"
-"សូមបញ្ចូលតម្លៃត្រឹមត្រូវ៖ / must be 1-25cm; enter correct value:"
+"⚠️ តួរលេខមិនត្រឹមត្រូវ! តួរលេខដែលអាចបញ្ចូលបានគឺពី 1 ទៅ 25 សង់ទីម៉ែត្រ / Incorrect water level! Acceptable values from 1 to 25 "
+"cm.\n"
+"\"សូមបញ្ចូលតួរលេខ៖ / Please enter the correct value:"
 
-#: bot.py:383 bot.py:521
+#: bot.py:436 bot.py:715
 msgid "✅ Irrigation completed! Enough water."
-msgstr "ស្រោចស្រពរួចរាល់ហើយ! ទឹកគ្រប់គ្រាន់ /  Irrigation completed! Enough water."
+msgstr "✅ ស្រោចស្រពរួចរាល់ហើយ! ទឹកគ្រប់គ្រាន់ / Irrigation completed! Enough water."
 
-#: bot.py:394 bot.py:532
+#: bot.py:442 bot.py:721
 #, python-brace-format
 msgid ""
 "💦 Current level: {water_level} cm\n"
 "⏱ Time left: {hours}h {minutes}m\n"
 "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
 msgstr ""
-"កម្រិតបច្ចុប្បន្ន៖ {water_level} សង់ទីម៉ែត្រ / current water level\n"
-"ពេលវេលានៅសល់៖ {hours}h {minutes}m / time left to irrigate\n"
-"បានប្រើ៖ {used_m3:.2f} m³ នៃ {total_m3:.2f} m³ / water used of total"
+"💦 តួរលេខកុងទ័របច្ចុប្បន្ន៖ {water_level} សង់ទីម៉ែត្រ / Current level: {water_level} cm\n"
+"⏱ ពេលវេលានៅសល់៖ {hours}h {minutes}m / Time left: {hours}h {minutes}m\n"
+"📊 បានប្រើ៖ {used_m3:.2f} m³ នៃ {total_m3:.2f} m³ / Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
 
-#: bot.py:410
+#: bot.py:458
 msgid "⚠️ Please enter a valid number (water level in cm)"
-msgstr ""
-"សូមបញ្ចូលលេខត្រឹមត្រូវ (កម្រិតទឹកគិតជាសង់ទីម៉ែត្រ) / please enter valid number in cm"
+msgstr "⚠️ សូមបញ្ចូលតួរលេខដែលត្រឹមត្រូវ (កម្រិតទឹកគិតជាសង់ទីម៉ែត្រ) / Please enter a valid number (water level in cm)"
 
-#: bot.py:451
+#: bot.py:473
+msgid "Please, send your counter number after irrigation (m³):"
+msgstr ""
+"សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកបន្ទាប់ពីស្រោចស្រពរួច (m³): / Please, send your counter number after irrigation (m³):"
+
+#: bot.py:478
+msgid "Please, send your counter number BEFORE irrigation (m³)"
+msgstr "សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកមុនពេលស្រោចស្រព (m³): / Please, send your counter number BEFORE irrigation (m³)"
+
+#: bot.py:483
+msgid "Wrong fieldtype"
+msgstr "តួរលេខបានបញ្ចូលមិនត្រឹមត្រូវ / Wrong fieldtype"
+
+#: bot.py:512
 #, python-brace-format
 msgid "✅ Data saved! Used: {used_m3:.2f} m³"
-msgstr "ទិន្នន័យត្រូវបានរក្សាទុក! បានប្រើ៖ {used_m3:.2f} m³  / data saved!"
+msgstr "✅ ទិន្នន័យត្រូវបានរក្សាទុក! បានប្រើ៖ {used_m3:.2f} m³ / Data saved! Used: {used_m3:.2f} m³"
 
-#: bot.py:462
+#: bot.py:523
 msgid "⚠️ Error saving data"
-msgstr "កំហុសក្នុងការរក្សាទុកទិន្នន័យ / error saving data"
+msgstr "⚠️ ការរក្សាទុកទិន្នន័យមិនបានសម្រេច / Error saving data"
 
-#: bot.py:464
+#: bot.py:525
 msgid "Enter actual water consumption (m³):"
-msgstr ""
-"បញ្ចូលការប្រើប្រាស់ទឹកជាក់ស្តែង (m³)៖ / Enter actual water consumption (m³):"
+msgstr "បញ្ចូលតួរលេខការប្រើប្រាស់ទឹកជាក់ស្តែងក្នុងកុងទ័រចំការពិសោធ (m³)៖ / Enter actual water consumption (m³):"
 
-#: bot.py:498
+#: bot.py:541
+msgid "Now send counter value AFTER irrigation (m³)"
+msgstr "សូមបញ្ចូលតួរលេខកុងទ័រទឹកចំការពិសោធរបស់អ្នកបន្ទាប់ពីស្រោចស្រពរួច (m³): / Now send counter value AFTER irrigation (m³)"
+
+#: bot.py:544 bot.py:598 bot.py:661
+msgid "⚠️ Type correct number (like 125.5)"
+msgstr "⚠️ សូមបញ្ចូលតួរលេខកុងទ័រទឹកដែលត្រឹមត្រូវ / Type correct number (like 125.5)"
+
+#: bot.py:562
+msgid "⚠️ Error: start value is greater than end value!"
+msgstr "⚠️ មិនត្រឹមត្រូវ៖ តួរលេខចាប់ផ្ដើមនៃកុងទ័រទឹកធំជាងតួលេខចុងក្រោយ! / Error: start value is greater than end value!"
+
+#: bot.py:584 bot.py:645 bot.py:692
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {equivalent_mm:.2f} mm"
+"Equivalent to: {actual_mm:.2f} mm"
 msgstr ""
-"ទិន្នន័យត្រូវបានរក្សាទុក! / data saved\n"
-"ទឹកប្រើប្រាស់៖ {used_m3:.2f} m³ / water used\n"
-"ស្មើនឹង៖ {equivalent_mm:.2f} mm / mm-equivalent"
+"✅ ទិន្នន័យត្រូវបានរក្សាទុក! / Data saved!\n"
+"ទឹកប្រើប្រាស់៖ {used_m3:.2f} m³ / Water used: {used_m3:.2f} m³\n"
+"ស្មើនឹង៖ {actual_mm:.2f} mm / Equivalent to: {actual_mm:.2f} mm"
 
-#: bot.py:510
+#: bot.py:615
+msgid "❌ Error: No start data found"
+msgstr "❌ មិនបានសម្រេច៖ រកទិន្នន័យចាប់ផ្ដើមមិនឃើញ / Error: No start data found"
+
+#: bot.py:622
+msgid ""
+"⚠️ Error: The initial value of the counter cannot be greater than the final value!\n"
+"Please enter correct data."
+msgstr ""
+"⚠️ មិនបានសម្រេច៖ តួរលេខកុងទ័រទឹកចាប់ផ្ដើមមិនអាចធំជាងតួរលេខកុងទ័រទឹកចុងក្រោយនោះទេ! / Error: The initial value of the counter cannot "
+"be greater than the final value!\n"
+"សូមបញ្ចូលតួរលេខកុងទ័រទឹកដែលត្រឹមត្រូវ / Please enter correct data."
+
+#: bot.py:704
 msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
-msgstr "សូមបញ្ចូលលេខដែលត្រឹមត្រូវ (ឧ. 150 ឬ 75.5) / enter valid number"
+msgstr "⚠️ សូមបញ្ចូលតួរលេខដែលត្រឹមត្រូវ (ឧ. 150 ឬ 75.5) / Please enter a valid number (e.g. 150 or 75.5)"
 
-#: bot.py:546
+#: bot.py:735
 msgid "❌ Unsupported field type"
-msgstr "ទិន្នន័យដែលបានបញ្ចូលមិនត្រឹមត្រូវ / unsupported field type"
+msgstr "❌ ទិន្នន័យដែលបានបញ្ចូលមិនត្រឹមត្រូវ / Unsupported field type"
 
-#: bot.py:550
+#: bot.py:739
 msgid "⚠️ Input data error"
-msgstr "កំហុសក្នុងការបញ្ចូលទិន្នន័យ / input data error"
+msgstr "⚠️ កំហុសក្នុងការបញ្ចូលទិន្នន័យ / Input data error"
+
+#, python-brace-format
+#~ msgid ""
+#~ "✅ Data saved!\n"
+#~ "Water used: {used_m3:.2f} m³\n"
+#~ "Equivalent to: {equivalent_mm:.2f} mm"
+#~ msgstr ""
+#~ "✅ ទិន្នន័យត្រូវបានរក្សាទុក! / Data saved!\n"
+#~ "ទឹកប្រើប្រាស់៖ {used_m3:.2f} m³ / Water used: {used_m3:.2f} m³\n"
+#~ "ស្មើនឹង៖ {equivalent_mm:.2f} mm / Equivalent to: {equivalent_mm:.2f} mm"

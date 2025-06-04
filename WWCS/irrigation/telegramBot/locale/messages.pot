@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-20 10:45+0200\n"
+"POT-Creation-Date: 2025-06-03 10:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,7 +40,7 @@ msgid ""
 "results."
 msgstr ""
 
-#: bot.py:254
+#: bot.py:247 bot.py:254
 #, python-brace-format
 msgid ""
 "🌤 Good morning, {first_name}!\n"
@@ -48,25 +48,54 @@ msgid ""
 "💧 Water required: {water:.2f} m³"
 msgstr ""
 
-#: bot.py:341
+#: bot.py:261
+#, python-brace-format
+msgid ""
+"Hello, {first_name}!\n"
+"If your irrigation complete please push Save data button and enter you "
+"counter numbers Before and After irrigation\n"
+"and save your data"
+msgstr ""
+
+#: bot.py:268
+msgid "ERROR!"
+msgstr ""
+
+#: bot.py:354
 msgid "Enter the current water level in the channel (in cm):"
 msgstr ""
 
-#: bot.py:352 bot.py:408 bot.py:459 bot.py:508
+#: bot.py:358
+msgid "Please, send the counter value before irrigation (m³):"
+msgstr ""
+
+#: bot.py:370 bot.py:403 bot.py:456 bot.py:485 bot.py:520 bot.py:556 bot.py:595
+#: bot.py:657 bot.py:702
 msgid "❌ Your data was not found in the system"
 msgstr ""
 
-#: bot.py:365
+#: bot.py:388
+#, python-brace-format
+msgid ""
+"Irrigate untill you counter is: {target_counter:.2f} m³\n"
+"Water need: {m3_needed:.2f} m³"
+msgstr ""
+
+#: bot.py:405
+msgid "⚠️ Please, type number (125.5)"
+msgstr ""
+
+#: bot.py:418
 msgid ""
 "⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
 "Please enter the correct value:"
 msgstr ""
 
-#: bot.py:383 bot.py:521
+#: bot.py:436 bot.py:715
 msgid "✅ Irrigation completed! Enough water."
 msgstr ""
 
-#: bot.py:394 bot.py:532
+#: bot.py:442 bot.py:721
 #, python-brace-format
 msgid ""
 "💦 Current level: {water_level} cm\n"
@@ -74,39 +103,74 @@ msgid ""
 "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
 msgstr ""
 
-#: bot.py:410
+#: bot.py:458
 msgid "⚠️ Please enter a valid number (water level in cm)"
 msgstr ""
 
-#: bot.py:451
+#: bot.py:473
+msgid "Please, send your counter number after irrigation (m³):"
+msgstr ""
+
+#: bot.py:478
+msgid "Please, send your counter number BEFORE irrigation (m³)"
+msgstr ""
+
+#: bot.py:483
+msgid "Wrong fieldtype"
+msgstr ""
+
+#: bot.py:512
 #, python-brace-format
 msgid "✅ Data saved! Used: {used_m3:.2f} m³"
 msgstr ""
 
-#: bot.py:462
+#: bot.py:523
 msgid "⚠️ Error saving data"
 msgstr ""
 
-#: bot.py:464
+#: bot.py:525
 msgid "Enter actual water consumption (m³):"
 msgstr ""
 
-#: bot.py:498
+#: bot.py:541
+msgid "Now send counter value AFTER irrigation (m³)"
+msgstr ""
+
+#: bot.py:544 bot.py:598 bot.py:661
+msgid "⚠️ Type correct number (like 125.5)"
+msgstr ""
+
+#: bot.py:562
+msgid "⚠️ Error: start value is greater than end value!"
+msgstr ""
+
+#: bot.py:584 bot.py:645 bot.py:692
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {equivalent_mm:.2f} mm"
+"Equivalent to: {actual_mm:.2f} mm"
 msgstr ""
 
-#: bot.py:510
+#: bot.py:615
+msgid "❌ Error: No start data found"
+msgstr ""
+
+#: bot.py:622
+msgid ""
+"⚠️ Error: The initial value of the counter cannot be greater than the final "
+"value!\n"
+"Please enter correct data."
+msgstr ""
+
+#: bot.py:704
 msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
 msgstr ""
 
-#: bot.py:546
+#: bot.py:735
 msgid "❌ Unsupported field type"
 msgstr ""
 
-#: bot.py:550
+#: bot.py:739
 msgid "⚠️ Input data error"
 msgstr ""

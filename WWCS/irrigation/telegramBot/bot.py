@@ -241,20 +241,33 @@ async def check_irrigation(chat_id):
         if str(chat_id) == str(row['telegramID']) and row['irrigation'] == 1:
             markup = create_reply_keyboard()
             m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
-            # await bot.send_message(
-            #     chat_id,
-            #     f"🌤 Good morning, {row['firstName']}!\n"
-            #     f"Your plot is ready for irrigation.\n"
-            #     f"💧 Water required: {round(m3_needed, 2)} m³",
-            #
-            #     reply_markup=markup
-            # )
 
-            text = _(
-                "🌤 Good morning, {first_name}!\n"
-                "Your plot is ready for irrigation.\n"
-                "💧 Water required: {water:.2f} m³"
-            )
+            if row['type'] == "channel":
+                text = _(
+                    "🌤 Good morning, {first_name}!\n"
+                    "Your plot is ready for irrigation.\n"
+                    "💧 Water required: {water:.2f} m³"
+                )
+
+            elif row['type'] == "counter":
+                text = _(
+                    "🌤 Good morning, {first_name}!\n"
+                    "Your plot is ready for irrigation.\n"
+                    "💧 Water required: {water:.2f} m³"
+                )
+
+            elif row['type'] == "traditional":
+                text = _(
+                    "Hello, {first_name}!\n"
+                    "If your irrigation complete please push Save data button and enter you counter numbers Before and After irrigation\n"
+                    "and save your data"
+                )
+
+            else:
+                text = _(
+                    "ERROR!"
+                )
+
             await bot.send_message(
                 chat_id,
                 text.format(first_name=row['firstName'], water=round(m3_needed, 2)),
@@ -339,6 +352,11 @@ async def handle_recommendation(message):
             if row['type'] == "channel":
                 user_states[chat_id] = "waiting_for_water_level"
                 await bot.send_message (chat_id, _("Enter the current water level in the channel (in cm):"))
+
+            elif row['type'] == "counter":
+                user_states[chat_id] = "waiting_for_counter_start"
+                await bot.send_message(chat_id, _("Please, send the counter value before irrigation (m³):"))
+
             else:
                 await send_recommendation(
                     chat_id,
@@ -350,6 +368,41 @@ async def handle_recommendation(message):
                 )
             return
     await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+
+
+
+@bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_counter_start')
+async def handle_counter_start(message):
+    chat_id = message.chat.id
+    try:
+        start_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+
+        rows = await get_irrigation_data()
+        for row in rows:
+            if str(chat_id) == str(row['telegramID']):
+                m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area'])) * float(row['wa']) / float(row['ie'])
+                target_counter = start_counter + m3_needed
+
+                await bot.send_message(
+                    chat_id,
+                    _("Irrigate untill you counter is: {target_counter:.2f} m³\n"
+                      "Water need: {m3_needed:.2f} m³"
+                      ).format(target_counter=target_counter,
+                               m3_needed=m3_needed)
+                )
+
+                # Сохраняем начальные показания для последующего расчета
+                user_irrigation_data[chat_id] = {
+                    'start_counter': start_counter,
+                    'target_counter': target_counter,
+                    'is_active': True,
+                    'last_update': datetime.now()
+                }
+                user_states[chat_id] = None
+                return
+        await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+    except ValueError:
+        await bot.send_message(chat_id, _("⚠️ Please, type number (125.5)"))
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_water_level')
@@ -384,11 +437,6 @@ async def handle_water_level(message):
                 else:
                     hours = int(calculation['remaining_time'])
                     minutes = int((calculation['remaining_time'] - hours) * 60)
-                    # msg = (
-                    #     f"💦 Current level: {water_level} cm\n"
-                    #     f"⏱ Time left: {hours}h {minutes}m\n"
-                    #     f"📊 Used: {round(calculation['used_m3'], 2)} m³ of {round(calculation['used_m3'] + calculation['remaining_m3'], 2)} m³"
-                    # )
 
                     msg = _(
                         "💦 Current level: {water_level} cm\n"
@@ -418,6 +466,24 @@ async def handle_send_data(message):
     # Гарантированно останавливаем все уведомления
     await notification_manager.remove_all_jobs(chat_id)
 
+    rows = await get_irrigation_data()
+    for row in rows:
+        if str(chat_id) == str(row['telegramID']):
+            if row['type'] == "counter":
+                await bot.send_message(chat_id, _("Please, send your counter number after irrigation (m³):"))
+                user_states[chat_id] = "waiting_for_counter_end"
+                return
+
+            elif row['type'] == "traditional":
+                await bot.send_message(chat_id, _("Please, send your counter number BEFORE irrigation (m³)"))
+                user_states[chat_id] = "waiting_for_traditional_start"
+                return
+
+            else:
+                await bot.send_message(chat_id, _("Wrong fieldtype"))
+                return
+    await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+
     if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
         try:
             data = user_irrigation_data[chat_id]
@@ -440,11 +506,6 @@ async def handle_send_data(message):
                         (actual_mm, row['siteID'])
                     )
 
-                    # await bot.send_message(
-                    #     chat_id,
-                    #     f"✅ Data saved! Used: {round(data['total_used_m3'], 2)} m³"
-                    # )
-
                     await bot.send_message(
                         chat_id,
                         _(
@@ -463,6 +524,146 @@ async def handle_send_data(message):
     else:
         await bot.send_message(chat_id, _("Enter actual water consumption (m³):"))
         user_states[chat_id] = "waiting_for_actual_data"
+
+
+
+@bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_traditional_start')
+async def handle_traditional_start(message):
+    chat_id = message.chat.id
+    try:
+        start_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+
+        user_irrigation_data[chat_id] = {
+            'start_counter': start_counter,
+            'type': "traditional"
+        }
+
+        await bot.send_message(chat_id, _("Now send counter value AFTER irrigation (m³)"))
+        user_states[chat_id] = "waiting_for_traditional_end"
+    except ValueError:
+        await bot.send_message(chat_id, _("⚠️ Type correct number (like 125.5)"))
+
+
+
+
+@bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_traditional_end')
+async def handle_traditional_end(message):
+    chat_id = message.chat.id
+    try:
+        end_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+
+        if chat_id not in user_irrigation_data:
+            await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+            return
+
+        start_counter = user_irrigation_data[chat_id]['start_counter']
+
+        if start_counter > end_counter:
+            await bot.send_message(chat_id, _("⚠️ Error: start value is greater than end value!"))
+            return
+
+        used_m3 = end_counter - start_counter
+
+        # Сохраняем в БД (аналогично counter)
+        rows = await get_irrigation_data()
+        for row in rows:
+            if str(chat_id) == str(row['telegramID']):
+                area = float(row['area'])
+                actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
+
+                await execute_query(
+                    """UPDATE WWCServices.Irrigation 
+                    SET irrigationApp = %s 
+                    WHERE siteID = %s 
+                    AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
+                    (actual_mm, row['siteID'])
+                )
+
+                await bot.send_message(
+                    chat_id,
+                    _(f"✅ Data saved!\n"
+                      "Water used: {used_m3:.2f} m³\n"
+                      "Equivalent to: {actual_mm:.2f} mm"
+                      ).format(
+                        used_m3=used_m3,
+                        actual_mm=actual_mm
+                    )
+                )
+                break
+
+        else:
+            await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+
+    except ValueError:
+        await bot.send_message(chat_id, _("⚠️ Type correct number (like 125.5)"))
+
+    finally:
+        # Очищаем состояние
+        user_states[chat_id] = None
+        if chat_id in user_irrigation_data:
+            del user_irrigation_data[chat_id]
+
+
+
+@bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_counter_end')
+async def handle_counter_end(message):
+    chat_id = message.chat.id
+    try:
+        end_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+
+        if chat_id not in user_irrigation_data or 'start_counter' not in user_irrigation_data[chat_id]:
+            await bot.send_message(chat_id, _("❌ Error: No start data found"))
+            return
+
+        start_counter = user_irrigation_data[chat_id]['start_counter']
+        if start_counter > end_counter:
+            await bot.send_message(
+                chat_id,
+                _("⚠️ Error: The initial value of the counter cannot be greater than the final value!\n"
+                  "Please enter correct data.")
+            )
+            return
+
+        used_m3 = round(end_counter - start_counter, 2)
+
+        rows = await get_irrigation_data()  # ✅ Важно: get_irrigation_data должна быть функцией!
+        for row in rows:
+            if str(chat_id) == str(row['telegramID']):
+                area = float(row['area'])
+                actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
+
+                await execute_query(
+                    """UPDATE WWCServices.Irrigation 
+                    SET irrigationApp = %s 
+                    WHERE siteID = %s 
+                    AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
+                    (actual_mm, row['siteID'])
+                )
+
+                await bot.send_message(
+                    chat_id,
+                    _(f"✅ Data saved!\n"
+                      "Water used: {used_m3:.2f} m³\n"
+                      "Equivalent to: {actual_mm:.2f} mm"
+                      ).format(
+                        used_m3=used_m3,
+                        equivalent_mm=actual_mm
+                    )
+                )
+                break
+        else:
+            await bot.send_message(
+                chat_id,
+                _("❌ Your data was not found in the system"))
+    except ValueError:
+        await bot.send_message(
+            chat_id,
+            _("⚠️ Type correct number (like 125.5)"))
+    finally:
+        user_states[chat_id] = None
+        if chat_id in user_irrigation_data:
+            del user_irrigation_data[chat_id]
+
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_actual_data')
@@ -485,19 +686,12 @@ async def handle_actual_data(message):
                     (actual_mm, row['siteID'])
                 )
 
-                # await bot.send_message(
-                #     chat_id,
-                #     f"✅ Data saved!\n"
-                #     f"Water used: {round(actual_m3, 2)} m³\n"
-                #     f"Equivalent to: {round(actual_mm, 2)} mm"
-                # )
-
                 await bot.send_message(
                     chat_id,
                     _(
                         "✅ Data saved!\n"
                         "Water used: {used_m3:.2f} m³\n"
-                        "Equivalent to: {equivalent_mm:.2f} mm"
+                        "Equivalent to: {actual_mm:.2f} mm"
                     ).format(
                         used_m3=actual_m3,
                         equivalent_mm=actual_mm
@@ -522,11 +716,6 @@ async def send_recommendation(chat_id, fieldtype, irrigation_need, area, ie, wa,
             else:
                 hours = int(calculation['remaining_time'])
                 minutes = int((calculation['remaining_time'] - hours) * 60)
-                # msg = (
-                #     f"💦 Current level: {water_level} cm\n"
-                #     f"⏱ Time left: {hours}h {minutes}m\n"
-                #     f"📊 Used: {round(calculation['used_m3'], 2)} m³ of {round(calculation['used_m3'] + calculation['remaining_m3'], 2)} m³"
-                # )
 
                 msg = _(
                     "💦 Current level: {water_level} cm\n"
