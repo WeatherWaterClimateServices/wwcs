@@ -40,4 +40,6 @@ WWCS/dashboard_dev/
 WWCS/dashboard/service/cronjob_tjhm_data.sh
 WWCS/dashboard/service/get_hydromet_data/
 
-
+# macOS files
+.DS_Store
+._.DS_Store # на всякий случай
