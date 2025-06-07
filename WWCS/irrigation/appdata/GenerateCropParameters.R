@@ -7,13 +7,21 @@ crop.parameters <- data.frame(Index = 1:300)
 ## cucumber for cambodia - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
 ## fresh market, summer variety, shortened to 60 days
 ## rooting depth: additionally here: https://soilandhealth.org/wp-content/uploads/01aglibrary/010137veg.roots/010137ch29.html
+
+## the full cycle after planting
 Ls <- round(c(ini=20, dev=30, mid=40, late=15) / 105 * 60)
 Kc <- c(ini=0.6, mid=1, end=.75)
 Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
          seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
          rep(Kc[["mid"]], Ls[["mid"]]),
          seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
-RDs <- c(seq(.1, 1, length=Ls[["ini"]]), rep(1, 60 - Ls[["ini"]]))
+RDs <- c(seq(0.1, 1, length=Ls[["ini"]]), rep(1, 60 - Ls[["ini"]]))
+
+## cut off initial days 10-15 which happen in a nursery (some tuning for RD -
+## these will remain short in the pots of the nursery)
+Kcs <- Kcs[Ls[["ini"]]:length(Kcs)]
+RDs <- c(seq(.3, 1, length=5), rep(1, length(Kcs) - 5))
+
 CucumberCambodia <-
   data.frame(Index=1:nrow(crop.parameters),
              CucumberCambodia_Kc=c(Kcs,
