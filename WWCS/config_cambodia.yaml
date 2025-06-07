@@ -17,7 +17,7 @@ setlon: 105
 
 # Define default station name                                                      
 
-dashboard_default_station: "CAMBO_TEST01"
+dashboard_default_station: "CAMBO01"
 
 # Define GADM country code (https://gadm.org/)                                     
 
@@ -43,15 +43,15 @@ gemos_formula: "Observations ~ IFS_T_mea + division(ELEV,100) + division(HSURF,1
 
 spatial_threshold: 0.5 # 0.5 = 50 % of grid points within an area that exceed the threshold
 warning_days: 5 # Window to calculate the warning
-warning_default_station: "CAMBO_TEST01"
+warning_default_station: "CAMBO01"
 
 # Irrigation parameters
 
-irrigation_default_station: "CAMBO_TEST01" # Default station for irrigation
+irrigation_default_station: "Mr_Phal_ET_Treatment" # Default station for irrigation
 
 # Planting parameters
 
-planting_default_station: "CAMBO_TEST01"
+planting_default_station: "CAMBO01"
 soil_fcst_days: 7 # Days to consider of forecasts for soil temperature
 proxy_formula: "Temperature ~ T2_lag3 +  T2_lag2 + TemperatureAir + RH"
 lag3: 15 # Days to consider for lag 3
@@ -60,7 +60,7 @@ lag1: 3 # Days to consider for lag 1
 
 # Harvest parameters
 
-harvest_default_station: "CAMBO_TEST01"
+harvest_default_station: "CAMBO01"
 past_rain_thrs: 1 # Threshold for past rain in mm
 future_rain_thrs: 1 # Threshold for future rain in mm
 past_rain_days: 5 # Threshold for past rain in mm
