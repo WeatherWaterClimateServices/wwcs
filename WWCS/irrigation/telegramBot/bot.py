@@ -463,7 +463,7 @@ async def handle_water_level(message):
 async def handle_send_data(message):
     chat_id = message.chat.id
 
-    # Гарантированно останавливаем все уведомления
+    # Останавливаем все уведомления
     await notification_manager.remove_all_jobs(chat_id)
 
     rows = await get_irrigation_data()
@@ -479,51 +479,46 @@ async def handle_send_data(message):
                 user_states[chat_id] = "waiting_for_traditional_start"
                 return
 
+            elif row['type'] == "channel":
+                # Для channel сразу рассчитываем и сохраняем данные
+                if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
+                    try:
+                        data = user_irrigation_data[chat_id]
+                        time_elapsed = (datetime.now() - data['last_update']).total_seconds()
+                        flow_rate = WATER_FLOW_RATES.get(data['current_level'], 0)
+                        additional_used = flow_rate * (time_elapsed / 60)
+                        data['total_used_m3'] += additional_used
+
+                        area = float(row['area'])
+                        actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
+
+                        await execute_query(
+                            """UPDATE WWCServices.Irrigation 
+                            SET irrigationApp = %s 
+                            WHERE siteID = %s 
+                            AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
+                            (actual_mm, row['siteID'])
+                        )
+
+                        await bot.send_message(
+                            chat_id,
+                            _("✅ Data saved! Used: {used_m3:.2f} m³").format(used_m3=data['total_used_m3'])
+                        )
+                        data['is_active'] = False
+                        return
+                    except Exception as e:
+                        print(f"Error while saving: {str(e)}")
+                        await bot.send_message(chat_id, _("⚠️ Error saving data"))
+                        return
+                else:
+                    await bot.send_message(chat_id, _("❌ No active irrigation session found"))
+                    return
+
             else:
                 await bot.send_message(chat_id, _("Wrong fieldtype"))
                 return
+
     await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
-
-    if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
-        try:
-            data = user_irrigation_data[chat_id]
-            time_elapsed = (datetime.now() - data['last_update']).total_seconds()
-            flow_rate = WATER_FLOW_RATES.get(data['current_level'], 0)
-            additional_used = flow_rate * (time_elapsed / 60)
-            data['total_used_m3'] += additional_used
-
-            rows = await get_irrigation_data()
-            for row in rows:
-                if str(chat_id) == str(row['telegramID']):
-                    area = float(row['area'])
-                    actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
-
-                    await execute_query(
-                        """UPDATE WWCServices.Irrigation 
-                        SET irrigationApp = %s 
-                        WHERE siteID = %s 
-                        AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
-                        (actual_mm, row['siteID'])
-                    )
-
-                    await bot.send_message(
-                        chat_id,
-                        _(
-                            "✅ Data saved! Used: {used_m3:.2f} m³"
-                        ).format(
-                            used_m3=data['total_used_m3']
-                        )
-                    )
-                    data['is_active'] = False
-                    return
-
-            await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
-        except Exception as e:
-            print(f"Error while saving: {str(e)}")
-            await bot.send_message(chat_id, _("⚠️ Error saving data"))
-    else:
-        await bot.send_message(chat_id, _("Enter actual water consumption (m³):"))
-        user_states[chat_id] = "waiting_for_actual_data"
 
 
 
