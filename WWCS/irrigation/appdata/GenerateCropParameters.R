@@ -4,6 +4,30 @@ library(xlsx)
 ## raw data.frame
 crop.parameters <- data.frame(Index = 1:300)
 
+## tomato for cambodia - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
+## chosen the shortest variety, and further shortened to 90 days. the Kcs seem to be the same for all
+
+## the full cycle after planting
+Ls <- round(c(ini = 30, dev = 40, mid = 40, late = 20) / 130 * 90)
+Kc <- c(ini = 0.6, mid = 1.15, end = .8)
+Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
+         seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
+         rep(Kc[["mid"]], Ls[["mid"]]),
+         seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
+
+## cut off initial days 45 which happen in a nursery (some tuning for RD -
+## these will remain short in the pots of the nursery)
+Kcs <- Kcs[46:length(Kcs)]
+RDs <- c(seq(.25, 1, length=10), rep(1, length(Kcs) - 10))
+
+TomatoCambodia <-
+  data.frame(Index = 1:nrow(crop.parameters),
+             TomatoCambodia_Kc=c(Kcs,
+                            rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             TomatoCambodia_RD=c(RDs,
+                            rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, TomatoCambodia, by = "Index")
+
 ## cucumber for cambodia - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
 ## fresh market, summer variety, shortened to 60 days
 ## rooting depth: additionally here: https://soilandhealth.org/wp-content/uploads/01aglibrary/010137veg.roots/010137ch29.html
