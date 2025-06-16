@@ -28,9 +28,13 @@ TomatoCambodia <-
                             rep(last(RDs), nrow(crop.parameters)-length(RDs))))
 crop.parameters <- full_join(crop.parameters, TomatoCambodia, by = "Index")
 
-## cucumber for cambodia - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
+##
+## cucumber for cambodia
+##
+## default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
 ## fresh market, summer variety, shortened to 60 days
-## rooting depth: additionally here: https://soilandhealth.org/wp-content/uploads/01aglibrary/010137veg.roots/010137ch29.html
+## rooting depth: additionally here:
+##   https://soilandhealth.org/wp-content/uploads/01aglibrary/010137veg.roots/010137ch29.html
 
 ## the full cycle after planting
 Ls <- round(c(ini=20, dev=30, mid=40, late=15) / 105 * 60)
@@ -41,18 +45,27 @@ Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
          seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
 RDs <- c(seq(0.1, 1, length=Ls[["ini"]]), rep(1, 60 - Ls[["ini"]]))
 
+CucumberCambodiaSeeded <-
+  data.frame(Index=1:nrow(crop.parameters),
+             CucumberCambodiaSeeded_Kc=c(Kcs,
+                                   rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             CucumberCambodiaSeeded_RD=c(RDs,
+                                   rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, CucumberCambodiaSeeded, by = "Index")
+
+## now the same cucumber, but with
 ## cut off initial days 10-15 which happen in a nursery (some tuning for RD -
 ## these will remain short in the pots of the nursery)
 Kcs <- Kcs[Ls[["ini"]]:length(Kcs)]
 RDs <- c(seq(.3, 1, length=5), rep(1, length(Kcs) - 5))
 
-CucumberCambodia <-
+CucumberCambodiaTranspl <-
   data.frame(Index=1:nrow(crop.parameters),
-             CucumberCambodia_Kc=c(Kcs,
+             CucumberCambodiaTranspl_Kc=c(Kcs,
                                    rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
-             CucumberCambodia_RD=c(RDs,
+             CucumberCambodiaTranspl_RD=c(RDs,
                                    rep(last(RDs), nrow(crop.parameters)-length(RDs))))
-crop.parameters <- full_join(crop.parameters, CucumberCambodia, by = "Index")
+crop.parameters <- full_join(crop.parameters, CucumberCambodiaTranspl, by = "Index")
                        
 
 ## winter wheat from ICARDA
