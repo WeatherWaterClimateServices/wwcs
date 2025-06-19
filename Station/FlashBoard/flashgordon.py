@@ -35,8 +35,8 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QLabel, QMessageBox,
 
 basedir = Path(os.path.dirname(__file__))
 srcdir = basedir / 'src'
-APIURL = 'https://wwcs.tj/post'
-#APIURL = 'http://127.0.0.1:5000'
+ServerURLDefault = 'https://wwcs.tj/post'
+#ServerURLDefault = 'http://127.0.0.1:5000'
 
 try:
     from ctypes import windll  # Only exists on Windows.
@@ -100,7 +100,7 @@ class Widget(QWidget):
         super().__init__()
 
         self.setObjectName("Widget")
-        self.resize(620, 570)
+        self.resize(620, 600)
         self.setFixedSize(self.size())
 
         # Create temporary directory
@@ -139,77 +139,109 @@ class Widget(QWidget):
 
         self.TitleMinor.setFont(self.titlefont)
 
+        top = 80
+        space = 30
+
         # Provider selection
-        self.TitleProvider = QLabel(self)
-        self.TitleProvider.setObjectName("TitleProvider")
-        self.TitleProvider.setGeometry(QRect(20, 80, 230, 30))
-        self.TitleProvider.setTextFormat(Qt.RichText)
-        self.TitleProvider.setScaledContents(False)
-        self.TitleProvider.setAlignment(Qt.AlignCenter)
-        self.Provider = QComboBox(self)
-        self.Provider.addItem("")
-        self.Provider.addItem("")
-        self.Provider.addItem("")
-        self.Provider.setObjectName("Provider")
-        self.Provider.setGeometry(QRect(10, 110, 230, 22))
+        label = self.TitleProvider = QLabel(self)
+        label.setObjectName("TitleProvider")
+        label.setGeometry(QRect(10, top, 230, 30))
+        top += space
+        label.setTextFormat(Qt.RichText)
+        label.setScaledContents(False)
+        label.setAlignment(Qt.AlignCenter)
+        input = self.Provider = QComboBox(self)
+        input.addItem("")
+        input.addItem("")
+        input.addItem("")
+        input.setObjectName("Provider")
+        input.setGeometry(QRect(10, top, 230, 22))
+        top += space
+
+        # Server URL
+        label = self.TitleServerURL = QLabel(self)
+        label.setObjectName("TitleServerURL")
+        label.setGeometry(QRect(10, top, 230, 30))
+        top += space
+        label.setAlignment(Qt.AlignCenter)
+        input = self.ServerURL = QTextEdit(self)
+        input.setObjectName("ServerURL")
+        input.setGeometry(QRect(10, top, 230, 30))
+        top += space
+        top += 8
+        input.setPlaceholderText("Enter Server URL")
+        input.setText(ServerURLDefault)
 
         # Board type selection
-        self.TitleBoardType = QLabel(self)
-        self.TitleBoardType.setObjectName("TitleBoardType")
-        self.TitleBoardType.setGeometry(QRect(20, 140, 230, 30))
-        self.TitleBoardType.setAlignment(Qt.AlignCenter)
-        self.Boardtype = QComboBox(self)
-        self.Boardtype.setObjectName("Boardtype")
-        self.Boardtype.setGeometry(QRect(10, 170, 230, 22))
+        label = self.TitleBoardType = QLabel(self)
+        label.setObjectName("TitleBoardType")
+        label.setGeometry(QRect(10, top, 230, 30))
+        top += space
+        label.setAlignment(Qt.AlignCenter)
+        input = self.Boardtype = QComboBox(self)
+        input.setObjectName("Boardtype")
+        input.setGeometry(QRect(10, top, 230, 22))
+        top += space
         
         # Sensor type selection
-        self.TitleSensorType = QLabel(self)
-        self.TitleSensorType.setObjectName("TitleSensorType")
-        self.TitleSensorType.setGeometry(QRect(20, 200, 230, 30))
-        self.TitleSensorType.setAlignment(Qt.AlignCenter)
-        self.Sensortype = QComboBox(self)
-        self.Sensortype.addItem("")
-        self.Sensortype.addItem("")
-        self.Sensortype.setObjectName("Sensortype")
-        self.Sensortype.setGeometry(QRect(10, 230, 230, 22))
+        label = self.TitleSensorType = QLabel(self)
+        label.setObjectName("TitleSensorType")
+        label.setGeometry(QRect(10, top, 230, 30))
+        top += space
+        label.setAlignment(Qt.AlignCenter)
+        input = self.Sensortype = QComboBox(self)
+        input.addItem("")
+        input.addItem("")
+        input.setObjectName("Sensortype")
+        input.setGeometry(QRect(10, top, 230, 22))
+        top += space
 
         # Network  selection
-        self.TitleNetwork = QLabel(self)
-        self.TitleNetwork.setObjectName("TitleNetwork")
-        self.TitleNetwork.setGeometry(QRect(20, 260, 230, 30))
-        self.TitleNetwork.setAlignment(Qt.AlignCenter)
-        self.Network = QComboBox(self)
-        self.Network.addItem("")
-        self.Network.addItem("")
-        self.Network.addItem("")
-        self.Network.setObjectName("Network")
-        self.Network.setGeometry(QRect(10, 290, 230, 22))
+        label = self.TitleNetwork = QLabel(self)
+        label.setObjectName("TitleNetwork")
+        label.setGeometry(QRect(10, top, 230, 30))
+        top += space
+        label.setAlignment(Qt.AlignCenter)
+        input = self.Network = QComboBox(self)
+        input.addItem("")
+        input.addItem("")
+        input.addItem("")
+        input.setObjectName("Network")
+        input.setGeometry(QRect(10, top, 230, 22))
+        top += space
 
         # Serial Monitor
-        self.TitleMonitor = QLabel(self)
-        self.TitleMonitor.setObjectName("TitleMonitor")
-        self.TitleMonitor.setGeometry(QRect(20, 320, 230, 30))
-        self.TitleMonitor.setAlignment(Qt.AlignCenter)
-        self.MonitorButton = QPushButton(self, checkable=True)
-        self.MonitorButton.setObjectName("MonitorButton")
-        self.MonitorButton.setGeometry(QRect(50, 350, 170, 32))
-        self.MonitorButton.clicked.connect(self.monitor)
+        label = self.TitleMonitor = QLabel(self)
+        label.setObjectName("TitleMonitor")
+        label.setGeometry(QRect(20, top, 230, 30))
+        top += space
+        label.setAlignment(Qt.AlignCenter)
+        input = self.MonitorButton = QPushButton(self, checkable=True)
+        input.setObjectName("MonitorButton")
+        input.setGeometry(QRect(50, top, 170, 32))
+        input.clicked.connect(self.monitor)
+        top += space
 
         # Station ID Input
-        self.TitleStation = QLabel(self)
-        self.TitleStation.setObjectName("TitleStation")
-        self.TitleStation.setGeometry(QRect(20, 400, 230, 30))
-        self.TitleStation.setAlignment(Qt.AlignCenter)
-        self.StationID = QTextEdit(self)
-        self.StationID.setObjectName("StationID")
-        self.StationID.setGeometry(QRect(50, 430, 170, 28))
-        self.StationID.setPlaceholderText("Enter Station ID")
+        top += space
+        label = self.TitleStation = QLabel(self)
+        label.setObjectName("TitleStation")
+        label.setGeometry(QRect(10, top, 230, 30))
+        top += space
+        label.setAlignment(Qt.AlignCenter)
+        input = self.StationID = QTextEdit(self)
+        input.setObjectName("StationID")
+        input.setGeometry(QRect(50, top, 170, 30))
+        top += space
+        top += 2
+        input.setPlaceholderText("Enter Station ID")
 
         # Flash Button
-        self.FlashButton = QPushButton(self)
-        self.FlashButton.setObjectName("FlashButton")
-        self.FlashButton.setGeometry(QRect(50, 470, 170, 32))
-        self.FlashButton.clicked.connect(self.flash)
+        input = self.FlashButton = QPushButton(self)
+        input.setObjectName("FlashButton")
+        input.setGeometry(QRect(50, top, 170, 32))
+        top += space
+        input.clicked.connect(self.flash)
 
         # Console and monitor output
         self.TitleConsole = QLabel(self)
@@ -218,12 +250,12 @@ class Widget(QWidget):
         self.TitleConsole.setAlignment(Qt.AlignCenter)
         self.Console = QPlainTextEdit(self, readOnly=True)
         self.Console.setObjectName("Console")
-        self.Console.setGeometry(QRect(270, 110, 330, 330))
+        self.Console.setGeometry(QRect(270, 110, 330, 390))
 
         # Logos
         self.Logo = QLabel(self)
         self.Logo.setObjectName("Logo")
-        self.Logo.setGeometry(QRect(330, 470, 230*0.9, 60*0.9))
+        self.Logo.setGeometry(QRect(330, 515, 230*0.9, 60*0.9))
         self.Logo.setPixmap(QPixmap(str(srcdir / "logo_caritas_white.png")))
         self.Logo.setScaledContents(True)
         # self.Logo2 = QLabel(self)
@@ -247,6 +279,7 @@ class Widget(QWidget):
     def register(self, loggerID):
         self.message("Updating data base with new stationID ...  \n")
         loggerID = loggerID.strip()
+        server_url = self.ServerURL.toPlainText()
         siteID = self.StationID.toPlainText()
         img = qrcode.make(siteID)
         path = self.Downloads / "QR-StationID"
@@ -255,7 +288,7 @@ class Widget(QWidget):
         img.save(str(path), 'png')
         if isConnect(): 
             data = {'siteID': siteID, 'loggerID': loggerID, 'git_version': self.gitversion}
-            response = httpx.post(f'{APIURL}/register', json=data)
+            response = httpx.post(f'{server_url}/register', json=data)
             if response.status_code not in [200, 201]:
                 self.message('Error registering station')
             else:
@@ -584,6 +617,7 @@ class Widget(QWidget):
         self.Sensortype.setItemText(0, QCoreApplication.translate("Widget", "Sensirion", None))
         self.Sensortype.setItemText(1, QCoreApplication.translate("Widget", "Climavue", None))
         self.TitleProvider.setText(QCoreApplication.translate("Widget", "Mobile Provider", None))
+        self.TitleServerURL.setText(QCoreApplication.translate("Widget", "Server URL", None))
         self.TitleBoardType.setText(QCoreApplication.translate("Widget", "Board Type", None))
         self.TitleSensorType.setText(QCoreApplication.translate("Widget", "Sensor Type", None))
         self.TitleNetwork.setText(QCoreApplication.translate("Widget", "Network", None))
