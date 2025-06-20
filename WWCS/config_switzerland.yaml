@@ -1,0 +1,69 @@
+# Configuration file for the WWCS application
+
+servicepass: "wwcs1234" # Password for service applications
+wwcs_domain: "164.90.231.18" # Domain name of the server
+
+# Define area of WWCS application                                                  
+# 45.7910882210682, 5.7761397522042435
+# 47.832655753772215, 10.632102906248939
+
+minlat: 45.79
+maxlat: 47.84
+minlon: 5.78
+maxlon: 10.63
+
+# Define view point of leaflet map                                                # 47.3385921903871, 8.483956572153835 (zurich)
+
+setlat: 47.34
+setlon: 8.48
+
+# Define default station name                                                      
+
+dashboard_default_station: "BB"
+
+# Define GADM country code (https://gadm.org/)                                     
+
+gadm0: "CHE"
+
+# Define time-zone (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)  
+
+timezone_country: "Europe/Zurich"
+
+# Parameters for EMOS
+
+train_period: 30 # Days with which to train temperature forecasts
+forecast_days: 10 # Days to consider of ECMWF forecasts
+miss_val: 0.50 # Amount of missing values to allow in the station data
+emos_formula: "Temperature_mean ~ IFS_T_mea + IFS_T_DTR  | IFS_T_std"
+
+# Parameters for global EMOS
+
+resolution_gEMOS: 0.005
+gemos_formula: "Observations ~ IFS_T_mea + division(ELEV,100) + division(HSURF,100) + TPI5 + division(TPI100,100) | IFS_T_std + division(ELEV,100)"
+
+# Warning parameters
+
+spatial_threshold: 0.5 # 0.5 = 50 % of grid points within an area that exceed the threshold
+warning_days: 5 # Window to calculate the warning
+warning_default_station: "BB"
+
+# Irrigation parameters
+
+irrigation_default_station: "BB" # Default station for irrigation
+
+# Planting parameters
+
+planting_default_station: "BB"
+soil_fcst_days: 7 # Days to consider of forecasts for soil temperature
+proxy_formula: "Temperature ~ T2_lag3 +  T2_lag2 + TemperatureAir + RH"
+lag3: 15 # Days to consider for lag 3
+lag2: 10 # Days to consider for lag 2
+lag1: 3 # Days to consider for lag 1
+
+# Harvest parameters
+
+harvest_default_station: "BB"
+past_rain_thrs: 1 # Threshold for past rain in mm
+future_rain_thrs: 1 # Threshold for future rain in mm
+past_rain_days: 5 # Threshold for past rain in mm
+future_rain_days: 5 # Threshold for future rain in mm
