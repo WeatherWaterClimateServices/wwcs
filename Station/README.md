@@ -1,7 +1,7 @@
 # Compilation and upload
 
 The sketches in this folder can be compiled and uploaded to the boards in different ways
-- by use of the code in the FlashStation directory
+- by use of the code in the FlashBoard directory
 - using the Arduino IDE (make sure to have the libraries at the versions indicated in the sketch.yaml files)
 - arduino command line
 
