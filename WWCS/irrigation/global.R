@@ -18,7 +18,7 @@ library(shinymanager)
 
 rm(list = ls())
 setwd("/srv/shiny-server/irrigation/")
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 options(shiny.sanitize.errors = FALSE)
 
 # ------------------------------------------------
@@ -66,7 +66,7 @@ if (nrow(sites_map_ui) == 0) {
 source("./R/calc_et0.R")
 
 
-mask <- readRDS("/opt/shiny-server/WWCS/boundaries/mask.rds")
+mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
 # SET LANGUAGE TRANSLATION
 # ------------------------------------------------

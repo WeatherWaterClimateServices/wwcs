@@ -312,7 +312,7 @@ server <- function(input, output, session) {
       )
     
     source(
-      "/opt/shiny-server/WWCS/irrigation/service/irrigation_calculation.R"
+      "/home/wwcs/wwcs/WWCS/irrigation/service/irrigation_calculation.R"
     )
     
     irrigation_data <- reactive({

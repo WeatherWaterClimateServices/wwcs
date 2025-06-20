@@ -12,7 +12,7 @@ rm(list = ls())
 
 # SET GLOBAL PARAMETERS
 # ------------------------------------------------
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 maxlead <- forecast_days * 24
 setwd("/srv/shiny-server/ews/service")
@@ -31,17 +31,17 @@ station_id <- unique(obs$siteID)
 # READ GRID AND PREDICTOR DATA
 # ------------------------------------------------
 
-preproc_grid <-  readRDS('/opt/shiny-server/WWCS/ews/service/gEMOS/preproc_grid.rds') %>%
+preproc_grid <-  readRDS('/home/wwcs/wwcs/WWCS/ews/service/gEMOS/preproc_grid.rds') %>%
   dplyr::select(-c(poi)) %>%
   dplyr::distinct()
 
-preproc_train <-  readRDS('/opt/shiny-server/WWCS/ews/service/gEMOS/preproc_train.rds')
+preproc_train <-  readRDS('/home/wwcs/wwcs/WWCS/ews/service/gEMOS/preproc_train.rds')
 
 poi <- preproc_grid %>% 
        dplyr::select(lon, lat)
 npoi <- nrow(poi)
 
-tj_gadm <- sf::st_read(paste0("/opt/shiny-server/WWCS/boundaries/gadm41_", gadm0, "_0.shp")) 
+tj_gadm <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_0.shp")) 
 
 # Define NetCDF parameters for writing output
 # ------------------------------------------------

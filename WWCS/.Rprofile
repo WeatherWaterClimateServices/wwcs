@@ -1,7 +1,7 @@
 # Read configuration from text file
 
-config <- yaml::yaml.load_file("/opt/shiny-server/WWCS/config.yaml")
-dotenv::load_dot_env("/opt/shiny-server/WWCS/.env")
+config <- yaml::yaml.load_file("/home/wwcs/wwcs/WWCS/config.yaml")
+dotenv::load_dot_env("/home/wwcs/wwcs/WWCS/.env")
 db_password = Sys.getenv("PASSWORD")
 wwcs_domain = config$wwcs_domain
 

@@ -4,7 +4,7 @@ library(dplyr)
 library(lubridate)
 library(tidyjson)
 
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 source("/srv/shiny-server/irrigation/R/calc_et0.R")
 crop.parameters <- readr::read_csv(file = "/srv/shiny-server/irrigation/appdata/CropParameters.csv", show_col_types = FALSE)
 

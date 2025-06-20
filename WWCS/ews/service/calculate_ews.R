@@ -6,7 +6,7 @@ library(pool)
 library(sf)
 library(RMySQL)
 
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 # ------------------------------------------------
 # DEFINE AND LOAD GENERAL VARIABLES
@@ -18,7 +18,7 @@ warning_window <- seq(currdate, currdate + days(warning_days - 1), by = "days")
 
 bd <- sf::st_read(
   paste0(
-    "/opt/shiny-server/WWCS/boundaries/gadm41_",
+    "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
     gadm0,
     "_2.shp"
   ),

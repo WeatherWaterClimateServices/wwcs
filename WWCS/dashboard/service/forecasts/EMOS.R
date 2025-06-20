@@ -22,7 +22,7 @@ doParallel::registerDoParallel(numOfCores)
 
 # SET GLOBAL PARAMETERS
 # ------------------------------------------------
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 setwd("/srv/shiny-server/dashboard/service")
 

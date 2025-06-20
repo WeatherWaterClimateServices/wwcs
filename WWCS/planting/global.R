@@ -14,7 +14,7 @@ library(lubridate)
 rm(list = ls())
 
 setwd("/srv/shiny-server/planting/")
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 options(shiny.sanitize.errors = FALSE)
 
 # READ AND ALLOCATE DATA
@@ -47,7 +47,7 @@ if (gadm0 == "TJK") {
   bd$district[14] = "Rudaki2"  
 }
 
-mask <- readRDS("/opt/shiny-server/WWCS/boundaries/mask.rds")
+mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
 criteria <-
   read_csv("/srv/shiny-server/planting/appdata/criteria_planting.csv")

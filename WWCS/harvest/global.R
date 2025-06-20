@@ -13,7 +13,7 @@ library(RMySQL)
 
 rm(list = ls())
 
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 options(shiny.sanitize.errors = FALSE)
 setwd("/srv/shiny-server/harvest/")
 
@@ -58,7 +58,7 @@ sites <- sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
   dplyr::select(c(siteID, latitude, longitude, district))
 
 # Read administrative areas
-bd <- sf::st_read(paste0("/opt/shiny-server/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
+bd <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
 
@@ -66,7 +66,7 @@ if (gadm0 == "TJK") {
   bd$district[14] = "Rudaki2"  
 }
 
-mask <- readRDS("/opt/shiny-server/WWCS/boundaries/mask.rds")
+mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
 pool_service <-
   pool::dbPool(

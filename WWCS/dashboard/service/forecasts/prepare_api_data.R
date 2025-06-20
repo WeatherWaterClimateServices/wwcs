@@ -10,7 +10,7 @@ library(RMySQL)
 rm(list = ls())
 
 setwd("/srv/shiny-server/dashboard/service/forecasts")
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 
 pool_service <-

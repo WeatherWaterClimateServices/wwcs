@@ -10,11 +10,11 @@ library(lubridate)
 # PREPARE GLOBAL PARAMETERS
 # ------------------------------------------------
 
-source('/opt/shiny-server/WWCS/.Rprofile')
-mask <- readRDS("/opt/shiny-server/WWCS/boundaries/mask.rds")
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
+mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
 # Read administrative areas
-bd <- sf::st_read(paste0("/opt/shiny-server/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
+bd <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
 
