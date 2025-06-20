@@ -33,10 +33,20 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QLabel, QMessageBox,
                                QPlainTextEdit, QPushButton, QTextEdit, QWidget)
 
 
+DEV = os.environ.get('WWCS_DEV', False)
+
+DOWNLOAD_URL = 'https://wwcs.tj/downloads/Ij6iez6u/Firmware.zip'
+
+if DEV:
+    ServerURLDefault = 'http://127.0.0.1:5000'
+    DOWNLOAD_DIR = Path('/tmp')
+else:
+    ServerURLDefault = 'https://wwcs.tj/post'
+    DOWNLOAD_DIR = Path.home() / "Downloads"
+
 basedir = Path(os.path.dirname(__file__))
 srcdir = basedir / 'src'
-ServerURLDefault = 'https://wwcs.tj/post'
-#ServerURLDefault = 'http://127.0.0.1:5000'
+
 
 try:
     from ctypes import windll  # Only exists on Windows.
@@ -182,7 +192,7 @@ class Widget(QWidget):
         input.setObjectName("Boardtype")
         input.setGeometry(QRect(10, top, 230, 22))
         top += space
-        
+
         # Sensor type selection
         label = self.TitleSensorType = QLabel(self)
         label.setObjectName("TitleSensorType")
@@ -270,10 +280,9 @@ class Widget(QWidget):
         # Find Arduino cli
         self.find_arduino()
 
-        # Download firmware file      
-        self.Downloads = Path.home() / "Downloads"
-        if not os.path.exists(self.Downloads):
-            os.makedirs(self.Downloads)
+        # Download firmware file
+        if not os.path.exists(DOWNLOAD_DIR):
+            os.makedirs(DOWNLOAD_DIR)
         self.download_fw()
 
     def register(self, loggerID):
@@ -282,29 +291,31 @@ class Widget(QWidget):
         server_url = self.ServerURL.toPlainText()
         siteID = self.StationID.toPlainText()
         img = qrcode.make(siteID)
-        path = self.Downloads / "QR-StationID"
+        path = DOWNLOAD_DIR / "QR-StationID"
         path.mkdir(exist_ok=True)
         path = path / f'{siteID}_QR.png'
         img.save(str(path), 'png')
-        if isConnect(): 
+        if isConnect():
             data = {'siteID': siteID, 'loggerID': loggerID, 'git_version': self.gitversion}
             response = httpx.post(f'{server_url}/register', json=data)
             if response.status_code not in [200, 201]:
                 self.message('Error registering station')
             else:
                 self.message("You sucessfully flashed the board!  \n")
-        else: 
+        else:
             self.message("No connection to server, station not updated on database. Finished flashing. \n")
 
 
     def download_fw(self):
-
         # Download
-        zip_file = self.Downloads / 'Firmware.zip'
+        zip_file = DOWNLOAD_DIR / 'Firmware.zip'
         self.message('Firmware...')
         try:
-            status_code = download('https://wwcs.tj/downloads/Ij6iez6u/Firmware.zip',
-                                   zip_file, 'application/zip')
+            if DEV:
+                # In development run zip_firmware.py manually
+                status_code = 304
+            else:
+                status_code = download(DOWNLOAD_URL, zip_file, 'application/zip')
         except Exception:
             if zip_file.exists():
                 self.message("Firmware download failed, will use version from cache.")
@@ -395,7 +406,7 @@ class Widget(QWidget):
             if self.Boardtype.currentText() == "Lilygo":
                 self.configout = False
                 return
-            else: 
+            else:
                 inplace_change(filename,"CLIMAVUE50 = false", "CLIMAVUE50 = true")
 
 
@@ -477,70 +488,16 @@ class Widget(QWidget):
             text = text.rstrip('\r\n')
             self.message(text)
 
-    def install_core(self):
-        # Check if the ESP32 core is installed with the desired version
-        desired_core_version = "3.0.5"
-        corelist = self.arduino.core.list()
-        for core in corelist['result']:
-            core_id = core['id']
-            if core_id == "esp32:esp32":
-                if core['installed'] == desired_core_version:  # Check installed version
-                    print(f"ESP32 core version {desired_core_version} is already installed.")
-                    break
-        else:
-            # If the core is not installed or the version does not match, install it
-            print(f"Installing ESP32 core version {desired_core_version}...")
-            # Write to arduino-cli.yaml if it doesn't exist
-            yaml_file_path = 'arduino-cli.yaml'
-            if not os.path.exists(yaml_file_path):
-                with open(yaml_file_path, 'w') as f:
-                    f.write('board_manager:\n')
-                    f.write('  additional_urls:\n')
-                    f.write('    - https://espressif.github.io/arduino-esp32/package_esp32_index.json')
-
-            # Update the core index and install the desired version
-            self.arduino.core.update_index()
-            self.arduino.core.install(installs=["esp32:esp32@" + desired_core_version])
-    
-    def install_libraries(self):
-        # Install required libraries
-        libinstalled = {}
-        for library in self.arduino.lib.list()['result']:
-            library = library['library']
-            name = library['name']
-            libinstalled[name] = library.get('version', 'N/A')
-
-        for lib_name, lib_version in required_libraries.items():
-            if lib_name in libinstalled and libinstalled[lib_name] == lib_version:
-                print(f"{lib_name} version {lib_version} is already installed.")
-            else:
-                print(f"Installing {lib_name} version {lib_version}...")
-                self.arduino.lib.install([f"{lib_name}@{lib_version}"])
-
-        # Check for conflicts, and remove offending libraries
-        liblist = self.arduino.lib.list()['result']
-
-        provides = set()
-        for library in liblist:
-            library = library['library']
-            name = library['name']
-            if name in required_libraries:
-                provides_includes = library.get('provides_includes', [])
-                provides.update(provides_includes)
-
-        for library in liblist:
-            library = library['library']
-            name = library['name']
-            provides_includes = library.get('provides_includes', [])
-            if name not in required_libraries and provides & set(provides_includes):
-                print(f"Removing library {name}")
-                self.arduino.lib.uninstall([name])
-
-
     def flash(self):
         try:
             self.__flash()
         except Exception as exc:
+            if DEV:
+                print('<<<< STDERR >>>>')
+                print(exc.result['__stderr'])
+                print('<<<< STDOUT >>>>')
+                print(exc.result['__stdout'])
+                #print(exc.result['result'])
             self.message_exc(exc)
 
     def __flash(self):
@@ -563,20 +520,14 @@ class Widget(QWidget):
             self.message("Exit: No Arduino board detected on USB port\n")
             return
 
-        # INSTALL LIBRARIES
+        # Verify the sketch.yaml file exists
         sketch_yaml = Path(self.PathSketchConfig) / "sketch.yaml"
-        if sketch_yaml.exists():
-            kwargs = {"profile": "default"}
-        else:
-            self.message("Installing core and libraries ...\n")
-            self.install_core()
-            self.install_libraries()
-            kwargs = {"fqbn": "esp32:esp32:esp32wrover"}
+        assert sketch_yaml.exists()
 
         # COMPILING SKETCH
         self.message("Compiling sketch...")
         os.chdir(self.PathSketchConfig)
-        out = self.arduino.compile(sketch = self.Sketch + ".ino", **kwargs)
+        out = self.arduino.compile(sketch = self.Sketch + ".ino", profile='default')
         if out['result']['success']:
             self.message("Sketch compiled.\n")
         else:
@@ -585,10 +536,10 @@ class Widget(QWidget):
 
         # UPLOADING SKETCH
         self.message("Uploading sketch ...\n")
-        out = self.arduino.upload(port = self.Port, 
+        out = self.arduino.upload(port = self.Port,
                                   fqbn = "esp32:esp32:esp32wrover",
                                   board_options = {"EraseFlash": "all"})
-        
+
         if len(out['__stderr']) > 0:
             return self.message("Exit: Upload of sketch failed \n")
 

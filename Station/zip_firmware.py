@@ -14,27 +14,30 @@ In the server this command should be called by cron, with a line like:
 In a local development environment the Zip file will be saved to /tmp/Firmware.zip
 """
 
+import argparse
 import json
-from pathlib import Path
+import pathlib
 import subprocess
-import sys
-from zipfile import ZipFile
+import zipfile
 
 
-if __name__ == '__main__':
-    force = len(sys.argv) == 2 and sys.argv[1] == '--force'
+def zip_firmware():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--force', action='store_true')
+    args = parser.parse_args()
 
     # Build the metadata
-    root = Path(__file__).parent
+    root = pathlib.Path(__file__).parent
     output = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root)
     gitversion = output.decode()[:8]
     metadata = {'gitversion': gitversion}
     metadata = json.dumps(metadata)
 
     # The output directory
-    output_dir = Path('/var/www/html/downloads/Ij6iez6u')
+    output_dir = '/var/www/html/downloads/Ij6iez6u'
+    output_dir = pathlib.Path(output_dir)
     if not output_dir.exists():
-        output_dir = Path('/tmp')
+        output_dir = pathlib.Path('/tmp')
 
     # Get the mtime of the zip file, if it exists.
     zip_path = output_dir / 'Firmware.zip'
@@ -51,8 +54,12 @@ if __name__ == '__main__':
             mtimes.append(path.stat().st_mtime)
 
     # Create the zip file, if needed
-    if force or mtime is None or max(mtimes) > mtime:
-        with ZipFile(zip_path, 'w') as zip_file:
+    if args.force or mtime is None or max(mtimes) > mtime:
+        with zipfile.ZipFile(zip_path, 'w') as zip_file:
             for relpath in sources:
                 zip_file.write(root / relpath, relpath)
             zip_file.writestr('metadata.json', metadata)
+
+
+if __name__ == '__main__':
+    zip_firmware()
