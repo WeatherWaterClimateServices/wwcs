@@ -9,6 +9,8 @@ from sqlalchemy import pool
 
 from alembic import context
 
+from models import BeneficiarySupport, Humans, Machines, SitesHumans, WWCServices
+
 
 # Configuration
 dotenv.load_dotenv()
@@ -46,7 +48,13 @@ db_names = config.get_main_option("databases", "")
 #       'engine1':mymodel.metadata1,
 #       'engine2':mymodel.metadata2
 # }
-target_metadata = {}
+target_metadata = {
+    'BeneficiarySupport': BeneficiarySupport.Base.metadata,
+    'Humans': Humans.Base.metadata,
+    'Machines': Machines.Base.metadata,
+    'SitesHumans': SitesHumans.Base.metadata,
+    'WWCServices': WWCServices.Base.metadata,
+}
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
