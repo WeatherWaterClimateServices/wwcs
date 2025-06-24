@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 import sqlalchemy as sa
 
-from models import MachineAtSite, MachineObs, t_MachineObsRejected, Metadata
+from models.Machines import MachineAtSite, MachineObs, t_MachineObsRejected, Metadata
 
 
 # Configuration
