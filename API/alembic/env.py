@@ -1,11 +1,22 @@
 import logging
 from logging.config import fileConfig
+import os
 import re
 
+import dotenv
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+
+# Configuration
+dotenv.load_dotenv()
+ENV = os.environ.get('ENV')
+DB_USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
+
+DATABASE_URL = f'mysql://{DB_USERNAME}:{DB_PASSWORD}@localhost/'
 
 USE_TWOPHASE = False
 
@@ -61,7 +72,7 @@ def run_migrations_offline() -> None:
     engines = {}
     for name in re.split(r",\s*", db_names):
         engines[name] = rec = {}
-        rec["url"] = context.config.get_section_option(name, "sqlalchemy.url")
+        rec["url"] = DATABASE_URL + name
 
     for name, rec in engines.items():
         logger.info("Migrating database %s" % name)
@@ -94,7 +105,7 @@ def run_migrations_online() -> None:
     for name in re.split(r",\s*", db_names):
         engines[name] = rec = {}
         rec["engine"] = engine_from_config(
-            context.config.get_section(name, {}),
+            {'sqlalchemy.url': DATABASE_URL + name},
             prefix="sqlalchemy.",
             poolclass=pool.NullPool,
         )
