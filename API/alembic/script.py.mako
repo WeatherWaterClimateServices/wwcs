@@ -1,4 +1,7 @@
-"""${message}
+<%!
+import re
+
+%>"""${message}
 
 Revision ID: ${up_revision}
 Revises: ${down_revision | comma,n}
@@ -18,11 +21,31 @@ branch_labels: Union[str, Sequence[str], None] = ${repr(branch_labels)}
 depends_on: Union[str, Sequence[str], None] = ${repr(depends_on)}
 
 
-def upgrade() -> None:
+def upgrade(engine_name: str) -> None:
     """Upgrade schema."""
-    ${upgrades if upgrades else "pass"}
+    globals()["upgrade_%s" % engine_name]()
 
 
-def downgrade() -> None:
+def downgrade(engine_name: str) -> None:
     """Downgrade schema."""
-    ${downgrades if downgrades else "pass"}
+    globals()["downgrade_%s" % engine_name]()
+
+<%
+    db_names = config.get_main_option("databases")
+%>
+
+## generate an "upgrade_<xyz>() / downgrade_<xyz>()" function
+## for each database name in the ini file.
+
+% for db_name in re.split(r',\s*', db_names):
+
+def upgrade_${db_name}() -> None:
+    """Upgrade ${db_name} schema."""
+    ${context.get("%s_upgrades" % db_name, "pass")}
+
+
+def downgrade_${db_name}() -> None:
+    """Downgrade ${db_name} schema."""
+    ${context.get("%s_downgrades" % db_name, "pass")}
+
+% endfor
