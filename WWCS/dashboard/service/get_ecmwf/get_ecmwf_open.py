@@ -3,7 +3,6 @@ import glob
 import re
 import pandas as pd
 import xarray as xr
-import requests
 import shutil
 from cdo import *
 cdo = Cdo()

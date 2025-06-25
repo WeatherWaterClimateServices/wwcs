@@ -2,8 +2,6 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-import numpy as np
-import glob
 import os
 import fnmatch
 

@@ -3,13 +3,8 @@ import re
 from ecmwfapi import *
 from cdo import *
 cdo = Cdo()
-import csv
-import urllib
-import requests
-import json
 import pandas as pd
 from datetime import datetime, timedelta
-import fnmatch
 import mysql.connector
 import yaml
 from dotenv import load_dotenv

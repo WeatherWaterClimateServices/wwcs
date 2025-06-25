@@ -1,9 +1,7 @@
-from itertools import product
-import xarray as xr
 import elevation as ele
 import numpy as np
 import os.path
-from topo_descriptors import topo, helpers
+from topo_descriptors import topo
 from topo_descriptors.helpers import get_dem_netcdf, scale_to_pixel
 import yaml
 

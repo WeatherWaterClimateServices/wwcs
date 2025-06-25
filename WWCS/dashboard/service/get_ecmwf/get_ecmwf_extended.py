@@ -2,13 +2,8 @@ import os
 from ecmwfapi import *
 from cdo import *
 cdo = Cdo()
-import csv
-import urllib
-import requests
-import json
 import pandas as pd
 import datetime as datetime
-import fnmatch
 import mysql.connector
 import yaml
 from dotenv import load_dotenv
