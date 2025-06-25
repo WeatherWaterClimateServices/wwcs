@@ -115,7 +115,7 @@ All locale files should be commited, so don't forget to:
 
     git add locale
 
-# Add a new language
+## Add a new language
 
 To add a new language you need first to initialize the PO file. This is the procedure, for
 example for the Khmer (kh) language:
