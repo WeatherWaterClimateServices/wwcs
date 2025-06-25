@@ -128,3 +128,10 @@ Now edit the Makefile and add the km language to the list of locales, for exampl
     LOCALES = km tg
 
 Then you can continue editing the PO file with poedit as described above.
+
+
+# Local development
+
+To run the bot:
+
+    python bot.py
