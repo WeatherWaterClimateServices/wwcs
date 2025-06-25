@@ -1,15 +1,18 @@
+import datetime
 import os
-from ecmwfapi import *
-from cdo import *
-cdo = Cdo()
-import pandas as pd
-import datetime as datetime
+
+from cdo import Cdo
+from ecmwfapi import ECMWFService
+import dotenv
 import mysql.connector
+import pandas as pd
 import yaml
-from dotenv import load_dotenv
+
+
+cdo = Cdo()
 
 # Configuration
-load_dotenv("/opt/shiny-server/WWCS/.env")
+dotenv.load_dotenv("/opt/shiny-server/WWCS/.env")
 ENV = os.environ.get('ENV')
 USERNAME = os.environ.get('USERNAME', 'wwcs')
 PASSWORD = os.environ.get('PASSWORD')
@@ -31,7 +34,10 @@ minlon = config['minlon']
 
 server = ECMWFService("mars")
 outdir = "/srv/shiny-server/dashboard/ifsdata"
-dat = [d.strftime("%Y-%m-%d") for d in pd.date_range(datetime.datetime.today() - datetime.timedelta(days = 20), datetime.datetime.today())]
+dat = [
+    d.strftime("%Y-%m-%d")
+    for d in pd.date_range(datetime.datetime.today() - datetime.timedelta(days = 20), datetime.datetime.today())
+]
 os.chdir(outdir)
 
 # Read station names and locations

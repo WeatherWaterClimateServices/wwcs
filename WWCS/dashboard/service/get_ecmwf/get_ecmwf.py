@@ -1,16 +1,19 @@
+from datetime import datetime, timedelta
 import os
 import re
-from ecmwfapi import *
-from cdo import *
-cdo = Cdo()
-import pandas as pd
-from datetime import datetime, timedelta
+
+from cdo import Cdo
+from ecmwfapi import ECMWFService
+import dotenv
 import mysql.connector
+import pandas as pd
 import yaml
-from dotenv import load_dotenv
+
+
+cdo = Cdo()
 
 # Configuration
-load_dotenv("/opt/shiny-server/WWCS/.env")
+dotenv.load_dotenv("/opt/shiny-server/WWCS/.env")
 ENV = os.environ.get('ENV')
 USERNAME = os.environ.get('USERNAME', 'wwcs')
 PASSWORD = os.environ.get('PASSWORD')
