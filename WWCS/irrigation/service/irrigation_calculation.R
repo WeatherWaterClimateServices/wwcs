@@ -4,7 +4,7 @@ library(dplyr)
 library(lubridate)
 library(tidyjson)
 
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 source("/srv/shiny-server/irrigation/R/calc_et0.R")
 crop.parameters <- readr::read_csv(file = "/srv/shiny-server/irrigation/appdata/CropParameters.csv", show_col_types = FALSE)
 
@@ -69,15 +69,17 @@ irrigation_sites <- dbReadTable(pool, "Sites")   %>%
     PHIt = FC - TAW * MAD ## was 21.8 hardcoded in here, but of different value in crop_parameters.R); t=threshold -> constant
   )
 
-irrigation <- dbReadTable(pool_service, "Irrigation") 
+## give more useful names
+irrigation <- dbReadTable(pool_service, "Irrigation") %>%
+  as_tibble() %>%
+  dplyr::rename(Ineed = irrigationNeed,
+                Iapp = irrigationApp,
+                Precipitation = precipitation)
 
+## extract only entries for the current calendar year
 if (nrow(irrigation) > 0) {
   irrigation <- irrigation %>% 
-    dplyr::filter(lubridate::year(date) == lubridate::year(Sys.Date())) %>%
-    as_tibble() %>%
-    dplyr::rename(Ineed = irrigationNeed,
-                  Iapp = irrigationApp,
-                  Precipitation = precipitation)
+    dplyr::filter(lubridate::year(date) == lubridate::year(Sys.Date())) 
 } 
 
 
@@ -217,25 +219,21 @@ for (i in 1:nrow(irrigation_sites)) {
   nday <- nrow(irrigation_temp)
   
   for (j in 1:nday) {
-    if (!"Iapp" %in% names(irrigation_temp) || is.na(irrigation_temp$Iapp[j])) {
-      irrigation_temp$Iapp[j] = 0
+    if (is.na(irrigation_temp$Iapp[j])) {
+      irrigation_temp$Iapp[j] <-  0
     }
     
-    
-    if (!"Precipitation" %in% names(irrigation_temp) || is.na(irrigation_temp$Precipitation[j])) {
-      irrigation_temp$Precipitation[j] = irrigation_temp$PrecipitationStation[j]
+    ##if PrecipitationStation contains a valid value, use this one
+    ##otherwise leave at NA or a manually set value (via webform/db)    
+    if (!is.na(irrigation_temp$PrecipitationStation[j])) {
+      irrigation_temp$Precipitation[j] <-  irrigation_temp$PrecipitationStation[j]
     } 
-    
-    if (is.na(irrigation_temp$Precipitation[j])) {
-      irrigation_temp$Precipitation[j] = 0
-    } 
-    
+
     ## store this RD here
     this.RD <- crop.parameters[[paste0(irrigation_sites$Crop[i], "_RD")]][j]
 
     if (j == 1) { ## if first day, assign starting value
       irrigation_temp$PHIc[j] = irrigation_sites$PHIc[i] ## start value from db
-      irrigation_temp$Ks[j] = 1
     } else { ## if not first day, go through the water balance
       phi_update <-
         irrigation_temp$PHIc[j - 1] - (irrigation_temp$ETca[j - 1] * 100 /
@@ -253,16 +251,16 @@ for (i in 1:nrow(irrigation_sites)) {
           irrigation_temp$PHIc[j] <- phi_update
         }
       }
-
-      ## check if mosture content causes stress (no stress: Ks=1)
-      if (irrigation_temp$PHIc[j] > irrigation_sites$PHIt[i]) {
-        irrigation_temp$Ks[j] <- 1
-      } else {
-        irrigation_temp$Ks[j] <-
-          1 - (irrigation_sites$PHIt[i] - irrigation_temp$PHIc[j]) / 
-	  (irrigation_sites$PHIt[i] - irrigation_sites$WP[i])
-      }
     } ## end not first day
+
+    ## check if mosture content causes stress (no stress: Ks=1)
+    if (irrigation_temp$PHIc[j] > irrigation_sites$PHIt[i]) {
+      irrigation_temp$Ks[j] <- 1
+    } else {
+      irrigation_temp$Ks[j] <-
+        1 - (irrigation_sites$PHIt[i] - irrigation_temp$PHIc[j]) / 
+ (irrigation_sites$PHIt[i] - irrigation_sites$WP[i])
+    }
     
     # ------------------------------------------------
     # COMPUTE SOIL CONDITIONS
