@@ -1,5 +1,5 @@
 library(dplyr)
-library(xlsx)
+library(readxl)
 
 ## raw data.frame
 crop.parameters <- data.frame(Index = 1:300)
@@ -19,6 +19,13 @@ Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
 ## these will remain short in the pots of the nursery)
 Kcs <- Kcs[46:length(Kcs)]
 RDs <- c(seq(.25, 1, length=10), rep(1, length(Kcs) - 10))
+
+## in cambodia, tomatos were planted under plastic mulch.
+## this greatly reduces the initial Kc values. below a hand-made/tuned record
+Kcs <- c(seq(0.25, 0.5, length = 12),
+         seq(0.5, Kc[["mid"]], length = 20),
+         seq(Kc[["mid"]], Kc[["end"]], length = 13))
+RDs <- c(seq(.25, 1, length=22), rep(1, length(Kcs) - 22))
 
 TomatoCambodia <-
   data.frame(Index = 1:nrow(crop.parameters),
@@ -73,8 +80,8 @@ kc_path <- "WinterWheat/Winter_Wheat_Kc_Tadjikistan_Updated.xlsx"
 rd_path <- "WinterWheat/Winter_Wheat_Rooting_Depth_Tadjikistan_Updated.xlsx"
 
 if (file.exists(kc_path) && file.exists(rd_path)) {
-  Kc <- read.xlsx(kc_path, sheetIndex = 1)
-  RD <- read.xlsx(rd_path, sheetIndex = 1)
+  Kc <- read_xlsx(kc_path, sheet = 1) %>% as.data.frame
+  RD <- read_xlsx(rd_path, sheet = 1) %>% as.data.frame
   winterwheat <- data.frame(
     Index = crop.parameters$Index,
     WinterWheat_Kc = c(Kc[, 1], rep(Kc[nrow(Kc), 1], nrow(crop.parameters) - nrow(Kc))),
@@ -88,7 +95,7 @@ kc_path <- "Cotton/Cotton_Kc_Only.xlsx"
 rd_path <- "Cotton/Estimated_Rooting_Depths.csv"
 
 if (file.exists(kc_path) && file.exists(rd_path)) {
-  Kc <- read.xlsx(kc_path, sheetIndex = 1)
+  Kc <- read_xlsx(kc_path, sheet = 1) %>% as.data.frame
   RD <- read.csv(rd_path)
   cotton <- data.frame(
     Index = crop.parameters$Index,
