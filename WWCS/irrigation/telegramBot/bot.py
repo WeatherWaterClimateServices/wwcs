@@ -5,7 +5,9 @@ import os
 import pathlib
 
 # Requirements
+from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from databases import Database
 from telebot import types
@@ -36,29 +38,25 @@ translation = gettext.translation(
 _ = translation.gettext
 
 
+scheduler = AsyncIOScheduler()
+
 class NotificationManager:
-    def __init__(self):
-        self.jobs = {}
 
-    async def add_job(self, chat_id, job_type, func, *args, **kwargs):
-        await self.remove_job(chat_id, job_type)
-        job = scheduler.add_job(func, *args, **kwargs)
-        self.jobs[f"{job_type}_{chat_id}"] = job
-        return job
-
-    async def remove_job(self, chat_id, job_type):
+    def add_job(self, chat_id, job_type, func, trigger):
         job_id = f"{job_type}_{chat_id}"
-        if job_id in self.jobs:
-            try:
-                self.jobs[job_id].remove()
-            except Exception as e:
-                print (f"Error deleting task {job_id}: {e}")
-            finally:
-                self.jobs.pop(job_id, None)
+        self.remove_job(chat_id, job_type)
+        scheduler.add_job(func, trigger, id=job_id, args=[chat_id])
 
-    async def remove_all_jobs(self, chat_id):
+    def remove_job(self, chat_id, job_type):
+        job_id = f"{job_type}_{chat_id}"
+        try:
+            scheduler.remove_job(job_id)
+        except JobLookupError:
+            pass
+
+    def remove_all_jobs(self, chat_id):
         for job_type in ['water_check', 'polyv_complete']:
-            await self.remove_job(chat_id, job_type)
+            self.remove_job(chat_id, job_type)
 
 
 notification_manager = NotificationManager()
@@ -66,12 +64,10 @@ notification_manager = NotificationManager()
 
 # Инициализация бота
 bot = AsyncTeleBot(BOT_TOKEN)
-scheduler = AsyncIOScheduler()
 
 # Словари для хранения состояний
 user_states = {}
 user_irrigation_data = {}  # Для хранения данных о поливе
-notification_jobs = {}  # Для хранения задач уведомлений
 
 # Таблица расхода воды (уровень в см -> расход в м³/мин)
 WATER_FLOW_RATES = {
@@ -145,44 +141,29 @@ def create_reply_keyboard():
     return markup
 
 
-async def start_irrigation_notifications(chat_id):
-    await notification_manager.add_job(
-        chat_id,
-        'water_check',
-        send_water_check_notification,
-        trigger=IntervalTrigger(minutes=15),
-        args=[chat_id]
-    )
+def start_irrigation_notifications(chat_id):
+    notification_manager.add_job(chat_id, 'water_check', send_water_check_notification,
+                                 trigger=IntervalTrigger(minutes=15))
 
 
 async def send_water_check_notification(chat_id):
     """Отправляет уведомление о проверке уровня воды"""
     if chat_id in user_irrigation_data:
-        await bot.send_message(
-            chat_id,
-            _("🔄 Please check the current water level in the channel and send its value")
-        )
+        message = _("🔄 Please check the current water level in the channel and send its value")
+        await bot.send_message(chat_id, message)
 
 
-async def schedule_polyv_completion_notification(chat_id, hours, minutes):
+def schedule_polyv_completion_notification(chat_id, hours, minutes):
     completion_time = datetime.now() + timedelta(hours=hours, minutes=minutes)
-    await notification_manager.add_job(
-        chat_id,
-        'polyv_complete',
-        notify_polyv_completion,
-        trigger='date',
-        run_date=completion_time,
-        args=[chat_id]
-    )
+    notification_manager.add_job(chat_id, 'polyv_complete', notify_polyv_completion,
+                                 trigger=DateTrigger(run_date=completion_time))
 
 
 async def notify_polyv_completion(chat_id):
     if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
-        await bot.send_message(
-            chat_id,
-            _("⏰ Watering time is over! Please click the 'Save data' button to save the results.")
-        )
-        await notification_manager.remove_job(chat_id, 'water_check')
+        message = _("⏰ Watering time is over! Please click the 'Save data' button to save the results.")
+        await bot.send_message(chat_id, message)
+        notification_manager.remove_job(chat_id, 'water_check')
 
 
 async def check_irrigation(chat_id):
@@ -216,11 +197,8 @@ async def check_irrigation(chat_id):
             else:
                 text = _("ERROR!")
 
-            await bot.send_message(
-                chat_id,
-                text.format(first_name=row['firstName'], water=round(m3_needed, 2)),
-                reply_markup=markup
-            )
+            message = text.format(first_name=row['firstName'], water=round(m3_needed, 2))
+            await bot.send_message(chat_id, message, reply_markup=markup)
             return True
     return False
 
@@ -249,11 +227,11 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
             'total_needed_m3': total_needed_m3,
             'total_used_m3': 0,
             'history': [(water_level, datetime.now())],
-            'is_active': True
+            'is_active': True,
         }
 
-        # Запускаем уведомления только для нового полива
-        await start_irrigation_notifications(chat_id)
+        # We launch notifications only for new watering
+        start_irrigation_notifications(chat_id)
     else:
         data = user_irrigation_data[chat_id]
         time_elapsed = (datetime.now() - data['last_update']).total_seconds()
@@ -274,7 +252,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
     if remaining_time > 0:
         hours = int(remaining_time)
         minutes = int((remaining_time - hours) * 60)
-        await schedule_polyv_completion_notification(chat_id, hours, minutes)
+        schedule_polyv_completion_notification(chat_id, hours, minutes)
 
     return {
         'used_m3': user_irrigation_data[chat_id]['total_used_m3'],
@@ -410,8 +388,8 @@ async def handle_water_level(message):
 async def handle_send_data(message):
     chat_id = message.chat.id
 
-    # Останавливаем все уведомления
-    await notification_manager.remove_all_jobs(chat_id)
+    # Stop all notifications
+    notification_manager.remove_all_jobs(chat_id)
 
     rows = await get_irrigation_data()
     for row in rows:
