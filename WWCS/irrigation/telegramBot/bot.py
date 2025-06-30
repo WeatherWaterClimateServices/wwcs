@@ -64,8 +64,6 @@ class NotificationManager:
 notification_manager = NotificationManager()
 
 
-
-
 # Инициализация бота
 bot = AsyncTeleBot(BOT_TOKEN)
 scheduler = AsyncIOScheduler()
@@ -216,9 +214,7 @@ async def check_irrigation(chat_id):
                 )
 
             else:
-                text = _(
-                    "ERROR!"
-                )
+                text = _("ERROR!")
 
             await bot.send_message(
                 chat_id,
@@ -284,7 +280,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
         'used_m3': user_irrigation_data[chat_id]['total_used_m3'],
         'remaining_m3': remaining_m3,
         'remaining_time': remaining_time,
-        'is_completed': remaining_m3 <= 0
+        'is_completed': remaining_m3 <= 0,
     }
 
 
@@ -303,7 +299,7 @@ async def handle_recommendation(message):
         if str(chat_id) == str(row['telegramID']):
             if row['type'] == "channel":
                 user_states[chat_id] = "waiting_for_water_level"
-                await bot.send_message (chat_id, _("Enter the current water level in the channel (in cm):"))
+                await bot.send_message(chat_id, _("Enter the current water level in the channel (in cm):"))
 
             elif row['type'] == "counter":
                 user_states[chat_id] = "waiting_for_counter_start"
@@ -348,7 +344,7 @@ async def handle_counter_start(message):
                     'start_counter': start_counter,
                     'target_counter': target_counter,
                     'is_active': True,
-                    'last_update': datetime.now()
+                    'last_update': datetime.now(),
                 }
                 user_states[chat_id] = None
                 return
@@ -381,7 +377,7 @@ async def handle_water_level(message):
                     float(row['irrigationNeed']),
                     float(row['area']),
                     float(row['ie']),
-                    float(row['wa'])
+                    float(row['wa']),
                 )
 
                 if calculation['is_completed']:
@@ -399,7 +395,7 @@ async def handle_water_level(message):
                         hours=hours,
                         minutes=minutes,
                         used_m3=calculation['used_m3'],
-                        total_m3=calculation['used_m3'] + calculation['remaining_m3']
+                        total_m3=calculation['used_m3'] + calculation['remaining_m3'],
                     )
 
                 await bot.send_message(chat_id, msg)
@@ -408,7 +404,6 @@ async def handle_water_level(message):
         await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
     except ValueError:
         await bot.send_message(chat_id, _("⚠️ Please enter a valid number (water level in cm)"))
-
 
 
 @bot.message_handler(func=lambda message: message.text == BUTTONS["save_data"])
