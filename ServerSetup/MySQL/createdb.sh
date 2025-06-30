@@ -17,13 +17,14 @@ show_help() {
     echo "Options:"
     echo "  --drop-databases      Drop all databases (after confirmation)"
     echo "  --restore-dumps DIR   Restore databases from gzipped SQL dumps in DIR"
+    echo "  --database DB_NAME    Work on a specific database only (default: all)"
     echo "  --help                Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0                     # Apply all SQL migrations (0000_*.sql, etc)"
     echo "  $0 --drop-databases    # Drop databases, then apply migrations"
     echo "  $0 --restore-dumps /backups # Restore databases from dump files"
-    echo "  $0 --drop-databases --restore-dumps /backups # Drop then restore"
+    echo "  $0 --database Machines --drop-databases --restore-dumps /backups # Drop then restore only Machines"
     exit 0
 }
 
@@ -52,6 +53,14 @@ while [[ $# -gt 0 ]]; do
             DUMP_DIR="$2"
             shift 2
             ;;
+        --database)
+            if [ -z "$2" ]; then
+                echo "Error: --database requires a database name."
+                exit 1
+            fi
+            SELECTED_DB="$2"
+            shift 2
+            ;;
         *)
             echo "Error: Unknown option '$1'"
             show_help
@@ -59,6 +68,25 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Validate selected database
+if [ -n "$SELECTED_DB" ]; then
+    found=0
+    for db in "${DATABASES[@]}"; do
+        if [ "$db" = "$SELECTED_DB" ]; then
+            found=1
+            break
+        fi
+    done
+
+    if [ "$found" -eq 0 ]; then
+        echo "Error: Database '$SELECTED_DB' is not in the managed databases list."
+        exit 1
+    fi
+
+    # Work with only the selected database
+    DATABASES=("$SELECTED_DB")
+fi
 
 # Prompt for MySQL password
 read -s -p "Enter MySQL root password: " password
