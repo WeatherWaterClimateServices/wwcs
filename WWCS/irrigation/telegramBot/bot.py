@@ -7,19 +7,23 @@ import pathlib
 # Requirements
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from dotenv import load_dotenv
+from databases import Database
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
-import pymysql
+import dotenv
 
 
 # Configuration
-load_dotenv()
+dotenv.load_dotenv()
 DB_USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
 DB_PASSWORD = os.environ['DB_PASSWORD']
 BOT_TOKEN = os.environ['BOT_TOKEN']
 LANGUAGE = os.environ.get('LANGUAGE', 'en')
 TIMEZONE = os.environ.get('TIMEZONE')  # Defaults to local timezone
+
+# Database
+DATABASE_URL = f'mysql+asyncmy://{DB_USERNAME}:{DB_PASSWORD}@localhost:3306/WWCServices'
+database = Database(DATABASE_URL)
 
 # Initialize gettext
 root = pathlib.Path(__file__).parent
@@ -97,33 +101,8 @@ WATER_FLOW_RATES = {
     22: 1.91,
     23: 2.13,
     24: 2.37,
-    25: 2.63
+    25: 2.63,
 }
-
-
-# Подключение к базе данных MySQL
-def get_db_connection():
-    return pymysql.connect(
-        host="localhost",
-        user=DB_USERNAME,
-        password=DB_PASSWORD,
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
-
-async def execute_query(query, params=None):
-    def sync_execute():
-        connection = get_db_connection()
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute(query, params or ())
-                result = cursor.fetchall()
-                connection.commit()
-                return result
-        finally:
-            connection.close()
-
-    return await asyncio.to_thread(sync_execute)
 
 
 async def get_irrigation_data():
@@ -147,13 +126,13 @@ async def get_irrigation_data():
     WHERE s.irrigation = 1 AND i.PHIc < i.PHIt AND i.irrigationApp = 0
     AND i.date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
     """
-    return await execute_query(query)
+    return await database.fetch_all(query=query)
 
 
 BUTTONS = {
     "send_recommendation": _("Send recommendation"),
     "no_water": _("No water"),
-    "save_data": _("Save data")
+    "save_data": _("Save data"),
 }
 
 
@@ -492,18 +471,16 @@ async def handle_send_data(message):
                         area = float(row['area'])
                         actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
 
-                        await execute_query(
-                            """UPDATE WWCServices.Irrigation
-                            SET irrigationApp = %s
-                            WHERE siteID = %s
-                            AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
-                            (actual_mm, row['siteID'])
-                        )
+                        query = """
+                            UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                            WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                        """
+                        values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+                        await database.execute(query=query, values=values)
 
-                        await bot.send_message(
-                            chat_id,
-                            _("✅ Data saved! Used: {used_m3:.2f} m³").format(used_m3=data['total_used_m3'])
-                        )
+                        message = _("✅ Data saved! Used: {used_m3:.2f} m³").format(used_m3=data['total_used_m3'])
+                        await bot.send_message(chat_id, message)
+
                         data['is_active'] = False
                         return
                     except Exception as e:
@@ -521,7 +498,6 @@ async def handle_send_data(message):
     await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
 
 
-
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_traditional_start')
 async def handle_traditional_start(message):
     chat_id = message.chat.id
@@ -537,8 +513,6 @@ async def handle_traditional_start(message):
         user_states[chat_id] = "waiting_for_traditional_end"
     except ValueError:
         await bot.send_message(chat_id, _("⚠️ Type correct number (like 125.5)"))
-
-
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_traditional_end')
@@ -566,23 +540,19 @@ async def handle_traditional_end(message):
                 area = float(row['area'])
                 actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
-                await execute_query(
-                    """UPDATE WWCServices.Irrigation
-                    SET irrigationApp = %s
-                    WHERE siteID = %s
-                    AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
-                    (actual_mm, row['siteID'])
-                )
+                query = """
+                    UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                    WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                """
+                values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+                await database.execute(query=query, values=values)
 
                 await bot.send_message(
                     chat_id,
                     _("✅ Data saved!\n"
                       "Water used: {used_m3:.2f} m³\n"
                       "Equivalent to: {actual_mm:.2f} mm"
-                      ).format(
-                        used_m3=used_m3,
-                        actual_mm=actual_mm
-                    )
+                      ).format(used_m3=used_m3, actual_mm=actual_mm)
                 )
                 break
 
@@ -597,7 +567,6 @@ async def handle_traditional_end(message):
         user_states[chat_id] = None
         if chat_id in user_irrigation_data:
             del user_irrigation_data[chat_id]
-
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_counter_end')
@@ -627,13 +596,12 @@ async def handle_counter_end(message):
                 area = float(row['area'])
                 actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
-                await execute_query(
-                    """UPDATE WWCServices.Irrigation
-                    SET irrigationApp = %s
-                    WHERE siteID = %s
-                    AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
-                    (actual_mm, row['siteID'])
-                )
+                query = """
+                    UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                    WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                """
+                values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+                await database.execute(query=query, values=values)
 
                 await bot.send_message(
                     chat_id,
@@ -660,7 +628,6 @@ async def handle_counter_end(message):
             del user_irrigation_data[chat_id]
 
 
-
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_actual_data')
 async def handle_actual_data(message):
     chat_id = message.chat.id
@@ -673,13 +640,12 @@ async def handle_actual_data(message):
                 area = float(row['area'])
                 actual_mm = (actual_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
-                await execute_query(
-                    """UPDATE WWCServices.Irrigation
-                    SET irrigationApp = %s
-                    WHERE siteID = %s
-                    AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
-                    (actual_mm, row['siteID'])
-                )
+                query = """
+                    UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                    WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                """
+                values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+                await database.execute(query=query, values=values)
 
                 await bot.send_message(
                     chat_id,
@@ -735,23 +701,22 @@ async def send_recommendation(chat_id, fieldtype, irrigation_need, area, ie, wa,
 
 
 async def main():
-    # Очищаем старые задания при запуске
-    for job in scheduler.get_jobs():
-        job.remove()
+    await database.connect()
 
-    scheduler.add_job(
-        check_all_users,
-        'cron',
-        hour=7,
-        minute=0,  # Every day at 7 am
-        timezone=TIMEZONE,
-    )
+    # Clearing old tasks on startup
+    # XXX Do we need this? It's AsyncIOScheduler so jobs should not persist
+    scheduler.remove_all_jobs()
+
+    # Check irrigation for all users, every day at 7 am
+    scheduler.add_job(check_all_users, 'cron', hour=7, minute=0, timezone=TIMEZONE)
     scheduler.start()
 
+    # Start bot
     try:
         await bot.polling()
     finally:
         scheduler.shutdown()
+        await database.disconnect()
 
 
 if __name__ == "__main__":
