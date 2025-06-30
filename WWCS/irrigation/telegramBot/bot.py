@@ -157,19 +157,6 @@ async def start_irrigation_notifications(chat_id):
     )
 
 
-async def stop_irrigation_notifications(chat_id):
-    """Останавливает уведомления для указанного чата"""
-    job_id = f'water_check_{chat_id}'
-    try:
-        if job_id in notification_jobs:
-            job = notification_jobs[job_id]
-            job.remove()
-            del notification_jobs[job_id]
-    except Exception as e:
-        print(f"Error deleting task: {e}")
-
-
-
 async def send_water_check_notification(chat_id):
     """Отправляет уведомление о проверке уровня воды"""
     if chat_id in user_irrigation_data:
@@ -189,20 +176,6 @@ async def schedule_polyv_completion_notification(chat_id, hours, minutes):
         run_date=completion_time,
         args=[chat_id]
     )
-
-
-
-async def stop_polyv_completion_notification(chat_id):
-    """Останавливает уведомление о завершении полива"""
-    job_id = f'polyv_complete_{chat_id}'
-    try:
-        if job_id in notification_jobs:
-            job = notification_jobs[job_id]
-            job.remove()
-            del notification_jobs[job_id]
-    except Exception as e:
-        print(f"Error deleting task: {e}")  # Логируем ошибку, но не прерываем выполнение
-
 
 
 async def notify_polyv_completion(chat_id):
