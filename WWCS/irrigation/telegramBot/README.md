@@ -6,7 +6,7 @@ A deployment of the irrigation bot is configured with a number of environemnet v
     DB_PASSWORD -- Password to connect to MySQL (required)
     BOT_TOKEN   -- Token to connect to Telegram (required)
     LANGUAGE    -- Language to use (defaults to "en")
-    TIMEZONE    -- Timezone (defaults to Asia/Tashkent)
+    TIMEZONE    -- Timezone (defaults to the local timezone)
 
 The environment variables should be defined in a file with the name ".env", located in the
 directory where the bot runs. See [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for timezones. For example:
@@ -17,7 +17,11 @@ directory where the bot runs. See [here](https://en.wikipedia.org/wiki/List_of_t
     DB_PASSWORD=XXX
     BOT_TOKEN=XXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     LANGUAGE=tg
-    TIMEZONE=Asia/Dushanbe
+
+Notes:
+
+- The server's time should be configured to the local timezone, then you don't need to set
+  the TIMEZONE variable.
 
 Since this file contains sensitive information, set restrictive permissions, only the user
 should be able to read/write it:

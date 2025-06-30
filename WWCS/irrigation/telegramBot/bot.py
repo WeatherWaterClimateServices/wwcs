@@ -19,7 +19,7 @@ DB_USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
 DB_PASSWORD = os.environ['DB_PASSWORD']
 BOT_TOKEN = os.environ['BOT_TOKEN']
 LANGUAGE = os.environ.get('LANGUAGE', 'en')
-TIMEZONE = os.environ.get('TIMEZONE', 'Asia/Tashkent')
+TIMEZONE = os.environ.get('TIMEZONE')  # Defaults to local timezone
 
 # Initialize gettext
 root = pathlib.Path(__file__).parent
