@@ -99,7 +99,7 @@ WATER_FLOW_RATES = {
 }
 
 
-async def get_irrigation_data():
+async def get_irrigation_data(chat_id=None):
     query = """
     SELECT
         s.siteID,
@@ -117,9 +117,21 @@ async def get_irrigation_data():
     FROM SitesHumans.Sites s
         JOIN SitesHumans.Humans h ON JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.humanID')) = h.humanID
         JOIN WWCServices.Irrigation i ON i.siteID = s.siteID
-    WHERE s.irrigation = 1 AND i.PHIc < i.PHIt AND i.irrigationApp = 0
-    AND i.date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+    WHERE
+        s.irrigation = 1
+        AND i.PHIc < i.PHIt
+        AND i.irrigationApp = 0
+        AND i.date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
     """
+
+    if chat_id:
+        # TODO The telegramID column should be unique
+        query += f' AND telegramID = {chat_id}'
+        row = await database.fetch_one(query=query)
+        if row is None:
+            await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+        return row
+
     return await database.fetch_all(query=query)
 
 
@@ -167,47 +179,44 @@ async def notify_polyv_completion(chat_id):
 
 
 async def check_irrigation(chat_id):
-    rows = await get_irrigation_data()
-    for row in rows:
-        if str(chat_id) == str(row['telegramID']) and row['irrigation'] == 1:
-            markup = create_reply_keyboard()
-            m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
+    row = await get_irrigation_data(chat_id)
+    if row is not None:
+        m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
 
-            if row['type'] == "channel":
-                text = _(
-                    "🌤 Good morning, {first_name}!\n"
-                    "Your plot is ready for irrigation.\n"
-                    "💧 Water required: {water:.2f} m³"
-                )
+        row_type = row['type']
+        if row_type == "channel":
+            text = _(
+                "🌤 Good morning, {first_name}!\n"
+                "Your plot is ready for irrigation.\n"
+                "💧 Water required: {water:.2f} m³"
+            )
 
-            elif row['type'] == "counter":
-                text = _(
-                    "🌤 Good morning, {first_name}!\n"
-                    "Your plot is ready for irrigation.\n"
-                    "💧 Water required: {water:.2f} m³"
-                )
+        elif row_type == "counter":
+            text = _(
+                "🌤 Good morning, {first_name}!\n"
+                "Your plot is ready for irrigation.\n"
+                "💧 Water required: {water:.2f} m³"
+            )
 
-            elif row['type'] == "traditional":
-                text = _(
-                    "Hello, {first_name}!\n"
-                    "If your irrigation complete please push Save data button and enter you counter numbers Before and After irrigation\n"
-                    "and save your data"
-                )
+        elif row_type == "traditional":
+            text = _(
+                "Hello, {first_name}!\n"
+                "If your irrigation complete please push Save data button and enter you counter numbers Before and After irrigation\n"
+                "and save your data"
+            )
 
-            else:
-                text = _("ERROR!")
+        else:
+            text = _("ERROR!")
 
-            message = text.format(first_name=row['firstName'], water=round(m3_needed, 2))
-            await bot.send_message(chat_id, message, reply_markup=markup)
-            return True
-    return False
+        message = text.format(first_name=row['firstName'], water=round(m3_needed, 2))
+        markup = create_reply_keyboard()
+        await bot.send_message(chat_id, message, reply_markup=markup)
 
 
 async def check_all_users():
-    rows = await get_irrigation_data()
     notified_users = set()
-    for row in rows:
-        if row['irrigation'] == 1 and row['telegramID'] not in notified_users:
+    for row in await get_irrigation_data():
+        if row['telegramID'] not in notified_users:
             chat_id = row['telegramID']
             try:
                 await check_irrigation(chat_id)
@@ -272,61 +281,53 @@ async def start(message):
 @bot.message_handler(func=lambda message: message.text == BUTTONS["send_recommendation"])
 async def handle_recommendation(message):
     chat_id = message.chat.id
-    rows = await get_irrigation_data()
-    for row in rows:
-        if str(chat_id) == str(row['telegramID']):
-            if row['type'] == "channel":
-                user_states[chat_id] = "waiting_for_water_level"
-                await bot.send_message(chat_id, _("Enter the current water level in the channel (in cm):"))
+    row = await get_irrigation_data(chat_id)
+    if row is not None:
+        if row['type'] == "channel":
+            user_states[chat_id] = "waiting_for_water_level"
+            await bot.send_message(chat_id, _("Enter the current water level in the channel (in cm):"))
 
-            elif row['type'] == "counter":
-                user_states[chat_id] = "waiting_for_counter_start"
-                await bot.send_message(chat_id, _("Please, send the counter value before irrigation (m³):"))
+        elif row['type'] == "counter":
+            user_states[chat_id] = "waiting_for_counter_start"
+            await bot.send_message(chat_id, _("Please, send the counter value before irrigation (m³):"))
 
-            else:
-                await send_recommendation(
-                    chat_id,
-                    row['type'],
-                    float(row['irrigationNeed']),
-                    float(row['area']),
-                    float(row['ie']),
-                    float(row['wa'])
-                )
-            return
-    await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
-
+        else:
+            await send_recommendation(
+                chat_id,
+                row['type'],
+                float(row['irrigationNeed']),
+                float(row['area']),
+                float(row['ie']),
+                float(row['wa'])
+            )
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_counter_start')
 async def handle_counter_start(message):
     chat_id = message.chat.id
     try:
-        start_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+        row = await get_irrigation_data(chat_id)
+        if row is not None:
+            start_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+            m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area'])) * float(row['wa']) / float(row['ie'])
+            target_counter = start_counter + m3_needed
 
-        rows = await get_irrigation_data()
-        for row in rows:
-            if str(chat_id) == str(row['telegramID']):
-                m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area'])) * float(row['wa']) / float(row['ie'])
-                target_counter = start_counter + m3_needed
+            await bot.send_message(
+                chat_id,
+                _("Irrigate untill you counter is: {target_counter:.2f} m³\n"
+                  "Water need: {m3_needed:.2f} m³"
+                  ).format(target_counter=target_counter,
+                           m3_needed=m3_needed)
+            )
 
-                await bot.send_message(
-                    chat_id,
-                    _("Irrigate untill you counter is: {target_counter:.2f} m³\n"
-                      "Water need: {m3_needed:.2f} m³"
-                      ).format(target_counter=target_counter,
-                               m3_needed=m3_needed)
-                )
-
-                # Сохраняем начальные показания для последующего расчета
-                user_irrigation_data[chat_id] = {
-                    'start_counter': start_counter,
-                    'target_counter': target_counter,
-                    'is_active': True,
-                    'last_update': datetime.now(),
-                }
-                user_states[chat_id] = None
-                return
-        await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+            # Сохраняем начальные показания для последующего расчета
+            user_irrigation_data[chat_id] = {
+                'start_counter': start_counter,
+                'target_counter': target_counter,
+                'is_active': True,
+                'last_update': datetime.now(),
+            }
+            user_states[chat_id] = None
     except ValueError:
         await bot.send_message(chat_id, _("⚠️ Please, type number (125.5)"))
 
@@ -342,44 +343,41 @@ async def handle_water_level(message):
             await bot.send_message(
                 chat_id,
                 _("⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
-                "Please enter the correct value:")
+                  "Please enter the correct value:")
             )
             return  # Не продолжаем обработку
 
-        rows = await get_irrigation_data()
-        for row in rows:
-            if str(chat_id) == str(row['telegramID']):
-                calculation = await calculate_irrigation(
-                    chat_id,
-                    water_level,
-                    float(row['irrigationNeed']),
-                    float(row['area']),
-                    float(row['ie']),
-                    float(row['wa']),
+        row = await get_irrigation_data(chat_id)
+        if row is not None:
+            calculation = await calculate_irrigation(
+                chat_id,
+                water_level,
+                float(row['irrigationNeed']),
+                float(row['area']),
+                float(row['ie']),
+                float(row['wa']),
+            )
+
+            if calculation['is_completed']:
+                msg = _("✅ Irrigation completed! Enough water.")
+            else:
+                hours = int(calculation['remaining_time'])
+                minutes = int((calculation['remaining_time'] - hours) * 60)
+
+                msg = _(
+                    "💦 Current level: {water_level} cm\n"
+                    "⏱ Time left: {hours}h {minutes}m\n"
+                    "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
+                ).format(
+                    water_level=water_level,
+                    hours=hours,
+                    minutes=minutes,
+                    used_m3=calculation['used_m3'],
+                    total_m3=calculation['used_m3'] + calculation['remaining_m3'],
                 )
 
-                if calculation['is_completed']:
-                    msg = _("✅ Irrigation completed! Enough water.")
-                else:
-                    hours = int(calculation['remaining_time'])
-                    minutes = int((calculation['remaining_time'] - hours) * 60)
-
-                    msg = _(
-                        "💦 Current level: {water_level} cm\n"
-                        "⏱ Time left: {hours}h {minutes}m\n"
-                        "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
-                    ).format(
-                        water_level=water_level,
-                        hours=hours,
-                        minutes=minutes,
-                        used_m3=calculation['used_m3'],
-                        total_m3=calculation['used_m3'] + calculation['remaining_m3'],
-                    )
-
-                await bot.send_message(chat_id, msg)
-                user_states[chat_id] = None
-                return
-        await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+            await bot.send_message(chat_id, msg)
+            user_states[chat_id] = None
     except ValueError:
         await bot.send_message(chat_id, _("⚠️ Please enter a valid number (water level in cm)"))
 
@@ -391,57 +389,49 @@ async def handle_send_data(message):
     # Stop all notifications
     notification_manager.remove_all_jobs(chat_id)
 
-    rows = await get_irrigation_data()
-    for row in rows:
-        if str(chat_id) == str(row['telegramID']):
-            if row['type'] == "counter":
-                await bot.send_message(chat_id, _("Please, send your counter number after irrigation (m³):"))
-                user_states[chat_id] = "waiting_for_counter_end"
-                return
+    row = await get_irrigation_data(chat_id)
+    if row is not None:
+        if row['type'] == "counter":
+            await bot.send_message(chat_id, _("Please, send your counter number after irrigation (m³):"))
+            user_states[chat_id] = "waiting_for_counter_end"
 
-            elif row['type'] == "traditional":
-                await bot.send_message(chat_id, _("Please, send your counter number BEFORE irrigation (m³)"))
-                user_states[chat_id] = "waiting_for_traditional_start"
-                return
+        elif row['type'] == "traditional":
+            await bot.send_message(chat_id, _("Please, send your counter number BEFORE irrigation (m³)"))
+            user_states[chat_id] = "waiting_for_traditional_start"
 
-            elif row['type'] == "channel":
-                # Для channel сразу рассчитываем и сохраняем данные
-                if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
-                    try:
-                        data = user_irrigation_data[chat_id]
-                        time_elapsed = (datetime.now() - data['last_update']).total_seconds()
-                        flow_rate = WATER_FLOW_RATES.get(data['current_level'], 0)
-                        additional_used = flow_rate * (time_elapsed / 60)
-                        data['total_used_m3'] += additional_used
+        elif row['type'] == "channel":
+            # Для channel сразу рассчитываем и сохраняем данные
+            if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
+                try:
+                    data = user_irrigation_data[chat_id]
+                    time_elapsed = (datetime.now() - data['last_update']).total_seconds()
+                    flow_rate = WATER_FLOW_RATES.get(data['current_level'], 0)
+                    additional_used = flow_rate * (time_elapsed / 60)
+                    data['total_used_m3'] += additional_used
 
-                        area = float(row['area'])
-                        actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
+                    area = float(row['area'])
+                    actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
 
-                        query = """
-                            UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
-                            WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                        """
-                        values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
-                        await database.execute(query=query, values=values)
+                    query = """
+                        UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                        WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                    """
+                    values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+                    await database.execute(query=query, values=values)
 
-                        message = _("✅ Data saved! Used: {used_m3:.2f} m³").format(used_m3=data['total_used_m3'])
-                        await bot.send_message(chat_id, message)
+                    message = _("✅ Data saved! Used: {used_m3:.2f} m³").format(used_m3=data['total_used_m3'])
+                    await bot.send_message(chat_id, message)
 
-                        data['is_active'] = False
-                        return
-                    except Exception as e:
-                        print(f"Error while saving: {str(e)}")
-                        await bot.send_message(chat_id, _("⚠️ Error saving data"))
-                        return
-                else:
-                    await bot.send_message(chat_id, _("❌ No active irrigation session found"))
+                    data['is_active'] = False
                     return
-
+                except Exception as e:
+                    print(f"Error while saving: {str(e)}")
+                    await bot.send_message(chat_id, _("⚠️ Error saving data"))
             else:
-                await bot.send_message(chat_id, _("Wrong fieldtype"))
-                return
+                await bot.send_message(chat_id, _("❌ No active irrigation session found"))
 
-    await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+        else:
+            await bot.send_message(chat_id, _("Wrong fieldtype"))
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_traditional_start')
@@ -480,30 +470,25 @@ async def handle_traditional_end(message):
         used_m3 = end_counter - start_counter
 
         # Сохраняем в БД (аналогично counter)
-        rows = await get_irrigation_data()
-        for row in rows:
-            if str(chat_id) == str(row['telegramID']):
-                area = float(row['area'])
-                actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
+        row = await get_irrigation_data(chat_id)
+        if row is not None:
+            area = float(row['area'])
+            actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
-                query = """
-                    UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
-                    WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                """
-                values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
-                await database.execute(query=query, values=values)
+            query = """
+                UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+            """
+            values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+            await database.execute(query=query, values=values)
 
-                await bot.send_message(
-                    chat_id,
-                    _("✅ Data saved!\n"
-                      "Water used: {used_m3:.2f} m³\n"
-                      "Equivalent to: {actual_mm:.2f} mm"
-                      ).format(used_m3=used_m3, actual_mm=actual_mm)
-                )
-                break
-
-        else:
-            await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+            await bot.send_message(
+                chat_id,
+                _("✅ Data saved!\n"
+                  "Water used: {used_m3:.2f} m³\n"
+                  "Equivalent to: {actual_mm:.2f} mm"
+                  ).format(used_m3=used_m3, actual_mm=actual_mm)
+            )
 
     except ValueError:
         await bot.send_message(chat_id, _("⚠️ Type correct number (like 125.5)"))
@@ -536,38 +521,30 @@ async def handle_counter_end(message):
 
         used_m3 = round(end_counter - start_counter, 2)
 
-        rows = await get_irrigation_data()  # ✅ Важно: get_irrigation_data должна быть функцией!
-        for row in rows:
-            if str(chat_id) == str(row['telegramID']):
-                area = float(row['area'])
-                actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
+        row = await get_irrigation_data(chat_id)  # ✅ Важно: get_irrigation_data должна быть функцией!
+        if row is not None:
+            area = float(row['area'])
+            actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
-                query = """
-                    UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
-                    WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                """
-                values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
-                await database.execute(query=query, values=values)
+            query = """
+                UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+            """
+            values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+            await database.execute(query=query, values=values)
 
-                await bot.send_message(
-                    chat_id,
-                    _("✅ Data saved!\n"
-                      "Water used: {used_m3:.2f} m³\n"
-                      "Equivalent to: {actual_mm:.2f} mm"
-                      ).format(
-                        used_m3=used_m3,
-                        equivalent_mm=actual_mm
-                    )
-                )
-                break
-        else:
             await bot.send_message(
                 chat_id,
-                _("❌ Your data was not found in the system"))
+                _("✅ Data saved!\n"
+                  "Water used: {used_m3:.2f} m³\n"
+                  "Equivalent to: {actual_mm:.2f} mm"
+                  ).format(
+                    used_m3=used_m3,
+                    equivalent_mm=actual_mm
+                )
+            )
     except ValueError:
-        await bot.send_message(
-            chat_id,
-            _("⚠️ Type correct number (like 125.5)"))
+        await bot.send_message(chat_id, _("⚠️ Type correct number (like 125.5)"))
     finally:
         user_states[chat_id] = None
         if chat_id in user_irrigation_data:
@@ -579,34 +556,29 @@ async def handle_actual_data(message):
     chat_id = message.chat.id
     try:
         actual_m3 = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
-        rows = await get_irrigation_data()
+        row = await get_irrigation_data(chat_id)
+        if row is not None:
+            area = float(row['area'])
+            actual_mm = (actual_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
-        for row in rows:
-            if str(chat_id) == str(row['telegramID']):
-                area = float(row['area'])
-                actual_mm = (actual_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
+            query = """
+                UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+            """
+            values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+            await database.execute(query=query, values=values)
 
-                query = """
-                    UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
-                    WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                """
-                values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
-                await database.execute(query=query, values=values)
-
-                await bot.send_message(
-                    chat_id,
-                    _(
-                        "✅ Data saved!\n"
-                        "Water used: {used_m3:.2f} m³\n"
-                        "Equivalent to: {actual_mm:.2f} mm"
-                    ).format(
-                        used_m3=actual_m3,
-                        equivalent_mm=actual_mm
-                    )
+            await bot.send_message(
+                chat_id,
+                _(
+                    "✅ Data saved!\n"
+                    "Water used: {used_m3:.2f} m³\n"
+                    "Equivalent to: {actual_mm:.2f} mm"
+                ).format(
+                    used_m3=actual_m3,
+                    equivalent_mm=actual_mm
                 )
-                break
-        else:
-            await bot.send_message(chat_id, _("❌ Your data was not found in the system"))
+            )
     except ValueError:
         await bot.send_message(chat_id, _("⚠️ Please enter a valid number (e.g. 150 or 75.5)"))
     finally:
