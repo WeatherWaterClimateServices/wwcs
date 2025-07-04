@@ -44,8 +44,11 @@ crop.parameters <- full_join(crop.parameters, TomatoCambodia, by = "Index")
 ##   https://soilandhealth.org/wp-content/uploads/01aglibrary/010137veg.roots/010137ch29.html
 
 ## the full cycle after planting
+## radically reduced ini Kc from 0.6 to 0.15... based on pictures from the field
+## reduced mid Kc from 1 to .9, to be verified - the area between the mulches is
+## rather barren
 Ls <- round(c(ini=20, dev=30, mid=40, late=15) / 105 * 60)
-Kc <- c(ini=0.6, mid=1, end=.75)
+Kc <- c(ini=0.15, mid=.9, end=.75)
 Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
          seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
          rep(Kc[["mid"]], Ls[["mid"]]),
