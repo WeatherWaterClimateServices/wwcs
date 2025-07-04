@@ -148,18 +148,32 @@ for (i in 1:nrow(irrigation_sites)) {
   # ------------------------------------------------
   # PREPARE DATA FOR ET0
   # ------------------------------------------------
-  
-  station <- obs %>%
-    group_by(date = date(time)) %>%
+  ## agregate to 3hour intervals first, to ensure a complete diurnal cycle,
+  ## returning NA if any 3hour interval has no data
+  three_hour_agg <- obs %>%
+    group_by(date = date(time), 
+             three_hour = cut(hour(time), breaks=seq(-1, 24, by=3),
+                              labels=FALSE)) %>%
     summarize(
       Tmax = max(Temperature),
       Tmin = min(Temperature),
-      DOY = yday(time)[1],
-      DOM = day(time)[1],
-      Month = month(time)[1],
-      Year = year(time)[1],
-      lat = latitude[1] * pi / 180,
-      lon = longitude[1],
+      PrecipitationStation = sum(PrecipitationStation),
+    ) %>%
+    ungroup() %>%
+    complete(date, three_hour)
+  
+  ## now aggregate to daily - incomplete days becoming NA
+  station <- three_hour_agg %>%
+    group_by(date = date) %>%
+    summarize(
+      Tmax = max(Tmax),
+      Tmin = min(Tmin),
+      DOY = yday(date)[1],
+      DOM = day(date)[1],
+      Month = month(date)[1],
+      Year = year(date)[1],
+      lat = meta_site$latitude[1] * pi / 180,
+      lon = meta_site$longitude[1],
       PrecipitationStation = sum(PrecipitationStation),
     ) %>%
     dplyr::mutate(siteID = irrigation_sites$siteID[i])
@@ -207,8 +221,8 @@ for (i in 1:nrow(irrigation_sites)) {
   # -----------------------------------------------------------
   
   irrigation_temp <- irrigation_temp %>%
-    dplyr::mutate(ETc = zoo::na.approx(ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)], na.rm =
-                                         FALSE),
+    dplyr::mutate(ETc = zoo::na.approx(ET0 * crop.parameters[[paste0(irrigation_sites$Crop[i], "_Kc")]][1:nrow(irrigation_temp)], 
+                                       na.rm = FALSE),
                   ## if ever a trailing of heading value is NA, keep it; interpolate NA gaps
                   ETca = ETc)
   
@@ -222,8 +236,8 @@ for (i in 1:nrow(irrigation_sites)) {
       irrigation_temp$Iapp[j] <-  0
     }
     
-    ##if PrecipitationStation contains a valid value, use this one
-    ##otherwise leave at NA or a manually set value (via webform/db)    
+    ## if PrecipitationStation contains a valid value, use this one
+    ## otherwise leave at NA or a manually set value (via webform/db)    
     if (!is.na(irrigation_temp$PrecipitationStation[j])) {
       irrigation_temp$Precipitation[j] <-  irrigation_temp$PrecipitationStation[j]
     } 
@@ -231,7 +245,7 @@ for (i in 1:nrow(irrigation_sites)) {
     ## store this RD here
     this.RD <- crop.parameters[[paste0(irrigation_sites$Crop[i], "_RD")]][j]
 
-    if (j == 1) { ## if first day, assign starting value
+    if (j == 1) { ## if first day, assign starting value, unless outside WP-FC
       if (irrigation_sites$PHIc[i] > irrigation_sites$FC[i] || 
           irrigation_sites$PHIc[i] < irrigation_sites$WP[i]) {
         print(paste("Site", irrigation_sites$siteID[i],
