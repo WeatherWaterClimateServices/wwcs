@@ -351,9 +351,11 @@ server <- function(input, output, session) {
   observeEvent(input$edit_button, priority = 20, {
     sites <- dbReadTable(pool, "Sites")  %>%
       dplyr::as_tibble() %>%
+      dplyr::filter(type == "WWCS") %>%
       dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
     
     SQL_df <- dbReadTable(pool, "Sites")   %>%
+      dplyr::filter(type == "WWCS") %>%
       dplyr::select(fieldproperties) %>%
       unlist() %>%
       spread_all %>%
@@ -389,6 +391,11 @@ server <- function(input, output, session) {
     if (length(input$table_rows_selected) == 1) {
       entry_form("submit_edit")
       
+      print("you selected this row")
+      print(input$table_rows_selected)
+      
+      print("you selected this id")
+      print(SQL_df[input$table_rows_selected, "siteID"])
       
       updateTextInput(session, "wp", value = unlist(SQL_df[input$table_rows_selected, "WP"], use.names = FALSE))
       updateTextInput(session, "fc", value = unlist(SQL_df[input$table_rows_selected, "FC"], use.names = FALSE))
@@ -408,9 +415,11 @@ server <- function(input, output, session) {
   observeEvent(input$submit_edit, priority = 20, {
     sites <- dbReadTable(pool, "Sites")  %>%
       dplyr::as_tibble() %>%
+      dplyr::filter(type == "WWCS") %>%
       dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
     
     SQL_df <- dbReadTable(pool, "Sites")   %>%
+      dplyr::filter(type == "WWCS") %>%
       dplyr::select(fieldproperties) %>%
       unlist() %>%
       spread_all %>%
