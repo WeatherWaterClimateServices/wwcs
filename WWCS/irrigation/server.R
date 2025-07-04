@@ -391,12 +391,6 @@ server <- function(input, output, session) {
     if (length(input$table_rows_selected) == 1) {
       entry_form("submit_edit")
       
-      print("you selected this row")
-      print(input$table_rows_selected)
-      
-      print("you selected this id")
-      print(SQL_df[input$table_rows_selected, "siteID"])
-      
       updateTextInput(session, "wp", value = unlist(SQL_df[input$table_rows_selected, "WP"], use.names = FALSE))
       updateTextInput(session, "fc", value = unlist(SQL_df[input$table_rows_selected, "FC"], use.names = FALSE))
       updateTextInput(session, "ie", value = unlist(SQL_df[input$table_rows_selected, "IE"], use.names = FALSE))
