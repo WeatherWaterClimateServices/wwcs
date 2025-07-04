@@ -217,7 +217,6 @@ for (i in 1:nrow(irrigation_sites)) {
   # -----------------------------------------------------------
   
   nday <- nrow(irrigation_temp)
-  
   for (j in 1:nday) {
     if (is.na(irrigation_temp$Iapp[j])) {
       irrigation_temp$Iapp[j] <-  0
@@ -233,6 +232,12 @@ for (i in 1:nrow(irrigation_sites)) {
     this.RD <- crop.parameters[[paste0(irrigation_sites$Crop[i], "_RD")]][j]
 
     if (j == 1) { ## if first day, assign starting value
+      if (irrigation_sites$PHIc[i] > irrigation_sites$FC[i] || 
+          irrigation_sites$PHIc[i] < irrigation_sites$WP[i]) {
+        print(paste("Site", irrigation_sites$siteID[i],
+          "Initial PHIc from HumanSites.Sites outside of WP-FC range. Exiting."))
+        break
+      }
       irrigation_temp$PHIc[j] = irrigation_sites$PHIc[i] ## start value from db
     } else { ## if not first day, go through the water balance
       phi_update <-
@@ -245,8 +250,10 @@ for (i in 1:nrow(irrigation_sites)) {
       if (is.na(phi_update)) {## catch an NA, e.g. if station temporarily down
         irrigation_temp$PHIc[j] <- irrigation_temp$PHIc[j-1]
       } else { ## otherwise, if all good
-        if (phi_update > irrigation_sites$FC[i]){
+        if (phi_update > irrigation_sites$FC[i]){ ## make sure that PHIc <= FC
           irrigation_temp$PHIc[j] <- irrigation_sites$FC[i]
+        } else if (phi_update < irrigation_sites$WP[i]){ ## make sure that PHIc >= WP
+          irrigation_temp$PHIc[j] <- irrigation_sites$WP[i]
         } else {
           irrigation_temp$PHIc[j] <- phi_update
         }
@@ -298,7 +305,7 @@ for (i in 1:nrow(irrigation_sites)) {
             'REPLACE INTO Irrigation (siteID, date, irrigationNeed, irrigationApp, WP, FC, SWD, ETca, Ks, PHIc, PHIt, precipitation, ET0, ETc)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
           ),
-          params = list( ## some of them are fixed in time, these come from the sites directly 
+          params = list( ## some of them are fixed in time, these come from the sites directly
             irrigation_temp$siteID[j],
             irrigation_temp$date[j],
             irrigation_temp$Ineed[j],
@@ -316,7 +323,7 @@ for (i in 1:nrow(irrigation_sites)) {
           )
         )
       },
-      
+
       error = function(err) {
         out <-
           paste0(
@@ -329,5 +336,6 @@ for (i in 1:nrow(irrigation_sites)) {
         return(out)
       }
     ) ## end trycatch insert into WWCServices.Irrigation
-  }
-}
+  } ## end loop j in 1:ndays
+} ## end loop i in #irrigation sites
+
