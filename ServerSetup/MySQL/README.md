@@ -21,19 +21,18 @@ Notes:
   should be expressed with consecutive migrations: `0001_xxx.sql` etc.
 - The databases will be empty, there is no data in the migration files.
 - The migration does not have DROP statements, so if a database already exists it will
-  fail.
+  fail. Here we give priority to safety over convenience.
 
-If in development you already have the databases and want to start fresh with empty
-databases, first you need to drop the databases. To do so manually run the following
-statements:
+To make things easier there is a shell script called createdb.sh:
 
-    DROP DATABASE IF EXISTS BeneficiarySupport;
-    DROP DATABASE IF EXISTS Humans;
-    DROP DATABASE IF EXISTS Machines;
-    DROP DATABASE IF EXISTS SitesHumans;
-    DROP DATABASE IF EXISTS WWCServices;
+    # Print a help screen
+    createdb.sh --help
 
-In development it would be convenient to include these statements in the initial
-migration. But it would be dangerous as well if the file was accidentally run in
-production, it would wipe out everything. We give priority to safety over convenience,
-so the DROP statements must be run manually.
+    # Create a new empty database (applies migration files), useful for new deployments
+    createdb.sh
+
+    # As above, but first drop the databases, use carefully!
+    createdb.sh --drop-databases
+
+    # Instead of creating empty databases, restore dumps. Useful in development environments
+    createdb.sh --drop-databases --restore-dumps /backups

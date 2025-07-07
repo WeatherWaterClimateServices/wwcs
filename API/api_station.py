@@ -7,11 +7,12 @@ import time
 import traceback
 
 # Requirements
-from asyncmy.errors import IntegrityError
-from databases import Database
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Response, status
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 import sqlalchemy as sa
+
+from models.Machines import MachineAtSite, MachineObs, t_MachineObsRejected, Metadata
 
 
 # Configuration
@@ -22,43 +23,11 @@ DB_PASSWORD = os.environ.get('PASSWORD')
 
 # Database connection settings
 DATABASE_URL = f'mysql+asyncmy://{DB_USERNAME}:{DB_PASSWORD}@localhost:3306/Machines'
-database = Database(DATABASE_URL)
-
-
-# Define the table structure using SQLAlchemy Core
-metadata = sa.MetaData(schema="Machines")
-MachineAtSite = sa.Table(
-    "MachineAtSite",
-    metadata,
-    sa.Column("siteID", sa.String(50), nullable=False),
-    sa.Column("loggerID", sa.String(50), nullable=False),
-    sa.Column("startDate", sa.DateTime, nullable=False, server_default="2000-01-01 00:00:00"),
-    sa.Column("endDate", sa.DateTime, nullable=False, server_default="2100-01-01 00:00:00"),
-    sa.PrimaryKeyConstraint("loggerID", "startDate"),
-)
-
-Metadata = sa.Table(
-    "Metadata",
-    metadata,
-    sa.Column("loggerID", sa.String(50), nullable=False),
-    sa.Column("startDate", sa.DateTime, nullable=False, server_default="2000-01-01 00:00:00"),
-    sa.Column("endDate", sa.DateTime, nullable=False, server_default="2100-01-01 00:00:00"),
-    sa.Column("domain", sa.String(50), nullable=True),
-    sa.Column("git_version", sa.String(50), nullable=True),
-    sa.PrimaryKeyConstraint("loggerID", "startDate"),
-)
+engine = create_async_engine(DATABASE_URL)
 
 
 root_path = "/post" if ENV else None
 app = FastAPI(root_path=root_path)
-
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
 
 
 #testing API via browser
@@ -90,10 +59,15 @@ async def addData(request: Request):
             return await submitRejectedJSON("Invalid timestamp", myjson, domain)
 
         # Get siteID
-        sql = f"SELECT siteID FROM Machines.MachineAtSite WHERE loggerID = '{loggerID}' ORDER BY startDate DESC;"
-        rows = await database.fetch_all(sql)
-        if len(rows) == 0:
-            return await submitRejectedJSON("Station ID not registered", myjson, domain)
+        async with AsyncSession(engine) as session:
+            result = await session.execute(
+                sa.select(MachineAtSite)
+                    .filter_by(loggerID=loggerID)
+                    .order_by(MachineAtSite.startDate.desc())
+            )
+            rows = result.scalars().all()
+            if len(rows) == 0:
+                return await submitRejectedJSON("Station ID not registered", myjson, domain)
 
         row = rows[0]
         siteID = row.siteID
@@ -111,12 +85,13 @@ async def addData(request: Request):
 
     data.pop('git_version', None) # No column in the table for this one
     try:
-        async with database.transaction():
-            await insert_old(database, 'Machines.MachineObs', received='NOW()', **data)
+        async with AsyncSession(engine) as session:
+            await insert(session, MachineObs, received=sa.func.now(), **data)
+
         # TODO Change to 201 once the stations are updated
         return "New record inserted"
-    except IntegrityError as exc:
-        errcode = exc.args[0]
+    except sa.exc.IntegrityError as exc:
+        errcode = exc.orig.args[0]
         if errcode == 1062:
             return "Duplicate data NOT inserted"
         else:
@@ -129,12 +104,12 @@ async def addData(request: Request):
 #insert rejected functions
 async def submitRejectedJSON(text, json, domain):
     # XXX Should be 202 Accepted
-    async with database.transaction():
-        await insert_old(database, 'Machines.MachineObsRejected',
-               domain=domain,
-               comment=text,
-               received='NOW(6)',
-               data=json,
+    async with AsyncSession(engine) as session:
+        await insert_t(session, t_MachineObsRejected,
+           domain=domain,
+           comment=text,
+           received=sa.func.now(6),
+           data=json,
         )
 
     return text
@@ -152,31 +127,72 @@ def get_domain(request):
 
     return hostname
 
-async def insert_old(database, table, **kwargs):
-    columns = []
-    values = []
-    args = {}
-    for col, val in kwargs.items():
-        columns.append(col)
-        if type(val) is str and val.startswith('NOW('):
-            values.append(val)
-        else:
-            values.append(f':{col}')
-            args[col] = val
+async def insert(session: AsyncSession, model, **kwargs):
+    """Insert a new record with the given values.
 
-    columns = ', '.join(columns)
-    values = ', '.join(values)
-    sql = f"INSERT INTO {table} ({columns}) VALUES ({values});"
-    return await database.execute(sql, args)
+    Args:
+        session: AsyncSession instance
+        model: SQLAlchemy model class
+        **kwargs: Column values for the new record
+    Returns:
+        The newly created model instance
+    """
+    # Create model instance
+    new_instance = model(**kwargs)
 
-async def insert(database, table, **kwargs):
-    query = table.insert().values(kwargs)
-    await database.execute(query)
+    # Add to session and commit
+    session.add(new_instance)
+    await session.commit()
+    await session.refresh(new_instance)  # To get any server-generated values
 
-async def update(database, table, where, **kwargs):
+    return new_instance
+
+async def insert_t(session: AsyncSession, table, **kwargs):
+    """Insert a new record into a Core-style Table.
+
+    Args:
+        session: AsyncSession instance
+        table: SQLAlchemy Table object (like t_MachineObsRejected)
+        **kwargs: Column values for the new record
+    Returns:
+        Dictionary of the inserted values (including server-generated ones)
+    """
+    # Core-style insert operation
+    stmt = sa.insert(table).values(**kwargs)
+
+    # Execute and commit
+    result = await session.execute(stmt)
+    await session.commit()
+
+    # For tables with auto-incrementing IDs, get the inserted ID
+    if result.inserted_primary_key:
+        if len(result.inserted_primary_key) == 1:
+            kwargs['id'] = result.inserted_primary_key[0]
+
+    # Return the data that was inserted (including any server-generated values)
+    return kwargs
+
+async def update(session: AsyncSession, model, where, **kwargs):
+    """Update records matching the where clause with the given values.
+
+    Args:
+        session: AsyncSession instance
+        model: SQLAlchemy model class
+        where: BooleanClauseList for filtering
+        **kwargs: Column values to update
+    Returns:
+        ResultProxy with number of rows affected
+    """
     assert type(where) is sa.sql.elements.BooleanClauseList
-    query = sa.update(table).where(where).values(kwargs)
-    return await database.execute(query)
+
+    result = await session.execute(
+        sa.update(model)
+            .where(where)
+            .values(**kwargs)
+            .execution_options(synchronize_session="fetch")
+    )
+    await session.commit()  # Explicit commit
+    return result.rowcount  # Returns number of rows updated
 
 @app.post("/register")
 async def register(request: Request, response: Response):
@@ -196,43 +212,41 @@ async def register(request: Request, response: Response):
     startDate = time.strftime("%Y-%m-%d %H:%M:%S")
     endDate = "2100-01-01 00:00:00"
     try:
-        async with database.transaction():
+        async with AsyncSession(engine) as session:
             # Machines.MachineAtSite: Update latest row if any
-            table = MachineAtSite
-            rows = await database.fetch_all(
-                table.select()
-                    .where(table.c.loggerID == loggerID)
-                    .order_by(sa.desc(table.c.startDate))
+            result = await session.execute(
+                sa.select(MachineAtSite)
+                    .filter_by(loggerID=loggerID)
+                    .order_by(MachineAtSite.startDate.desc())
                     .limit(1)
             )
-            if len(rows) > 0:
-                row = rows[0]
-                where = (table.c.loggerID == loggerID) & (table.c.startDate == row.startDate)
-                await update(database, table, where, endDate=startDate)
+            row = result.scalar_one_or_none()
+            if row:
+                where = (MachineAtSite.loggerID == loggerID) & (MachineAtSite.startDate == row.startDate)
+                await update(session, MachineAtSite, where, endDate=startDate)
 
             # Machines.MachineAtSite: Insert new row
-            await insert(database, MachineAtSite, siteID=siteID, loggerID=loggerID,
+            await insert(session, MachineAtSite, siteID=siteID, loggerID=loggerID,
                          startDate=startDate, endDate=endDate)
 
             # Machines.Metadata: Update latest row if any
-            table = Metadata
-            rows = await database.fetch_all(
-                table.select()
-                    .where(table.c.loggerID == loggerID)
-                    .order_by(sa.desc(table.c.startDate))
+            result = await session.execute(
+                sa.select(Metadata)
+                    .filter_by(loggerID=loggerID)
+                    .order_by(Metadata.startDate.desc())
                     .limit(1)
             )
-            if len(rows) > 0:
-                row = rows[0]
-                where = (table.c.loggerID == loggerID) & (table.c.startDate == row.startDate)
-                await update(database, table, where, endDate=startDate)
+            row = result.scalar_one_or_none()
+            if row:
+                where = (Metadata.loggerID == loggerID) & (Metadata.startDate == row.startDate)
+                await update(session, Metadata, where, endDate=startDate)
 
             # Machines.Metadata: Insert new row
-            await insert(database, Metadata, loggerID=loggerID, startDate=startDate,
+            await insert(session, Metadata, loggerID=loggerID, startDate=startDate,
                          endDate=endDate, git_version=git_version, domain=domain)
 
-    except IntegrityError as exc:
-        errcode = exc.args[0]
+    except sa.exc.IntegrityError as exc:
+        errcode = exc.orig.args[0]
         if errcode == 1062:
             status_code = status.HTTP_200_OK
         else:

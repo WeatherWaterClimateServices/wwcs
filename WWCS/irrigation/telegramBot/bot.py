@@ -19,7 +19,7 @@ DB_USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
 DB_PASSWORD = os.environ['DB_PASSWORD']
 BOT_TOKEN = os.environ['BOT_TOKEN']
 LANGUAGE = os.environ.get('LANGUAGE', 'en')
-TIMEZONE = os.environ.get('TIMEZONE', 'Asia/Tashkent')
+TIMEZONE = os.environ.get('TIMEZONE')  # Defaults to local timezone
 
 # Initialize gettext
 root = pathlib.Path(__file__).parent
@@ -493,9 +493,9 @@ async def handle_send_data(message):
                         actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
 
                         await execute_query(
-                            """UPDATE WWCServices.Irrigation 
-                            SET irrigationApp = %s 
-                            WHERE siteID = %s 
+                            """UPDATE WWCServices.Irrigation
+                            SET irrigationApp = %s
+                            WHERE siteID = %s
                             AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
                             (actual_mm, row['siteID'])
                         )
@@ -567,9 +567,9 @@ async def handle_traditional_end(message):
                 actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
                 await execute_query(
-                    """UPDATE WWCServices.Irrigation 
-                    SET irrigationApp = %s 
-                    WHERE siteID = %s 
+                    """UPDATE WWCServices.Irrigation
+                    SET irrigationApp = %s
+                    WHERE siteID = %s
                     AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
                     (actual_mm, row['siteID'])
                 )
@@ -628,9 +628,9 @@ async def handle_counter_end(message):
                 actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
                 await execute_query(
-                    """UPDATE WWCServices.Irrigation 
-                    SET irrigationApp = %s 
-                    WHERE siteID = %s 
+                    """UPDATE WWCServices.Irrigation
+                    SET irrigationApp = %s
+                    WHERE siteID = %s
                     AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
                     (actual_mm, row['siteID'])
                 )
@@ -674,9 +674,9 @@ async def handle_actual_data(message):
                 actual_mm = (actual_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
                 await execute_query(
-                    """UPDATE WWCServices.Irrigation 
-                    SET irrigationApp = %s 
-                    WHERE siteID = %s 
+                    """UPDATE WWCServices.Irrigation
+                    SET irrigationApp = %s
+                    WHERE siteID = %s
                     AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)""",
                     (actual_mm, row['siteID'])
                 )
@@ -743,7 +743,7 @@ async def main():
         check_all_users,
         'cron',
         hour=7,
-        minute=0,  # Every day at 7 am 
+        minute=0,  # Every day at 7 am
         timezone=TIMEZONE,
     )
     scheduler.start()

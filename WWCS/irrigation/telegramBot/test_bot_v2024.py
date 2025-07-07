@@ -12,7 +12,7 @@ telegramID = 42
 
 
 class FakeMessage:
-    
+
     def __init__(self, chat, message_id, text):
         self.chat = chat
         self.message_id = message_id

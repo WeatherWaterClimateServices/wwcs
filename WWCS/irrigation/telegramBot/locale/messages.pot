@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-03 10:37+0200\n"
+"POT-Creation-Date: 2025-06-27 11:41+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -69,8 +69,8 @@ msgstr ""
 msgid "Please, send the counter value before irrigation (m³):"
 msgstr ""
 
-#: bot.py:370 bot.py:403 bot.py:456 bot.py:485 bot.py:520 bot.py:556 bot.py:595
-#: bot.py:657 bot.py:702
+#: bot.py:370 bot.py:403 bot.py:456 bot.py:521 bot.py:551 bot.py:590 bot.py:652
+#: bot.py:697
 msgid "❌ Your data was not found in the system"
 msgstr ""
 
@@ -91,11 +91,11 @@ msgid ""
 "Please enter the correct value:"
 msgstr ""
 
-#: bot.py:436 bot.py:715
+#: bot.py:436 bot.py:710
 msgid "✅ Irrigation completed! Enough water."
 msgstr ""
 
-#: bot.py:442 bot.py:721
+#: bot.py:442 bot.py:716
 #, python-brace-format
 msgid ""
 "💦 Current level: {water_level} cm\n"
@@ -115,36 +115,36 @@ msgstr ""
 msgid "Please, send your counter number BEFORE irrigation (m³)"
 msgstr ""
 
-#: bot.py:483
-msgid "Wrong fieldtype"
-msgstr ""
-
-#: bot.py:512
+#: bot.py:505
 #, python-brace-format
 msgid "✅ Data saved! Used: {used_m3:.2f} m³"
 msgstr ""
 
-#: bot.py:523
+#: bot.py:511
 msgid "⚠️ Error saving data"
 msgstr ""
 
-#: bot.py:525
-msgid "Enter actual water consumption (m³):"
+#: bot.py:514
+msgid "❌ No active irrigation session found"
 msgstr ""
 
-#: bot.py:541
+#: bot.py:518
+msgid "Wrong fieldtype"
+msgstr ""
+
+#: bot.py:536
 msgid "Now send counter value AFTER irrigation (m³)"
 msgstr ""
 
-#: bot.py:544 bot.py:598 bot.py:661
+#: bot.py:539 bot.py:593 bot.py:656
 msgid "⚠️ Type correct number (like 125.5)"
 msgstr ""
 
-#: bot.py:562
+#: bot.py:557
 msgid "⚠️ Error: start value is greater than end value!"
 msgstr ""
 
-#: bot.py:584 bot.py:645 bot.py:692
+#: bot.py:579 bot.py:640 bot.py:687
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
@@ -152,25 +152,25 @@ msgid ""
 "Equivalent to: {actual_mm:.2f} mm"
 msgstr ""
 
-#: bot.py:615
+#: bot.py:610
 msgid "❌ Error: No start data found"
 msgstr ""
 
-#: bot.py:622
+#: bot.py:617
 msgid ""
 "⚠️ Error: The initial value of the counter cannot be greater than the final "
 "value!\n"
 "Please enter correct data."
 msgstr ""
 
-#: bot.py:704
+#: bot.py:699
 msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
 msgstr ""
 
-#: bot.py:735
+#: bot.py:730
 msgid "❌ Unsupported field type"
 msgstr ""
 
-#: bot.py:739
+#: bot.py:734
 msgid "⚠️ Input data error"
 msgstr ""

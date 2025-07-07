@@ -1,18 +1,16 @@
+from datetime import datetime, timedelta
 import os
 import re
-from ecmwfapi import *
-from cdo import *
-cdo = Cdo()
-import csv
-import urllib
-import requests
-import json
-import pandas as pd
-from datetime import datetime, timedelta
-import fnmatch
+
+from cdo import Cdo
+from ecmwfapi import ECMWFService
+import dotenv
 import mysql.connector
+import pandas as pd
 import yaml
-from dotenv import load_dotenv
+
+
+cdo = Cdo()
 
 # Configuration
 load_dotenv("/home/wwcs/wwcs/WWCS/.env")

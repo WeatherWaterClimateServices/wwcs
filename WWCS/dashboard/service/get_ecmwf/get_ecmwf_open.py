@@ -1,14 +1,16 @@
-from ecmwf.opendata import Client
 import glob
+import os
 import re
+import shutil
+
+from cdo import Cdo
+from ecmwf.opendata import Client
+import mysql.connector
 import pandas as pd
 import xarray as xr
-import requests
-import shutil
-from cdo import *
-cdo = Cdo()
 import yaml
 
+cdo = Cdo()
 
 with open("/home/wwcs/wwcs/WWCS/config.yaml", 'r') as file:
     config = yaml.safe_load(file)

@@ -54,20 +54,20 @@ async def shutdown():
 
 async def get_observation(stationID):
     query = """
-        SELECT 
-            mo.loggerID, 
-            CASE WHEN mo.p = -999 THEN NULL ELSE mo.p END AS p, 
+        SELECT
+            mo.loggerID,
+            CASE WHEN mo.p = -999 THEN NULL ELSE mo.p END AS p,
             CASE WHEN mo.pr = -999 THEN NULL ELSE mo.pr END AS pr,
-            CASE WHEN mo.rh = -999 THEN NULL ELSE mo.rh END AS rh, 
-            mo.siteID as stationID, 
-            CASE WHEN mo.ta = -999 THEN NULL ELSE mo.ta END AS ta, 
-            mo.timestamp, 
+            CASE WHEN mo.rh = -999 THEN NULL ELSE mo.rh END AS rh,
+            mo.siteID as stationID,
+            CASE WHEN mo.ta = -999 THEN NULL ELSE mo.ta END AS ta,
+            mo.timestamp,
             CASE WHEN mo.ts10cm = -999 THEN NULL ELSE mo.ts10cm END AS ts10cm
-        FROM v_machineobs mo 
-        JOIN SitesHumans.Sites sh ON mo.siteID = sh.siteID 
-        WHERE sh.type = 'WWCS' 
-        AND mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR) 
-        AND mo.siteID = :stationID 
+        FROM v_machineobs mo
+        JOIN SitesHumans.Sites sh ON mo.siteID = sh.siteID
+        WHERE sh.type = 'WWCS'
+        AND mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        AND mo.siteID = :stationID
         ORDER BY timestamp DESC
     """
 
@@ -122,7 +122,7 @@ async def get_obs_by_area(response: Response, area: str):
 
 async def get_stations_metadata():
     query = """
-        SELECT 
+        SELECT
             siteID,
             siteName,
             latitude,
@@ -134,7 +134,7 @@ async def get_stations_metadata():
     """
 
     rows = await database_machines.fetch_all(query=query)
-    
+
     # Format the result
     results = []
     # If siteID starts with "CLIM" then use the sensor_type = ClimaVue, otherwise use Sensirion
@@ -148,7 +148,7 @@ async def get_stations_metadata():
             "sensor_type": "ClimaVUE50" if row.siteID.startswith("CLIM") else "SensirionSHT30",
             "sensor_height": "2m"
         })
-    
+
     return results
 
 @app.get("/stations/")
@@ -165,7 +165,7 @@ async def get_stations(response: Response):
 
 async def get_smartmet(siteID):
     query = """
-        SELECT 
+        SELECT
             mo.loggerID,
             mo.timestamp,
             mo.ta,
@@ -194,7 +194,7 @@ async def get_smartmet(siteID):
     """
 
     rows = await database_machines.fetch_all(query=query, values={"siteID": siteID})
-    
+
     # Convert rows to a list of dictionaries with the correct structure
     results = []
     for row in rows:
@@ -304,7 +304,7 @@ async def get_smartmet(siteID):
 
 async def get_ecmwf(siteID):
     query = """
-        SELECT 
+        SELECT
             mo.loggerID,
             mo.timestamp,
             mo.ta,
@@ -333,7 +333,7 @@ async def get_ecmwf(siteID):
     """
 
     rows = await database_machines.fetch_all(query=query, values={"siteID": siteID})
-    
+
     # Convert rows to a list of dictionaries with the correct structure
     results = []
     for row in rows:
@@ -450,8 +450,8 @@ async def app_ecmwf(response: Response, siteID: str):
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Internal Server Error")
-                            
-                            
+
+
 @app.get("/smartmet/")
 async def app_smartmet(response: Response, siteID: str):
     try:
@@ -471,18 +471,18 @@ async def app_smartmet(response: Response, siteID: str):
 async def get_frcst_data(request: Request, response: Response):
     date = request.query_params.get('date')
     stationID = request.query_params.get('stationID')
-    
+
     if not stationID or not date:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="stationID and date are required")
 
     query = """
         SELECT *
-        FROM Forecasts 
-        WHERE siteID = :stationID 
+        FROM Forecasts
+        WHERE siteID = :stationID
           AND date = :date
           AND timeofday != -1
     """
-    
+
     try:
         rows = await database_services.fetch_all(query=query, values={"stationID": stationID, "date": date})
         response.headers['Access-Control-Allow-Origin'] = '*'
@@ -493,7 +493,7 @@ async def get_frcst_data(request: Request, response: Response):
     except Exception:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-      
+
 
 @app.get('/map')
 async def get_map_data(request: Request, response: Response):
@@ -505,7 +505,7 @@ async def get_map_data(request: Request, response: Response):
     da = xr.open_dataset('/srv/shiny-server/dashboard/appdata/gemos_raster/raster_merged.nc')
     ds = da.sel(lon=sellon, lat=sellat, method="nearest")
     filtered_data = ds[["IFS_T_mea"]].round(1).rename({"IFS_T_mea": "Tmean"}).to_dict()["data_vars"]
-    
+
     # Write coordinates to a dictionary
     coords_dict = ds.to_dict()["coords"]
 
@@ -513,7 +513,7 @@ async def get_map_data(request: Request, response: Response):
     result_dict = {**filtered_data, **coords_dict}
     response.headers['Access-Control-Allow-Origin'] = '*'
     return result_dict
-  
+
 
 # ---------------------------------------
 # POST IRRIGATION DATA
@@ -524,20 +524,20 @@ async def get_map_data(request: Request, response: Response):
 async def retrieve_irrgation(request: Request, response: Response):
     siteID = request.query_params.get('siteID')
     date = request.query_params.get('date')
-    
+
     if not siteID or not date:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="siteID and date are required")
 
     query = """
-        SELECT date, irrigationNeed 
-        FROM Irrigation 
-        WHERE siteID = :siteID 
+        SELECT date, irrigationNeed
+        FROM Irrigation
+        WHERE siteID = :siteID
           AND date = :date
     """
-    
+
     try:
         rows = await database_services.fetch_all(query=query, values={"siteID": siteID, "date": date})
-         
+
         result = [
             {
                 "Date": convert_timestamp(str(row.date)),
@@ -553,7 +553,7 @@ async def retrieve_irrgation(request: Request, response: Response):
     except Exception:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-      
+
 
 
 class data_irrigation(BaseModel):
@@ -561,10 +561,10 @@ class data_irrigation(BaseModel):
     irrigationApp: int
     precip: float | None = None
     date: str | None = None
-    
+
 @app.post('/irrigationApp')
 async def app_irrigation(data_irrigation: data_irrigation):
-  
+
     siteID = data_irrigation.siteID
     irrigationApp = data_irrigation.irrigationApp
     precip = data_irrigation.precip
@@ -573,7 +573,7 @@ async def app_irrigation(data_irrigation: data_irrigation):
     query = """
         REPLACE INTO Irrigation (date, siteID, irrigationApp, precipitation) VALUES (:date, :siteID, :irrigationApp, :precip)
     """
-    
+
     try:
         values = {"date": date, "siteID": siteID, "irrigationApp": irrigationApp, "precip": precip}
         await database_services.execute(query=query, values=values)
@@ -595,26 +595,26 @@ async def get_data_warning(request: Request, response: Response):
     id = request.query_params.get('Name')
     date = request.query_params.get('date')
     type = request.query_params.get('type')
-    
+
     if not id or not date or not type:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name, date and type are required")
-      
+
     if type == 'heat':
         query = """
         SELECT date, Name, Heat1, Heat2, Heat3, Threshold1, Threshold2, Threshold3
-        FROM Heatwave 
-        WHERE Name = :id 
+        FROM Heatwave
+        WHERE Name = :id
           AND reftime = :date
     """
-    
+
     elif type == 'cold':
         query = """
         SELECT date, Name, Cold1, Cold2, Cold3, Threshold1, Threshold2, Threshold3
-        FROM Coldwave 
-        WHERE Name = :id 
+        FROM Coldwave
+        WHERE Name = :id
           AND reftime = :date
     """
-    
+
     try:
         rows = await database_services.fetch_all(query=query, values={"id": id, "date": date})
         response.headers['Access-Control-Allow-Origin'] = '*'
@@ -625,7 +625,7 @@ async def get_data_warning(request: Request, response: Response):
     except Exception:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-      
+
 
 # ---------------------------------------
 # GET PLANTING DATA
@@ -638,14 +638,14 @@ async def get_data_warning_planting(request: Request, response: Response):
 
     if not id or not date or not type:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name, date and type are required")
-      
+
     query = """
         SELECT *
-        FROM Planting 
-        WHERE siteID = :stationID 
+        FROM Planting
+        WHERE siteID = :stationID
           AND date = :date
     """
-    
+
     try:
         rows = await database_services.fetch_all(query=query, values={"stationID": stationID, "date": date})
         response.headers['Access-Control-Allow-Origin'] = '*'
@@ -656,7 +656,7 @@ async def get_data_warning_planting(request: Request, response: Response):
     except Exception:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-      
+
 
 # ---------------------------------------
 # GET HARVEST DATA
@@ -669,14 +669,14 @@ async def get_data_warning_harvest(request: Request, response: Response):
 
     if not id or not date or not type:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name, date and type are required")
-      
+
     query = """
         SELECT *
-        FROM Harvest 
-        WHERE siteID = :stationID 
+        FROM Harvest
+        WHERE siteID = :stationID
           AND date = :date
     """
-    
+
     try:
         rows = await database_services.fetch_all(query=query, values={"stationID": stationID, "date": date})
         response.headers['Access-Control-Allow-Origin'] = '*'
