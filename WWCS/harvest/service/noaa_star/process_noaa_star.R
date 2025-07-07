@@ -11,7 +11,7 @@ rm(list = ls())
 
 # READ STATION DATA FROM WWCS.TJ
 # ------------------------------------------------
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 sites <-
   sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
@@ -31,7 +31,7 @@ closest <- function(xv, sv) {
   min(which(abs(xv - sv) == min(abs(xv - sv))))
 }
 
-bd_gadm <- sf::st_read(paste0("/opt/shiny-server/WWCS/boundaries/gadm41_", gadm0, "_0.shp"))
+bd_gadm <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_0.shp"))
 
 ind <- array(NA, dim = c(length(sites$longitude), 2))
 

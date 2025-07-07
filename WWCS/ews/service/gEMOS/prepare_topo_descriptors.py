@@ -6,7 +6,7 @@ from topo_descriptors.helpers import get_dem_netcdf, scale_to_pixel
 import yaml
 
 # Read YAML file
-with open("/opt/shiny-server/WWCS/config.yaml", 'r') as file:
+with open("/home/wwcs/wwcs/WWCS/config.yaml", 'r') as file:
     config = yaml.safe_load(file)
 
 # Access parameters

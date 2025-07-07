@@ -11,7 +11,7 @@ library(shinymanager)
 
 
 rm(list = ls())
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 setwd("/srv/shiny-server/dashboard/")
 options(shiny.sanitize.errors = FALSE)
 
@@ -64,7 +64,7 @@ if (!file.exists("appdata/pictocodes.fst")) {
 # Read administrative areas
 bd <- sf::st_read(
   paste0(
-    "/opt/shiny-server/WWCS/boundaries/gadm41_",
+    "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
     gadm0,
     "_2.shp"
   ),
@@ -77,7 +77,7 @@ if (gadm0 == "TJK") {
   bd$district[14] = "Rudaki2"
 }
 
-mask <- readRDS("/opt/shiny-server/WWCS/boundaries/mask.rds")
+mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
 if (!file.exists("./appdata/gemos_raster/raster_plot_0.tif")) {
   ifsmap <- data.frame()

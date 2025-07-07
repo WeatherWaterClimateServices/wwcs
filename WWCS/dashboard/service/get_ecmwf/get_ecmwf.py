@@ -13,14 +13,14 @@ import yaml
 cdo = Cdo()
 
 # Configuration
-dotenv.load_dotenv("/opt/shiny-server/WWCS/.env")
+load_dotenv("/home/wwcs/wwcs/WWCS/.env")
 ENV = os.environ.get('ENV')
 USERNAME = os.environ.get('USERNAME', 'wwcs')
 PASSWORD = os.environ.get('PASSWORD')
 
 
 # Load YAML data from a file
-with open('/opt/shiny-server/WWCS/config.yaml', 'r') as file:
+with open('/home/wwcs/wwcs/WWCS/config.yaml', 'r') as file:
     config = yaml.safe_load(file)
     
 train_period = config['train_period']

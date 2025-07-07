@@ -19,7 +19,7 @@ registerDoParallel(numOfCores)
 
 setwd("/srv/shiny-server/dashboard/service")
 
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 maxlead <- forecast_days * 24
 
 

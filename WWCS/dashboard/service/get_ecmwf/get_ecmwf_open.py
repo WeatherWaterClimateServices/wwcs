@@ -10,10 +10,9 @@ import pandas as pd
 import xarray as xr
 import yaml
 
-
 cdo = Cdo()
 
-with open("/opt/shiny-server/WWCS/config.yaml", 'r') as file:
+with open("/home/wwcs/wwcs/WWCS/config.yaml", 'r') as file:
     config = yaml.safe_load(file)
 
 maxlat = config['maxlat']

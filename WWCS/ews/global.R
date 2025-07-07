@@ -13,7 +13,7 @@ rm(list = ls())
 
 setwd("/srv/shiny-server/ews/")
 options(shiny.sanitize.errors = FALSE)
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 # READ AND ALLOCATE DATA
 # -------------------
@@ -37,7 +37,7 @@ pool_service <-
   )
 
 # Read administrative areas
-bd <- sf::st_read(paste0("/opt/shiny-server/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
+bd <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
 
@@ -45,7 +45,7 @@ if (gadm0 == "TJK") {
   bd$district[14] = "Rudaki2"  
 }
 
-mask <- readRDS("/opt/shiny-server/WWCS/boundaries/mask.rds")
+mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
 sites <- dbReadTable(pool, "Sites") %>%
          dplyr::filter(heatwave == 1 | coldwave == 1) %>%

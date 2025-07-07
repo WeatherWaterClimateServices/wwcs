@@ -10,7 +10,7 @@ library(stringr)
 rm(list = ls())
 
 setwd("/srv/shiny-server/dashboard/service/get_wwcs/")
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 # SET GLOBAL PARAMETERS
 # ------------------------------------------------

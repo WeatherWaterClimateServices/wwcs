@@ -14,11 +14,11 @@ mkdir -p cronout
 
 echo "=== RETRIEVE EMCWF FORECASTS ==="
 
-/opt/shiny-server/WWCS/dashboard/service/get_ecmwf/venv/bin/python3 get_ecmwf/get_ecmwf.py > cronout/ecmwf.out
+/home/wwcs/wwcs/WWCS/dashboard/service/get_ecmwf/venv/bin/python3 get_ecmwf/get_ecmwf.py > cronout/ecmwf.out
 
-/opt/shiny-server/WWCS/dashboard/service/get_ecmwf/venv/bin/python3 get_ecmwf/get_ecmwf_extended.py > cronout/ecmwf_extended.out
+/home/wwcs/wwcs/WWCS/dashboard/service/get_ecmwf/venv/bin/python3 get_ecmwf/get_ecmwf_extended.py > cronout/ecmwf_extended.out
 
-/opt/shiny-server/WWCS/dashboard/service/get_ecmwf/venv/bin/python3 get_ecmwf/concatenate_ecmwf.py > cronout/ecmwf_concatenate.out
+/home/wwcs/wwcs/WWCS/dashboard/service/get_ecmwf/venv/bin/python3 get_ecmwf/concatenate_ecmwf.py > cronout/ecmwf_concatenate.out
 
 echo "=== GET OBSERVATIONS AND POSTPROCESS FORECASTS ==="
 

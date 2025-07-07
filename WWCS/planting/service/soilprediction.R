@@ -13,8 +13,8 @@ rm(list = ls())
 
 setwd("/srv/shiny-server/planting/")
 options(shiny.sanitize.errors = FALSE)
-source('/opt/shiny-server/WWCS/.Rprofile')
-source('/opt/shiny-server/WWCS/planting/R/complete_criteria.R')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/planting/R/complete_criteria.R')
 
 # READ AND ALLOCATE DATA
 # ----------------------
@@ -29,7 +29,7 @@ criteria <-
 bd <-
   sf::st_read(
     paste0(
-      "/opt/shiny-server/WWCS/boundaries/gadm41_",
+      "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
       gadm0,
       "_2.shp"
     ),

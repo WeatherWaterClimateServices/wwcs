@@ -3,7 +3,7 @@ library(shinyBS)
 library(shinyLP)
 library(shinythemes)
 
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 # Define UI for application
 shinyUI(# Include a fliudPage above the navbar to incorporate a icon in the header

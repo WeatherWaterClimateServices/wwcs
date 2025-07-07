@@ -12,7 +12,7 @@ library(plotly)
 library(shinydashboard)
 library(shinymanager)
 
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 # Load the credentials
 
@@ -35,7 +35,7 @@ credentials <- data.frame(
 # Read administrative areas
 bd <- sf::st_read(
   paste0(
-    "/opt/shiny-server/WWCS/boundaries/gadm41_",
+    "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
 	  gadm0,
     "_2.shp"
   ),
@@ -48,7 +48,7 @@ if (gadm0 == "TJK") {
   bd$district[14] = "Rudaki2"
 }
 
-mask <- readRDS("/opt/shiny-server/WWCS/boundaries/mask.rds")
+mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
 # Load data from database
 

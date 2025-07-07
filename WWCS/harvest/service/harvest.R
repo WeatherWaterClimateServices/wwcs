@@ -13,7 +13,7 @@ rm(list = ls())
 
 setwd("/srv/shiny-server/planting/")
 options(shiny.sanitize.errors = FALSE)
-source('/opt/shiny-server/WWCS/.Rprofile')
+source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 # READ AND ALLOCATE DATA
 # -------------------
