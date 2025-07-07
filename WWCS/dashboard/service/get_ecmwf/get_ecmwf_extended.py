@@ -3,7 +3,7 @@ import os
 
 from cdo import Cdo
 from ecmwfapi import ECMWFService
-import dotenv
+from dotenv import load_dotenv
 import mysql.connector
 import pandas as pd
 import yaml
