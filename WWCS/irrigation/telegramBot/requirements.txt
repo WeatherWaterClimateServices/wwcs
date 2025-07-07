@@ -1,6 +1,5 @@
 aiohttp
 APScheduler
-asyncmy
-databases
+PyMySQL
 pyTelegramBotAPI
 python-dotenv
