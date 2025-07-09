@@ -3,6 +3,7 @@ library(pool)
 library(dplyr)
 library(lubridate)
 library(tidyjson)
+library(tidyr)
 
 source('/home/wwcs/wwcs/WWCS/.Rprofile')
 source("/srv/shiny-server/irrigation/R/calc_et0.R")
