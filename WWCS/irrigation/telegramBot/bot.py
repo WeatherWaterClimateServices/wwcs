@@ -62,14 +62,14 @@ class NotificationManager:
 notification_manager = NotificationManager()
 
 
-# Инициализация бота
+# Bot initialization
 bot = AsyncTeleBot(BOT_TOKEN)
 
-# Словари для хранения состояний
+# Dictionaries for storing states
 user_states = {}
-user_irrigation_data = {}  # Для хранения данных о поливе
+user_irrigation_data = {}  # For storing irrigation data
 
-# Таблица расхода воды (уровень в см -> расход в м³/мин)
+# Water flow table (level in cm -> flow in m³/min)
 WATER_FLOW_RATES = {
     1: 0.0008,
     2: 0.0048,
@@ -111,6 +111,7 @@ async def get_irrigation_data(chat_id=None):
         i.irrigationNeed,
         h.telegramID,
         JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.type')) AS type,
+        JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.measurement_device')) AS device, 
         JSON_EXTRACT(s.fieldproperties, '$.area') AS area,
         JSON_EXTRACT(s.fieldproperties, '$.IE') AS ie,
         JSON_EXTRACT(s.fieldproperties, '$.WA') AS wa
@@ -136,18 +137,16 @@ async def get_irrigation_data(chat_id=None):
 
 
 BUTTONS = {
-    "send_recommendation": _("Send recommendation"),
-    "no_water": _("No water"),
-    "save_data": _("Save data"),
+    "start_irrigation": _("Start Irrigation"),
+    "irrigation_finished": _("Irrigation finished"),
 }
 
 
 def create_reply_keyboard():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     buttons = [
-        types.KeyboardButton(BUTTONS["send_recommendation"]),
-        types.KeyboardButton(BUTTONS["no_water"]),
-        types.KeyboardButton(BUTTONS["save_data"]),
+        types.KeyboardButton(BUTTONS["start_irrigation"]),
+        types.KeyboardButton(BUTTONS["irrigation_finished"]),
     ]
     markup.add(*buttons)
     return markup
@@ -159,7 +158,7 @@ def start_irrigation_notifications(chat_id):
 
 
 async def send_water_check_notification(chat_id):
-    """Отправляет уведомление о проверке уровня воды"""
+    """Sends a notification about checking the water level"""
     if chat_id in user_irrigation_data:
         message = _("🔄 Please check the current water level in the channel and send its value")
         await bot.send_message(chat_id, message)
@@ -257,7 +256,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
     flow_rate = WATER_FLOW_RATES.get(water_level, 0)
     remaining_time = (remaining_m3 / flow_rate) / 60 if flow_rate > 0 else 0
 
-    # Планируем уведомление о завершении
+    # Here we are planning a notification of completion
     if remaining_time > 0:
         hours = int(remaining_time)
         minutes = int((remaining_time - hours) * 60)
@@ -278,7 +277,7 @@ async def start(message):
     await check_irrigation(message.chat.id)
 
 
-@bot.message_handler(func=lambda message: message.text == BUTTONS["send_recommendation"])
+@bot.message_handler(func=lambda message: message.text == BUTTONS["start_irrigation"])
 async def handle_recommendation(message):
     chat_id = message.chat.id
     row = await get_irrigation_data(chat_id)
@@ -320,7 +319,7 @@ async def handle_counter_start(message):
                            m3_needed=m3_needed)
             )
 
-            # Сохраняем начальные показания для последующего расчета
+            # Saving the initial readings for subsequent calculation
             user_irrigation_data[chat_id] = {
                 'start_counter': start_counter,
                 'target_counter': target_counter,
@@ -338,14 +337,14 @@ async def handle_water_level(message):
     try:
         water_level = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
 
-        # Проверяем что уровень воды в допустимом диапазоне
+        # We check that the water level is within the acceptable range.
         if water_level < 1 or water_level > 25:
             await bot.send_message(
                 chat_id,
                 _("⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
                   "Please enter the correct value:")
             )
-            return  # Не продолжаем обработку
+            return  # We do not continue processing.
 
         row = await get_irrigation_data(chat_id)
         if row is not None:
@@ -382,7 +381,7 @@ async def handle_water_level(message):
         await bot.send_message(chat_id, _("⚠️ Please enter a valid number (water level in cm)"))
 
 
-@bot.message_handler(func=lambda message: message.text == BUTTONS["save_data"])
+@bot.message_handler(func=lambda message: message.text == BUTTONS["irrigation_finished"])
 async def handle_send_data(message):
     chat_id = message.chat.id
 
@@ -400,7 +399,7 @@ async def handle_send_data(message):
             user_states[chat_id] = "waiting_for_traditional_start"
 
         elif row['type'] == "channel":
-            # Для channel сразу рассчитываем и сохраняем данные
+            # For channel we immediately calculate and save the data
             if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
                 try:
                     data = user_irrigation_data[chat_id]
@@ -469,7 +468,7 @@ async def handle_traditional_end(message):
 
         used_m3 = end_counter - start_counter
 
-        # Сохраняем в БД (аналогично counter)
+        # Save in the DB (similar to counter)
         row = await get_irrigation_data(chat_id)
         if row is not None:
             area = float(row['area'])
@@ -494,7 +493,7 @@ async def handle_traditional_end(message):
         await bot.send_message(chat_id, _("⚠️ Type correct number (like 125.5)"))
 
     finally:
-        # Очищаем состояние
+        # Clearing the state
         user_states[chat_id] = None
         if chat_id in user_irrigation_data:
             del user_irrigation_data[chat_id]
@@ -521,7 +520,7 @@ async def handle_counter_end(message):
 
         used_m3 = round(end_counter - start_counter, 2)
 
-        row = await get_irrigation_data(chat_id)  # ✅ Важно: get_irrigation_data должна быть функцией!
+        row = await get_irrigation_data(chat_id)  # ✅ Important: get_irrigation_data must be a function!
         if row is not None:
             area = float(row['area'])
             actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
