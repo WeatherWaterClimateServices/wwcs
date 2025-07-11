@@ -41,19 +41,24 @@ crop.parameters <- full_join(crop.parameters, TomatoCambodia, by = "Index")
 ## default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
 ## fresh market, summer variety, shortened to 60 days
 ## rooting depth: additionally here:
-##   https://soilandhealth.org/wp-content/uploads/01aglibrary/010137veg.roots/010137ch29.html
+##   https://soilandhealth.org/wp-content/uploads/01aglibrary/010137veg.roots/010137ch29.html 
+## RDs <- c(seq(0.1, 1, length=Ls[["ini"]]), rep(1, 60 - Ls[["ini"]]))
 
-## the full cycle after planting
+## the full cycle after planting - plastic mulch cultivation
 ## radically reduced ini Kc from 0.6 to 0.15... based on pictures from the field
 ## reduced mid Kc from 1 to .9, to be verified - the area between the mulches is
 ## rather barren
+## on rooting depths: https://www.sciencedirect.com/science/article/pii/S0378377405001496
+## and https://onlinelibrary.wiley.com/doi/pdf/10.1155/2023/6435489
 Ls <- round(c(ini=20, dev=30, mid=40, late=15) / 105 * 60)
 Kc <- c(ini=0.15, mid=.9, end=.75)
 Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
          seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
          rep(Kc[["mid"]], Ls[["mid"]]),
          seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
-RDs <- c(seq(0.1, 1, length=Ls[["ini"]]), rep(1, 60 - Ls[["ini"]]))
+RDs <- c(seq(0.05, 0.3, length=Ls[["ini"]] + Ls[["dev"]]),
+         seq(0.3, 0.4, length=Ls[["mid"]]),
+         rep(.4, Ls[["late"]]))
 
 CucumberCambodiaSeeded <-
   data.frame(Index=1:nrow(crop.parameters),
@@ -64,10 +69,9 @@ CucumberCambodiaSeeded <-
 crop.parameters <- full_join(crop.parameters, CucumberCambodiaSeeded, by = "Index")
 
 ## now the same cucumber, but with
-## cut off initial days 10-15 which happen in a nursery (some tuning for RD -
-## these will remain short in the pots of the nursery)
+## cut off initial days 10-15 which happen in a nursery
 Kcs <- Kcs[Ls[["ini"]]:length(Kcs)]
-RDs <- c(seq(.3, 1, length=5), rep(1, length(Kcs) - 5))
+RDs <- RDs[Ls[["ini"]]:length(RDs)]
 
 CucumberCambodiaTranspl <-
   data.frame(Index=1:nrow(crop.parameters),
