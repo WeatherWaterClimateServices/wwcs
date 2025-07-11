@@ -57,8 +57,8 @@ Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
          rep(Kc[["mid"]], Ls[["mid"]]),
          seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
 RDs <- c(seq(0.05, 0.3, length=Ls[["ini"]] + Ls[["dev"]]),
-         seq(0.3, 0.4, length=Ls[["mid"]]),
-         rep(.4, Ls[["late"]]))
+         seq(0.3, 0.5, length=Ls[["mid"]]),
+         rep(.5, Ls[["late"]]))
 
 CucumberCambodiaSeeded <-
   data.frame(Index=1:nrow(crop.parameters),
