@@ -4,28 +4,41 @@ library(readxl)
 ## raw data.frame
 crop.parameters <- data.frame(Index = 1:300)
 
-## tomato for cambodia - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
-## chosen the shortest variety, and further shortened to 90 days. the Kcs seem to be the same for all
+## legumes / pinto beans - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
+## chosen the 'Beans, dry and Pulses' parameters
+Ls <- c(ini = 20, dev = 30, mid = 40, late = 20)
+Kc <- c(ini = 0.4, mid = 1.15, end = .35)
+Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
+         seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
+         rep(Kc[["mid"]], Ls[["mid"]]),
+         seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
+RDs <- c(seq(.15, .9, length=Ls[["ini"]] + Ls[["dev"]]),
+         rep(.9, length=Ls[["mid"]] + Ls[["late"]]))
 
-## the full cycle after planting
-Ls <- round(c(ini = 30, dev = 40, mid = 40, late = 20) / 130 * 90)
-Kc <- c(ini = 0.6, mid = 1.15, end = .8)
+PintoBeans <-
+  data.frame(Index = 1:nrow(crop.parameters),
+             PintoBeans_Kc=c(Kcs,
+                            rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             PintoBeans_RD=c(RDs,
+                            rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, PintoBeans, by = "Index")
+
+
+## tomato for cambodia - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
+## chosen the shortest variety. the Kcs seem to be the same for all
+## in cambodia, tomatos were planted under plastic mulch.
+## this greatly reduces the initial Kc values. below a hand-made/tuned record
+Ls <- round(c(ini = 35, dev = 45, mid = 40, late = 20))
+Kc <- c(ini = 0.25, mid = .85, end = .6)
 Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
          seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
          rep(Kc[["mid"]], Ls[["mid"]]),
          seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
 
-## cut off initial days 45 which happen in a nursery (some tuning for RD -
+## cut off initial days 25 which happen in a nursery (some tuning for RD -
 ## these will remain short in the pots of the nursery)
-Kcs <- Kcs[46:length(Kcs)]
-RDs <- c(seq(.25, 1, length=10), rep(1, length(Kcs) - 10))
-
-## in cambodia, tomatos were planted under plastic mulch.
-## this greatly reduces the initial Kc values. below a hand-made/tuned record
-Kcs <- c(seq(0.25, 0.5, length = 12),
-         seq(0.5, Kc[["mid"]], length = 20),
-         seq(Kc[["mid"]], Kc[["end"]], length = 13))
-RDs <- c(seq(.25, 1, length=22), rep(1, length(Kcs) - 22))
+Kcs <- Kcs[26:length(Kcs)]
+RDs <- c(seq(.25, 1, length=50), rep(1, length(Kcs) - 50))
 
 TomatoCambodia <-
   data.frame(Index = 1:nrow(crop.parameters),
@@ -46,19 +59,21 @@ crop.parameters <- full_join(crop.parameters, TomatoCambodia, by = "Index")
 
 ## the full cycle after planting - plastic mulch cultivation
 ## radically reduced ini Kc from 0.6 to 0.15... based on pictures from the field
-## reduced mid Kc from 1 to .9, to be verified - the area between the mulches is
+## reduced mid Kc from 1 to .7, and end Kc to .65 to be verified
+## the area between the mulches is
 ## rather barren
 ## on rooting depths: https://www.sciencedirect.com/science/article/pii/S0378377405001496
 ## and https://onlinelibrary.wiley.com/doi/pdf/10.1155/2023/6435489
-Ls <- round(c(ini=20, dev=30, mid=40, late=15) / 105 * 60)
-Kc <- c(ini=0.15, mid=.9, end=.75)
+Ls <- round(c(ini=15, dev=35, mid=40, late=15)) ## slightly adjusted based on pics from field
+Kc <- c(ini=0.1, mid=.7, end=.65)
 Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
          seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
          rep(Kc[["mid"]], Ls[["mid"]]),
          seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
-RDs <- c(seq(0.05, 0.3, length=Ls[["ini"]] + Ls[["dev"]]),
-         seq(0.3, 0.5, length=Ls[["mid"]]),
-         rep(.5, Ls[["late"]]))
+RDs <- c(seq(0.05, 0.25, length=Ls[["ini"]]),
+         seq(0.25, 0.5, length=Ls[["dev"]]),
+         seq(0.5, 0.8, length=Ls[["mid"]]),
+         rep(.8, Ls[["late"]]))
 
 CucumberCambodiaSeeded <-
   data.frame(Index=1:nrow(crop.parameters),
@@ -69,9 +84,9 @@ CucumberCambodiaSeeded <-
 crop.parameters <- full_join(crop.parameters, CucumberCambodiaSeeded, by = "Index")
 
 ## now the same cucumber, but with
-## cut off initial days 10-15 which happen in a nursery
-Kcs <- Kcs[Ls[["ini"]]:length(Kcs)]
-RDs <- RDs[Ls[["ini"]]:length(RDs)]
+## cut off initial days which happen in a nursery
+Kcs <- Kcs[7:length(Kcs)]
+RDs <- RDs[7:length(RDs)]
 
 CucumberCambodiaTranspl <-
   data.frame(Index=1:nrow(crop.parameters),
