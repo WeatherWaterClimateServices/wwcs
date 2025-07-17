@@ -1,12 +1,14 @@
+from itertools import product
+import xarray as xr
 import elevation as ele
 import numpy as np
 import os.path
-from topo_descriptors import topo
+from topo_descriptors import topo, helpers
 from topo_descriptors.helpers import get_dem_netcdf, scale_to_pixel
 import yaml
 
 # Read YAML file
-with open("/home/wwcs/wwcs/WWCS/config.yaml", 'r') as file:
+with open("/opt/shiny-server/WWCS/config.yaml", 'r') as file:
     config = yaml.safe_load(file)
 
 # Access parameters
@@ -28,7 +30,7 @@ outdir = '/srv/shiny-server/dashboard/appdata/topotiles/'
 
 if not os.path.exists(outdir):
    os.makedirs(outdir)
-
+   
 for x in range(ntiles):
     for y in range(ntiles): 
         file = outdir + 'DEM-30m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
@@ -42,6 +44,7 @@ for x in range(ntiles):
             ele.clip(bounds=[rlon[x]-margin, rlat[y]-margin, rlon[x+1]+margin, rlat[y+1]+margin], output=file)
         if not os.path.isfile(fileout100) and not os.path.isfile(file2):
             ele.clip(bounds=[rlon[x]-margin2, rlat[y]-margin2, rlon[x+1]+margin2, rlat[y+1]+margin2], product="SRTM3", output=file2)
+
 
 for x in range(ntiles):
     for y in range(ntiles): 
