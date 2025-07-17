@@ -67,8 +67,8 @@ server <- function(input, output, session) {
     clickLng = setlon
   )
   
-  selected <- reactiveValues(id = "TOJ004", 
-                             name = "TOJ004")
+  selected <- reactiveValues(id = dashboard_default_station, 
+                             name = dashboard_default_station)
   
   request <- reactiveValues(url = NULL)
   

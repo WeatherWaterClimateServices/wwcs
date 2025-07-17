@@ -29,7 +29,7 @@ timezone_country: "Asia/Tashkent"
 
 # Parameters for EMOS
 
-train_period: 10 # Days with which to train temperature forecasts
+train_period: 30 # Days with which to train temperature forecasts
 forecast_days: 10 # Days to consider of ECMWF forecasts
 miss_val: 0.50 # Amount of missing values to allow in the station data
 emos_formula: "Temperature_mean ~ IFS_T_mea + IFS_T_DTR  | IFS_T_std"
