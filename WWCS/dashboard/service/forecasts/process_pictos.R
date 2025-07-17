@@ -239,12 +239,24 @@ for (i in station_id) {
         dplyr::summarize(altitude = altitude[1]) %>%
         unlist()
       
+      # Get metadata information
+      nc <- RNetCDF::open.nc(file)
+      
+      # Extract reftime unit string
+      reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units")
+      RNetCDF::close.nc(nc)
+      
+      # Extract the reference date from the unit string
+      # Format is typically "days since YYYY-MM-DD HH:MM:SS"
+      ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since "
+      reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct
+      
       nc <- tidync::tidync(file)
       ifs <- nc %>%
         tidync::hyper_tibble() %>%
         dplyr::rename(lead = time) %>%
         dplyr::mutate(
-          reftime = lubridate::with_tz(as.POSIXct(read_start_date + days(reftime), tz = "UTC"), tz = timezone_country),
+          reftime = lubridate::with_tz(as.POSIXct(reference_time + days(reftime), tz = "UTC"), tz = timezone_country),
           time = as.POSIXct(reftime + as.difftime(lead, units = 'hours'), tz = timezone_country),
           z = as.numeric(z) / 9.807,
           tp = tp * 1000,

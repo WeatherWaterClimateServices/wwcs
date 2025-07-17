@@ -92,13 +92,26 @@ for (i in station_id) {
     file_ext <- file_ext <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_extended_merged.nc"), " ","")
     
     if (file.exists(file)) {
+      
+      # Get metadata information
+      nc <- RNetCDF::open.nc(file_ext)
+      
+      # Extract reftime unit string
+      reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units")
+      RNetCDF::close.nc(nc)
+      
+      # Extract the reference date from the unit string
+      # Format is typically "days since YYYY-MM-DD HH:MM:SS"
+      ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since "
+      reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct
+      
       nc <- tidync::tidync(file)
       ifs <- nc %>%
         tidync::hyper_tibble() %>%
         dplyr::select(-c(lat, lon)) %>%
         dplyr::rename(lead = time) %>%
         dplyr::mutate(
-          reftime = lubridate::with_tz(as.POSIXct(read_start_date + days(reftime), tz = "UTC"), tz = timezone_country),
+          reftime = lubridate::with_tz(as.POSIXct(reference_time + days(reftime), tz = "UTC"), tz = timezone_country),
           time = as.POSIXct(reftime + as.difftime(lead, units = 'hours'), tz = timezone_country),
           siteID = i,
           IFS_T_mea = IFS_T_mea - 273.15

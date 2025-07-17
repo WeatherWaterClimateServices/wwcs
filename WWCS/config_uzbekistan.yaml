@@ -27,6 +27,10 @@ gadm0: "UZB"
 
 timezone_country: "Asia/Tashkent"
 
+# Zoom level for map applications
+
+zoom_level: 5
+
 # Parameters for EMOS
 
 train_period: 30 # Days with which to train temperature forecasts
