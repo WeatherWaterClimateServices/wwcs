@@ -112,11 +112,20 @@ irrigation_colors <-
 
 
 for (file in list.files("/srv/shiny-server/irrigation/appdata/Shapefiles", pattern = ".shp", full.names = TRUE)) {
+  
+  try({
+    plot_polygons <- plot_polygons %>%
+      rbind(
+        sf::st_read(file) %>%
+          dplyr::select(plot_id, geometry) %>%
+          dplyr::rename(id = plot_id)
+      )
+  }, silent = TRUE)
+  
   if (!exists("plot_polygons")) {
-    plot_polygons <- sf::st_read(file) %>% dplyr::select(plot_id,geometry) %>%
+    plot_polygons <- sf::st_read(file) %>%
+      dplyr::select(plot_id, geometry) %>%
       dplyr::rename(id = plot_id)
-  } else {
-    plot_polygons <- rbind(plot_polygons, sf::st_read(file) %>% dplyr::select(id,geometry))
   }
 }
 
