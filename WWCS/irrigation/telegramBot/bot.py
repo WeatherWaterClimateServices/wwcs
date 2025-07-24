@@ -181,60 +181,65 @@ async def notify_polyv_completion(chat_id):
 
 async def check_irrigation(chat_id):
     row = await get_irrigation_data(chat_id)
-    if row is not None:
-        m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
+    if not row:  # Changed the condition for checking for data availability
+        print(f"[ERROR] No data found for chat_id: {chat_id}")
+        await bot.send_message(chat_id, "❌ Your data was not found in the system")
+        return False
+    print(f"[DEBUG] Processing irrigation for: {row['firstName']} (type: {row['type']}, device: {row['device']})")
+    m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
 
-        if row['type'] == "treatment" and row['device'] == "thomson_profile":
-            text = _(
-                "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
-                "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
-                "💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
-                "If you want to irrigate, press 'Start irrigation'. Otherwise simply come back tomorrow."
-            )
+    if row['type'] == "treatment" and row['device'] == "thomson_profile":
+        text = _(
+            "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+            "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
+            "💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
+            "If you want to irrigate, press 'Start irrigation'. Otherwise simply come back tomorrow."
+        )
 
-        elif row['type'] == "treatment" and row['device'] == "incremental_meter":
-            text = _(
-                "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
-                "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
-                "💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
-                "If you want to irrigate, press 'Start irrigation'. Otherwise simply come back tomorrow."
-            )
+    elif row['type'] == "treatment" and row['device'] == "incremental_meter":
+        text = _(
+            "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+            "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
+            "💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
+            "If you want to irrigate, press 'Start irrigation'. Otherwise simply come back tomorrow."
+        )
 
-        elif row['type'] == "treatment" and row['device'] == "total_meter":
-            text = _(
-                "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
-                "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
-                "💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
-                "If you want to irrigate, press 'Start irrigation'. Otherwise simply come back tomorrow."
-            )
+    elif row['type'] == "treatment" and row['device'] == "total_meter":
+        text = _(
+            "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+            "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
+            "💧 Please irrigate: {water:.2f} m³.\n"
+            "When finished, press the 'Irrigation finished' button."
+        )
 
-        elif row['type'] == "control" and row['device'] == "total_meter":
-            text = _(
-                "🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
-                "I will guide you through the irrigation data entry.\n"
-                "When you have finished irrigation, press button ‘Irrigation finished’."
-            )
+    elif row['type'] == "control" and row['device'] == "total_meter":
+        text = _(
+            "🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
+            "I will guide you through the irrigation data entry.\n"
+            "When you have finished irrigation, press button ‘Irrigation finished’."
+        )
 
-        elif row['type'] == "control" and row['device'] == "incremental_meter":
-            text = _(
-                "🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
-                "I will guide you through the irrigation data entry.\n"
-                "If you want to irrigate today, press 'Start irrigation'. Otherwise simply come back tomorrow."
-            )
+    elif row['type'] == "control" and row['device'] == "incremental_meter":
+        text = _(
+            "🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
+            "I will guide you through the irrigation data entry.\n"
+            "If you want to irrigate today, press 'Start irrigation'. Otherwise simply come back tomorrow."
+        )
 
-        elif row['type'] == "control" and row['device'] == "thomson_profile":
-            text = _(
-                "🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
-                "I will guide you through the irrigation data entry.\n"
-                "If you want to irrigate today, press 'Start irrigation'. Otherwise come back tomorrow."
-            )
+    elif row['type'] == "control" and row['device'] == "thomson_profile":
+        text = _(
+            "🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
+            "I will guide you through the irrigation data entry.\n"
+            "If you want to irrigate today, press 'Start irrigation'. Otherwise come back tomorrow."
+        )
 
-        else:
-            text = _("ERROR!")
+    else:
+        text = _("ERROR!")
 
-        message = text.format(first_name=row['firstName'], water=round(m3_needed, 2), crop=row.get('crop', 'crop'))
-        markup = create_reply_keyboard()
-        await bot.send_message(chat_id, message, reply_markup=markup)
+    message = text.format(first_name=row['firstName'], water=round(m3_needed, 2), crop=row.get('crop', 'crop'))
+    markup = create_reply_keyboard()
+    await bot.send_message(chat_id, message, reply_markup=markup)
+
 
 
 async def check_all_users():
@@ -553,18 +558,20 @@ async def handle_send_data(message):
                     additional_used = flow_rate * (time_elapsed / 60)
                     data['total_used_m3'] += additional_used
 
-                    area = float(row['area'])
-                    actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
+                    # area = float(row['area'])
+                    # actual_mm = (data['total_used_m3'] * float(row['ie'])) / (10 * area * float(row['wa']))
 
-                    query = """
-                        UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
-                        WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-                    """
-                    values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
-                    await database.execute(query=query, values=values)
-
-                    message = _("✅ Data saved! Used: {used_m3:.2f} m³").format(used_m3=data['total_used_m3'])
-                    await bot.send_message(chat_id, message)
+                    success, message_text = await save_irrigation_data(chat_id, data['total_used_m3'], row['siteID'])
+                    await bot.send_message(chat_id, message_text)
+                    # query = """
+                    #     UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+                    #     WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                    # """
+                    # values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+                    # await database.execute(query=query, values=values)
+                    #
+                    # message = _("✅ Data saved! Used: {used_m3:.2f} m³").format(used_m3=data['total_used_m3'])
+                    # await bot.send_message(chat_id, message)
 
                     data['is_active'] = False
                     return
@@ -619,20 +626,26 @@ async def handle_traditional_end(message):
             area = float(row['area'])
             actual_mm = (used_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
-            query = """
-                UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
-                WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-            """
-            values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
-            await database.execute(query=query, values=values)
+            success, msg = await save_irrigation_data(chat_id, actual_mm, row['siteID'])
+            if success:
+                await bot.send_message(chat_id, msg)
+            else:
+                await bot.send_message(chat_id, "❌ Failed to save data. Please contact support.")
 
-            await bot.send_message(
-                chat_id,
-                _("✅ Data saved!\n"
-                  "Water used: {used_m3:.2f} m³\n"
-                  "Equivalent to: {actual_mm:.2f} mm"
-                  ).format(used_m3=used_m3, actual_mm=actual_mm)
-            )
+            # query = """
+            #     UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
+            #     WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+            # """
+            # values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
+            # await database.execute(query=query, values=values)
+            #
+            # await bot.send_message(
+            #     chat_id,
+            #     _("✅ Data saved!\n"
+            #       "Water used: {used_m3:.2f} m³\n"
+            #       "Equivalent to: {actual_mm:.2f} mm"
+            #       ).format(used_m3=used_m3, actual_mm=actual_mm)
+            # )
 
     except ValueError:
         await bot.send_message(chat_id, _("⚠️ Type correct number (like 125.5)"))
@@ -732,24 +745,11 @@ async def handle_actual_data(message):
             area = float(row['area'])
             actual_mm = (actual_m3 * float(row['ie'])) / (10 * area * float(row['wa']))
 
-            query = """
-                UPDATE WWCServices.Irrigation SET irrigationApp = :actual_mm
-                WHERE siteID = :siteID AND date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
-            """
-            values = {'actual_mm': actual_mm, 'siteID': row['siteID']}
-            await database.execute(query=query, values=values)
-
-            await bot.send_message(
-                chat_id,
-                _(
-                    "✅ Data saved!\n"
-                    "Water used: {used_m3:.2f} m³\n"
-                    "Equivalent to: {actual_mm:.2f} mm"
-                ).format(
-                    used_m3=actual_m3,
-                    equivalent_mm=actual_mm
-                )
-            )
+            success, msg = await save_irrigation_data(chat_id, actual_mm, row['siteID'])
+            if success:
+                await bot.send_message(chat_id, msg)
+            else:
+                await bot.send_message(chat_id, "❌ Failed to save data. Please contact support.")
     except ValueError:
         await bot.send_message(chat_id, _("⚠️ Please enter a valid number (e.g. 150 or 75.5)"))
     finally:
@@ -795,27 +795,26 @@ async def save_irrigation_data(chat_id, used_m3, site_id=None):
         print(f"[SAVE_DATA_START] chat_id: {chat_id}, used_m3: {used_m3}, site_id: {site_id or 'not provided'}")
 
         if not site_id:
-            # use an existing function get_irrigation_data
             row = await get_irrigation_data(chat_id)
-            if row is None:
+            if not row:
                 error_msg = _("❌ Your data was not found in the system")
                 print(f"[SAVE_DATA_ERROR] {error_msg}")
                 return False, error_msg
             site_id = row['siteID']
             print(f"[SAVE_DATA_DEBUG] Found site_id: {site_id} for chat_id: {chat_id}")
 
-        # We get the parameters of the plot
+        # Get site parameters
         query = """
         SELECT 
             JSON_EXTRACT(fieldproperties, '$.area') AS area,
             JSON_EXTRACT(fieldproperties, '$.IE') AS ie,
             JSON_EXTRACT(fieldproperties, '$.WA') AS wa
-        FROM Sites
+        FROM SitesHumans.Sites
         WHERE siteID = :site_id
         """
         print(f"[SAVE_DATA_QUERY] Executing query for site_id: {site_id}")
 
-        row = await database.fetch_one(query=query, values={'site_id': site_id})
+        row = await database.fetch_one(query=query, values={"site_id": site_id})
         if not row:
             error_msg = _("❌ Site configuration not found")
             print(f"[SAVE_DATA_ERROR] {error_msg}")
@@ -827,11 +826,11 @@ async def save_irrigation_data(chat_id, used_m3, site_id=None):
         ie = float(row['ie'])
         wa = float(row['wa'])
 
-        # We calculate the actual value in mm
+        # Calculate actual mm
         actual_mm = (used_m3 * ie) / (10 * area * wa)
         print(f"[SAVE_DATA_CALC] used_m3: {used_m3} -> actual_mm: {actual_mm}")
 
-        # Updating irrigation data
+        # Update irrigation data
         update_query = """
         UPDATE WWCServices.Irrigation 
         SET irrigationApp = :actual_mm 
@@ -842,7 +841,7 @@ async def save_irrigation_data(chat_id, used_m3, site_id=None):
 
         await database.execute(
             query=update_query,
-            values={'actual_mm': actual_mm, 'site_id': site_id}
+            values={"actual_mm": actual_mm, "site_id": site_id}
         )
 
         success_msg = _(
