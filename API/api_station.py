@@ -137,6 +137,10 @@ async def insert(session: AsyncSession, model, **kwargs):
     Returns:
         The newly created model instance
     """
+    # Filter kwargs to only include valid columns
+    model_columns = {column.name for column in model.__table__.columns}
+    kwargs = {k: v for k, v in kwargs.items() if k in model_columns}
+
     # Create model instance
     new_instance = model(**kwargs)
 
