@@ -7,25 +7,20 @@ import time
 import traceback
 
 # Requirements
-from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 import sqlalchemy as sa
 
+from common import USERNAME, PASSWORD
 from models.Machines import MachineAtSite, MachineObs, t_MachineObsRejected, Metadata
 
 
-# Configuration
-load_dotenv()
-ENV = os.environ.get('ENV')
-DB_USERNAME = os.environ.get('USERNAME', 'wwcs')
-DB_PASSWORD = os.environ.get('PASSWORD')
-
 # Database connection settings
-DATABASE_URL = f'mysql+asyncmy://{DB_USERNAME}:{DB_PASSWORD}@localhost:3306/Machines'
+DATABASE_URL = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/Machines'
 engine = create_async_engine(DATABASE_URL)
 
 
+ENV = os.environ.get('ENV')
 root_path = "/post" if ENV else None
 app = FastAPI(root_path=root_path)
 

@@ -10,6 +10,9 @@ import pandas as pd
 import xarray as xr
 import yaml
 
+from common import USERNAME, PASSWORD
+
+
 cdo = Cdo()
 
 with open("/home/wwcs/wwcs/WWCS/config.yaml", 'r') as file:
@@ -75,7 +78,7 @@ shutil.rmtree(tmpdir)
 # Interpolate to nearest neighbour
 # --------------------------------
 
-cnx = mysql.connector.connect(user='wwcs', password=config['dbpass'],
+cnx = mysql.connector.connect(user=USERNAME, password=PASSWORD,
                               host='127.0.0.1',
                               database='SitesHumans')
 

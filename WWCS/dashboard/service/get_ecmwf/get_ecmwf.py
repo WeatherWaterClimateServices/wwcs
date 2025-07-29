@@ -4,19 +4,14 @@ import re
 
 from cdo import Cdo
 from ecmwfapi import ECMWFService
-from dotenv import load_dotenv
 import mysql.connector
 import pandas as pd
 import yaml
 
+from common import USERNAME, PASSWORD
+
 
 cdo = Cdo()
-
-# Configuration
-load_dotenv("/home/wwcs/wwcs/WWCS/.env")
-ENV = os.environ.get('ENV')
-USERNAME = os.environ.get('USERNAME', 'wwcs')
-PASSWORD = os.environ.get('PASSWORD')
 
 
 # Load YAML data from a file
@@ -76,7 +71,7 @@ os.chdir(outdir)
 # Read station names and locations
 # --------------------------------
 
-cnx = mysql.connector.connect(user='wwcs', password=PASSWORD,
+cnx = mysql.connector.connect(user=USERNAME, password=PASSWORD,
                               host='127.0.0.1',
                               database='SitesHumans')
 
