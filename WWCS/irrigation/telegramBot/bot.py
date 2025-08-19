@@ -949,11 +949,11 @@ async def main():
         print("[SHUTDOWN] Shutting down...")
         try:
             scheduler.shutdown()
-        except:
+        except Exception:
             pass
         try:
             await database.disconnect()
-        except:
+        except Exception:
             pass
         print("[SHUTDOWN] Complete")
 
