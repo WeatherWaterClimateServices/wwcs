@@ -35,12 +35,9 @@ class MachineObs(Base):
     U_Solar: Mapped[Optional[float]] = mapped_column(Float)
     signalStrength: Mapped[Optional[float]] = mapped_column(Float)
     Charge_Battery1: Mapped[Optional[float]] = mapped_column(Float)
-    Charge_Battery2: Mapped[Optional[float]] = mapped_column(Float)
     Temp_Battery1: Mapped[Optional[float]] = mapped_column(Float)
-    Temp_Battery2: Mapped[Optional[float]] = mapped_column(Float)
     Temp_HumiSens: Mapped[Optional[float]] = mapped_column(Float)
     U_Battery1: Mapped[Optional[float]] = mapped_column(Float)
-    U_Battery2: Mapped[Optional[float]] = mapped_column(Float)
     compass: Mapped[Optional[float]] = mapped_column(Float)
     lightning_count: Mapped[Optional[float]] = mapped_column(Float)
     lightning_dist: Mapped[Optional[float]] = mapped_column(Float)
@@ -102,12 +99,9 @@ t_v_machineobs = Table(
     Column('U_Solar', Float),
     Column('signalStrength', Float),
     Column('Charge_Battery1', Float),
-    Column('Charge_Battery2', Float),
     Column('Temp_Battery1', Float),
-    Column('Temp_Battery2', Float),
     Column('Temp_HumiSens', Float),
     Column('U_Battery1', Float),
-    Column('U_Battery2', Float),
     Column('compass', Float),
     Column('lightning_count', Float),
     Column('lightning_dist', Float),
