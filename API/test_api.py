@@ -2,7 +2,6 @@ import collections
 import contextlib
 import datetime
 import hashlib
-import os
 import random
 import string
 import time
@@ -11,7 +10,8 @@ import time
 import httpx
 import MySQLdb
 import pytest
-import dotenv
+
+from common import USERNAME, PASSWORD
 
 
 URL = 'http://localhost:8000'
@@ -22,12 +22,8 @@ siteID = 'test-site'
 loggerID = 'test-logger'
 
 
-dotenv.load_dotenv()
-DB_USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
-DB_PASSWORD = os.environ.get('DB_PASSWORD')
-
 def connect():
-    return MySQLdb.connect("localhost", DB_USERNAME, DB_PASSWORD)
+    return MySQLdb.connect("localhost", USERNAME, PASSWORD)
 
 
 @contextlib.contextmanager

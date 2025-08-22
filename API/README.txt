@@ -54,9 +54,9 @@ To run the tests locally first setup a virtual environment:
 Then start the API in one terminal:
 
     source venv/bin/activate
-    USERNAME=wwcs uvicorn api_station:app
+    uvicorn api_station:app
 
 And run the tests in another terminal:
 
     source venv/bin/activate
-    USERNAME=wwcs pytest
+    pytest
