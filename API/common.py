@@ -4,21 +4,27 @@ import pathlib
 import dotenv
 
 
-def load_dotenv():
+def get_rootdir():
     """
-    Find and load .env file, starting from the directory where this script is located.
+    Returns the absolute path to the project's root directory (or working directory in
+    Git's parlance).
     """
     current_dir = pathlib.Path(__file__).parent.resolve()
     while current_dir != current_dir.parent:
-        env_path = current_dir / '.env'
+        env_path = current_dir / '.git'
         if env_path.exists():
-            dotenv.load_dotenv(env_path)
-            break
+            return current_dir
 
         current_dir = current_dir.parent
 
 
-load_dotenv()
+# Load the .env file, in production this must be /home/wwcs/wwcs/WWCS/.env
+# Or more generally {ROOT-DIRECTORY}/WWCS/.env (in local development the root directory
+# may be somewhere else than /home/wwcs/wwcs)
+ROOT_DIR = get_rootdir()
+dotenv.load_dotenv(ROOT_DIR / 'WWCS' / '.env')
+
+
 USERNAME = os.environ.get('DB_USERNAME')
 PASSWORD = os.environ.get('DB_PASSWORD')
 
