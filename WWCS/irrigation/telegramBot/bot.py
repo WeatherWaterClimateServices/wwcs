@@ -70,6 +70,7 @@ user_irrigation_data = {}  # For storing irrigation data
 
 # Water flow table (level in cm -> flow in m³/min)
 WATER_FLOW_RATES = {
+    0: 0,
     1: 0.0008,
     2: 0.0048,
     3: 0.01,
@@ -388,7 +389,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
 async def start(message):
     try:
         markup = create_reply_keyboard()
-        await send_message_safe(message.chat.id, "Select action:", reply_markup=markup)
+        await send_message_safe(message.chat.id, reply_markup=markup)
         await check_irrigation(message.chat.id)
     except Exception as e:
         print(f"[ERROR] in start command: {str(e)}")
@@ -399,6 +400,10 @@ async def start(message):
 async def handle_recommendation(message):
     chat_id = message.chat.id
     try:
+        if chat_id in user_irrigation_data:
+            print(f"[DEBUG] Clearing previous irrigation data for {chat_id}")
+            del user_irrigation_data[chat_id]
+        
         row = await get_irrigation_data(chat_id)
         if row is None:
             await send_message_safe(chat_id, _("❌ Your data was not found in the system"))
@@ -444,6 +449,9 @@ async def handle_water_level_control(message):
     chat_id = message.chat.id
     try:
         water_level = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+
+        print(f"[DEBUG] Water level input: {water_level} for chat {chat_id}")
+        print(f"[DEBUG] Current user_irrigation_data: {user_irrigation_data.get(chat_id)}")
 
         if water_level < 0 or water_level > 25:
             await send_message_safe(chat_id, _("⚠️ Invalid level! Enter 0-25 cm."))
