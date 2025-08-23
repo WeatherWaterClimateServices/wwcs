@@ -303,7 +303,7 @@ for (i in 1:nrow(irrigation_sites)) {
     water_balance <-
       (irrigation_temp$SWD[j] / 100) * this.RD * 1000 - (irrigation_temp$Precipitation[j] + irrigation_temp$Iapp[j]) 
     
-    if (water_balance > 0) {
+    if (is.na(water_balance) || water_balance > 0) {
       irrigation_temp$Ineed[j] <- water_balance
     } else {
       irrigation_temp$Ineed[j] <- 0
