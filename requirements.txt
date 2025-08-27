@@ -1,2 +1,3 @@
 -r ./API/requirements.txt
 -r ./WWCS/irrigation/telegramBot/requirements.txt
+-r ./WWCS/dashboard/requirements_python.txt
