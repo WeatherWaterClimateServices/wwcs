@@ -6,25 +6,21 @@ import xarray as xr
 # Requirements
 from asyncmy.errors import IntegrityError
 from databases import Database
-from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# Configuration
-load_dotenv()
-ENV = os.environ.get('ENV')
-DB_USERNAME = os.environ.get('USERNAME', 'wwcs')
-DB_PASSWORD = os.environ.get('PASSWORD')
+from common import USERNAME, PASSWORD
+
 
 # Database connection settings
-
-DATABASE_URL_MACHINES = f'mysql+asyncmy://{DB_USERNAME}:{DB_PASSWORD}@localhost:3306/Machines'
+DATABASE_URL_MACHINES = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/Machines'
 database_machines = Database(DATABASE_URL_MACHINES)
 
-DATABASE_URL_SERVICES = f'mysql+asyncmy://{DB_USERNAME}:{DB_PASSWORD}@localhost:3306/WWCServices'
+DATABASE_URL_SERVICES = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/WWCServices'
 database_services = Database(DATABASE_URL_SERVICES)
 
+ENV = os.environ.get('ENV')
 root_path = "./" if ENV else None
 app = FastAPI(root_path=root_path)
 
