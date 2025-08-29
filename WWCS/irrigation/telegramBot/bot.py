@@ -109,20 +109,21 @@ async def get_irrigation_data(chat_id=None):
         s.irrigation,
         i.date,
         i.irrigationNeed,
+        i.irrigationApp,
         h.telegramID,
         JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.type')) AS type,
         JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.measurement_device')) AS device,
         JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.Crop')) AS crop, 
         JSON_EXTRACT(s.fieldproperties, '$.area') AS area,
         JSON_EXTRACT(s.fieldproperties, '$.IE') AS ie,
-        JSON_EXTRACT(s.fieldproperties, '$.WA') AS wa
+        JSON_EXTRACT(s.fieldproperties, '$.WA') AS wa,
+        i.PHIc as phic,
+        i.PHIt as phit
     FROM SitesHumans.Sites s
         JOIN SitesHumans.Humans h ON JSON_UNQUOTE(JSON_EXTRACT(s.fieldproperties, '$.humanID')) = h.humanID
         JOIN WWCServices.Irrigation i ON i.siteID = s.siteID
     WHERE
         s.irrigation = 1
-        AND i.PHIc < i.PHIt
-        AND i.irrigationApp = 0
         AND i.date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
     """
 
@@ -154,11 +155,42 @@ async def get_irrigation_data(chat_id=None):
                     # The user is not in the system at all
                     await send_message_safe(
                         chat_id,
-                        _("❌ Your Telegram ID was not found in our system. Please check if you registered correctly or contact support.")
+                        _("❌ I am sorry, your telegramID is not in our system. Please contact support.")
                     )
                     return False
-            return row
 
+            irrigation_app = row['irrigationApp'] if 'irrigationApp' in row else 0
+            phic = float(row['phic']) if row['phic'] is not None and row['phic'] != 'NA' else None
+            phit = float(row['phit']) if row['phit'] is not None and row['phit'] != 'NA' else None
+            irrigation_need = row['irrigationNeed']
+
+            print(
+                f"[DEBUG] irrigation_app: {irrigation_app}, phic: {phic}, phit: {phit}, irrigation_need: {irrigation_need}")
+
+            # 1. Check: if irrigation is already applied
+            if irrigation_app is not None and irrigation_app != 'NA':
+                try:
+                    if float(irrigation_app) > 0:
+                        await send_message_safe(
+                            chat_id,
+                            _("❌ I am sorry, you have already registered your irrigation. Please contact support.")
+                        )
+                        return False  # here bot exits
+                except (ValueError, TypeError):
+                    pass
+
+            if (phic is not None and phit is not None and phic >= phit and irrigation_need != 'NA' and
+                    f"no_irrigation_msg_{chat_id}" not in user_states):
+                await send_message_safe(
+                    chat_id,
+                    _("🌤 Your plot does not require irrigation today. If you want to irrigate nevertheless, press 'Start irrigation'. Otherwise simply come back tomorrow.")
+                )
+                user_states[f"no_irrigation_msg_{chat_id}"] = True  # Помечаем как отправленное
+
+                # IMPORTANT: DO NOT return, continue working!
+                # The message is just informative, the bot continues to work
+                pass
+            return row
         except Exception as e:
             print(f"Database error for chat_id {chat_id}: {str(e)}")
             await send_message_safe(
@@ -228,23 +260,35 @@ async def send_message_safe(chat_id, text, reply_markup=None):
 async def check_irrigation(chat_id):
     try:
         row = await get_irrigation_data(chat_id)
+        print(f"[DEBUG] check_irrigation: row = {row}, type = {type(row)}")
+
+        if row is False:
+            return  # The error has already been processed in get_irrigation_data
+
+
+        if isinstance(row, bool):
+            if row is True:
+                # If True is returned, it means "no irrigation required"
+                return True  # Just finishing
+            else:
+                return False  # Error
 
         # Handling a special case where irrigation is not required
         if row is None:
             await send_message_safe(
                 chat_id,
-                _("🌤 Your plot does not require irrigation today. If you want to irrigate nevertheless, press ‘Start irrigation’. Otherwise simply come back tomorrow.")
+                _("🌤 I am sorry, I have a technical problem and cannot provide you with a recommendation. Please contact support. Otherwise simply come back tomorrow.")
             )
             return True
 
-        # Error handling (when False is returned)
-        if row is False:
-            return False
-
+        # # Error handling (when False is returned)
+        # if row is False:
+        #     return False
 
         if not row or 'type' not in row or 'device' not in row:
             print(f"[ERROR] Invalid row data for chat_id: {chat_id}")
-            await send_message_safe(chat_id, "❌ Your data was not found in the system. Please check if you have registered correctly and filled in all required fields. If the problem persists, please contact support.")
+            await send_message_safe(chat_id,
+                                    "❌ Your data was not found in the system. Please check if you have registered correctly and filled in all required fields. If the problem persists, please contact support.")
             return False
 
         print(f"[DEBUG] Processing irrigation for: {row['firstName']} (type: {row['type']}, device: {row['device']})")
@@ -253,7 +297,8 @@ async def check_irrigation(chat_id):
 
         if 'irrigationNeed' not in row or 'area' not in row or 'wa' not in row or 'ie' not in row:
             print(f"[ERROR] Missing required fields in row data for chat_id: {chat_id}")
-            await send_message_safe(chat_id, "❌ Configuration error: required data is missing. Please check your profile and fill in all required fields or contact support.")
+            await send_message_safe(chat_id,
+                                    "❌ Configuration error: required data is missing. Please check your profile and fill in all required fields or contact support.")
             return False
 
         m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
@@ -389,7 +434,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
 async def start(message):
     try:
         markup = create_reply_keyboard()
-        await send_message_safe(message.chat.id, reply_markup=markup)
+        await send_message_safe(message.chat.id, "Select action:", reply_markup=markup)
         await check_irrigation(message.chat.id)
     except Exception as e:
         print(f"[ERROR] in start command: {str(e)}")
@@ -400,14 +445,20 @@ async def start(message):
 async def handle_recommendation(message):
     chat_id = message.chat.id
     try:
-        if chat_id in user_irrigation_data:
-            print(f"[DEBUG] Clearing previous irrigation data for {chat_id}")
-            del user_irrigation_data[chat_id]
-        
+        # if chat_id in user_irrigation_data:
+        #     print(f"[DEBUG] Clearing previous irrigation data for {chat_id}")
+        #     del user_irrigation_data[chat_id]
+
         row = await get_irrigation_data(chat_id)
+
+        if row is False:
+            print("[DEBUG] Row is False, returning")
+            return
+
         if row is None:
             await send_message_safe(chat_id, _("❌ Your data was not found in the system"))
             return
+
 
         if row['type'] == "treatment" and row['device'] == "thomson_profile":
             user_states[chat_id] = "waiting_for_water_level"
@@ -426,6 +477,10 @@ async def handle_recommendation(message):
         elif row['type'] == "control" and row['device'] == "thomson_profile":
             await send_message_safe(chat_id, _("Enter the water level in your profile in (cm):"))
             user_states[chat_id] = "waiting_for_water_level_control"
+            return
+
+        elif row['type'] == "treatment" and row['device'] == "total_meter":
+            await send_message_safe(chat_id, _("For your plot and device type you need to press 'Irrigation finished and enter m³ used water in total'"))
             return
 
         else:
@@ -557,7 +612,7 @@ async def handle_water_level(message):
         water_level = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
 
         # We check that the water level is within the acceptable range.
-        if water_level < 1 or water_level > 25:
+        if water_level < 0 or water_level > 25:
             await send_message_safe(
                 chat_id,
                 _("⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
@@ -613,9 +668,30 @@ async def handle_send_data(message):
         notification_manager.remove_all_jobs(chat_id)
 
         row = await get_irrigation_data(chat_id)
+
+        if row is False:
+            print("[DEBUG] Row is False, returning")
+            return
+
         if row is None:
             await send_message_safe(chat_id, _("❌ Your data was not found in the system"))
             return
+
+        irrigation_app = row['irrigationApp'] if 'irrigationApp' in row else 0
+        print(f"[DEBUG] irrigation_app value: {irrigation_app}, type: {type(irrigation_app)}")
+        try:
+            irrigation_app_float = float(irrigation_app)
+            if irrigation_app_float > 0:
+                await send_message_safe(
+                    chat_id,
+                    _("❌ I am sorry, you have already registered your irrigation. Please contact support.")
+                )
+                print(f"[DEBUG] Irrigation already registered: {irrigation_app_float}, stopping bot")
+                return  # Завершаем работу бота
+        except (ValueError, TypeError):
+            print(f"[DEBUG] Could not convert irrigation_app to float: {irrigation_app}")
+
+
 
         if row['type'] == "treatment" and row['device'] == "total_meter":
             print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
