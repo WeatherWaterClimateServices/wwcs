@@ -25,16 +25,5 @@ ROOT_DIR = get_rootdir()
 dotenv.load_dotenv(ROOT_DIR / '.env')
 
 
-USERNAME = os.environ.get('DB_USERNAME')
+USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
 PASSWORD = os.environ.get('DB_PASSWORD')
-
-# For backwards compatibility, to be removed once all .env files have been updated
-if USERNAME is None:
-    USERNAME = os.environ.get('USERNAME')
-
-if PASSWORD is None:
-    PASSWORD = os.environ.get('PASSWORD')
-
-# Defaults
-if USERNAME is None:
-    USERNAME = 'wwcs'
