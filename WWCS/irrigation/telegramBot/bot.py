@@ -263,8 +263,7 @@ async def check_irrigation(chat_id):
         print(f"[DEBUG] check_irrigation: row = {row}, type = {type(row)}")
 
         if row is False:
-            return  # The error has already been processed in get_irrigation_data
-
+            return False
 
         if isinstance(row, bool):
             if row is True:
@@ -434,8 +433,9 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
 async def start(message):
     try:
         markup = create_reply_keyboard()
-        await send_message_safe(message.chat.id, "Select action:", reply_markup=markup)
-        await check_irrigation(message.chat.id)
+        success = await check_irrigation(message.chat.id)
+        if success:
+            await send_message_safe(message.chat.id, "Select action:", reply_markup=markup)
     except Exception as e:
         print(f"[ERROR] in start command: {str(e)}")
         traceback.print_exc()
