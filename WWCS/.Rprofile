@@ -1,8 +1,8 @@
 # Read configuration from text file
 
 config <- yaml::yaml.load_file("/home/wwcs/wwcs/WWCS/config.yaml")
-dotenv::load_dot_env("/home/wwcs/wwcs/WWCS/.env")
-db_password = Sys.getenv("PASSWORD")
+dotenv::load_dot_env("/home/wwcs/wwcs/.env")
+db_password = Sys.getenv("DB_PASSWORD")
 wwcs_domain = config$wwcs_domain
 
 minlat = config$minlat
