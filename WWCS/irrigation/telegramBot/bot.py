@@ -513,13 +513,14 @@ async def handle_water_level_control(message):
         if chat_id not in user_irrigation_data:
             # first level input
             user_irrigation_data[chat_id] = {
-                'type': 'control_thomson',
+                'type': 'control',
+                'device': 'thomson_profile',
                 'levels': [(water_level, current_time)],
                 'total_used': 0.0
             }
             await send_message_safe(
                 chat_id,
-                _("✅ Thank you. Whenever the water level changes by >2cm, enter the new level.\n"
+                _("✅ Thank you. Whenever the water level changes by >2cm press 'Start irrigation' and enter the new level.\n"
                   "Enter 0 if water stops. Press 'Irrigation finished' when done.")
             )
         else:
