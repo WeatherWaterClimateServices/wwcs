@@ -428,6 +428,25 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
 @bot.message_handler(commands=['start'])
 async def start(message):
     try:
+        chat_id = message.chat.id
+
+        # Reset all user data and states
+        if chat_id in user_irrigation_data:
+            print(f"[DEBUG] Clearing irrigation data for {chat_id} due to /start command")
+            del user_irrigation_data[chat_id]
+
+        if chat_id in user_states:
+            print(f"[DEBUG] Clearing user state for {chat_id} due to /start command")
+            del user_states[chat_id]
+
+        # Remove all notifications for this user
+        notification_manager.remove_all_jobs(chat_id)
+
+        # Delete the message about no need for irrigation (if it was sent)
+        no_irrigation_key = f"no_irrigation_msg_{chat_id}"
+        if no_irrigation_key in user_states:
+            del user_states[no_irrigation_key]
+            
         markup = create_reply_keyboard()
         success = await check_irrigation(message.chat.id)
         if success:
