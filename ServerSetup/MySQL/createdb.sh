@@ -29,8 +29,8 @@ show_help() {
 }
 
 # Check if MySQL is available
-if ! command -v mysql &> /dev/null; then
-    echo "Error: mysql command not found. Please ensure MySQL is installed."
+if ! command -v mariadb &> /dev/null; then
+    echo "Error: mariadb command not found. Please ensure MySQL is installed."
     exit 1
 fi
 
@@ -107,7 +107,7 @@ if [ -n "$DROP_DATABASES" ]; then
     echo "Dropping databases..."
     for db in "${DATABASES[@]}"; do
         echo "Dropping $db..."
-        mysql -u root -p"$password" -e "DROP DATABASE IF EXISTS \`$db\`;"
+        mariadb -u root -p"$password" -e "DROP DATABASE IF EXISTS \`$db\`;"
         if [ $? -ne 0 ]; then
             echo "Error dropping $db. Continuing anyway..."
         fi
@@ -125,7 +125,7 @@ if [ -n "$RESTORE_DUMPS" ]; then
     echo "Creating empty databases..."
     for db in "${DATABASES[@]}"; do
         echo "Creating $db..."
-        mysql -u root -p"$password" -e "CREATE DATABASE IF NOT EXISTS \`$db\`;"
+        mariadb -u root -p"$password" -e "CREATE DATABASE IF NOT EXISTS \`$db\`;"
         if [ $? -ne 0 ]; then
             echo "Error creating $db. Aborting."
             exit 1
@@ -141,7 +141,7 @@ if [ -n "$RESTORE_DUMPS" ]; then
         fi
 
         echo "Restoring $db from $(basename "$DUMP_FILE")..."
-        gunzip -c "$DUMP_FILE" | mysql -u root -p"$password" "$db"
+        gunzip -c "$DUMP_FILE" | mariadb -u root -p"$password" "$db"
         if [ $? -ne 0 ]; then
             echo "Error restoring $db. Aborting."
             exit 1
@@ -155,7 +155,7 @@ fi
 echo "Applying SQL scripts..."
 for sql_file in $(ls *.sql | sort -n); do
     echo "Applying $sql_file..."
-    mysql -u root -p"$password" < "$sql_file"
+    mariadb -u root -p"$password" < "$sql_file"
     if [ $? -ne 0 ]; then
         echo "Error applying $sql_file. Aborting."
         exit 1
