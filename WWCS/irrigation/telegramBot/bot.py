@@ -276,13 +276,9 @@ async def check_irrigation(chat_id):
         if row is None:
             await send_message_safe(
                 chat_id,
-                _("🌤 I am sorry, I have a technical problem and cannot provide you with a recommendation. Please contact support. Otherwise simply come back tomorrow.")
+                _("❌ I am sorry, I have a technical problem and cannot provide you with a recommendation. Please contact support. Otherwise simply come back tomorrow.")
             )
-            return True
-
-        # # Error handling (when False is returned)
-        # if row is False:
-        #     return False
+            return False
 
         if not row or 'type' not in row or 'device' not in row:
             print(f"[ERROR] Invalid row data for chat_id: {chat_id}")
