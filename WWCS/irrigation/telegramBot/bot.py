@@ -639,7 +639,7 @@ async def handle_water_level(message):
 
                 msg = _(
                     "Thank you. 💦 At this level {water_level} cm, the recommended irrigation duration is ⏱ {hours}h {minutes}m\n"
-                    "Whenever the water level changes by more than 2cm, enter the new water level.\n"
+                    "Whenever the water level changes by more than 2cm, press 'Start irrigation' one more time and enter the new water level.\n"
                     "Enter 0 if no water flows. Press 'Irrigation finished' when you stop.\n"
                     "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
                 ).format(
