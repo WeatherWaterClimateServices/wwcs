@@ -21,6 +21,7 @@
 "DT",
 "reticulate",
 "RMySQL",
+"RCurl",
 "DBI",
 "RMariaDB",
 "pool",
