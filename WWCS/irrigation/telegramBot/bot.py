@@ -127,15 +127,6 @@ async def get_irrigation_data(chat_id=None):
         AND i.date = DATE_SUB(CURDATE(), INTERVAL 1 DAY)
     """
 
-    # if chat_id:
-    #     # TODO The telegramID column should be unique
-    #     query += f' AND telegramID = {chat_id}'
-    #     row = await database.fetch_one(query=query)
-    #     if row is None:
-    #         await send_message_safe(chat_id, _("❌ Your Telegram ID was not found in our system. Please check if you registered correctly or contact support."))
-    #     return row
-    #
-    # return await database.fetch_all(query=query)
     if chat_id:
         queries = query + ' AND h.telegramID = :chat_id LIMIT 1'
         try:
@@ -160,12 +151,10 @@ async def get_irrigation_data(chat_id=None):
                     return False
 
             irrigation_app = row['irrigationApp'] if 'irrigationApp' in row else 0
-            phic = float(row['phic']) if row['phic'] is not None and row['phic'] != 'NA' else None
-            phit = float(row['phit']) if row['phit'] is not None and row['phit'] != 'NA' else None
             irrigation_need = row['irrigationNeed']
 
             print(
-                f"[DEBUG] irrigation_app: {irrigation_app}, phic: {phic}, phit: {phit}, irrigation_need: {irrigation_need}")
+                f"[DEBUG] irrigation_app: {irrigation_app}, irrigation_need: {irrigation_need}")
 
             # 1. Check: if irrigation is already applied
             if irrigation_app is not None and irrigation_app != 'NA':
@@ -179,17 +168,6 @@ async def get_irrigation_data(chat_id=None):
                 except (ValueError, TypeError):
                     pass
 
-            if (phic is not None and phit is not None and phic >= phit and irrigation_need != 'NA' and
-                    f"no_irrigation_msg_{chat_id}" not in user_states):
-                await send_message_safe(
-                    chat_id,
-                    _("🌤 Your plot does not require irrigation today. If you want to irrigate nevertheless, press 'Start irrigation'. Otherwise simply come back tomorrow.")
-                )
-                user_states[f"no_irrigation_msg_{chat_id}"] = True  # Помечаем как отправленное
-
-                # IMPORTANT: DO NOT return, continue working!
-                # The message is just informative, the bot continues to work
-                pass
             return row
         except Exception as e:
             print(f"Database error for chat_id {chat_id}: {str(e)}")
@@ -289,6 +267,8 @@ async def check_irrigation(chat_id):
         print(f"[DEBUG] Processing irrigation for: {row['firstName']} (type: {row['type']}, device: {row['device']})")
 
         crop = row['crop'] if 'crop' in row else 'crop'
+        phic = float(row['phic']) if row['phic'] is not None and row['phic'] != 'NULL' else None
+        phit = float(row['phit']) if row['phit'] is not None and row['phit'] != 'NULL' else None
 
         if 'irrigationNeed' not in row or 'area' not in row or 'wa' not in row or 'ie' not in row:
             print(f"[ERROR] Missing required fields in row data for chat_id: {chat_id}")
@@ -299,20 +279,29 @@ async def check_irrigation(chat_id):
         m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
 
         if row['type'] == "treatment":
-            if row['device'] in ["thomson_profile", "incremental_meter"]:
+            if row['device'] in ["thomson_profile", "incremental_meter"] and phic <= phit:
                 text = _(
                     "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
                     "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
                     "💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
                     "If you want to irrigate, press 'Start irrigation'. Otherwise simply come back tomorrow."
                 )
-            elif row['device'] == "total_meter":
+            elif row['device'] == "total_meter" and phic <= phit:
                 text = _(
                     "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
                     "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
                     "💧 Please irrigate: {water:.2f} m³.\n"
                     "When finished, press the 'Irrigation finished' button."
                 )
+            else:
+                text = _(
+                    "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+                    "I will give you a recommendation for irrigation and will guide you through the data entry:\n"
+                    "💧 Your plot is currently not under water stress, and I don't recommend to irrigate.\n"
+                    "If you want to irrigate nevertheless, don't apply more than {water:.2f} m³ of irrigation.\n"
+                    "Press 'Start irrigation' if you want to irrigate. Otherwise simply come back tomorrow."
+                )
+
 
         elif row['type'] == "control":
             if row['device'] == "total_meter":
@@ -446,7 +435,7 @@ async def start(message):
         no_irrigation_key = f"no_irrigation_msg_{chat_id}"
         if no_irrigation_key in user_states:
             del user_states[no_irrigation_key]
-            
+
         markup = create_reply_keyboard()
         success = await check_irrigation(message.chat.id)
         if success:
@@ -474,7 +463,6 @@ async def handle_recommendation(message):
             await send_message_safe(chat_id, _("❌ Your data was not found in the system"))
             return
 
-
         if row['type'] == "treatment" and row['device'] == "thomson_profile":
             user_states[chat_id] = "waiting_for_water_level"
             await send_message_safe(chat_id,
@@ -495,7 +483,8 @@ async def handle_recommendation(message):
             return
 
         elif row['type'] == "treatment" and row['device'] == "total_meter":
-            await send_message_safe(chat_id, _("For your plot and device type you need to press 'Irrigation finished and enter m³ used water in total'"))
+            await send_message_safe(chat_id,
+                                    _("For your plot and device type you need to press 'Irrigation finished and enter m³ used water in total'"))
             return
 
         else:
@@ -706,8 +695,6 @@ async def handle_send_data(message):
                 return  # Завершаем работу бота
         except (ValueError, TypeError):
             print(f"[DEBUG] Could not convert irrigation_app to float: {irrigation_app}")
-
-
 
         if row['type'] == "treatment" and row['device'] == "total_meter":
             print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
