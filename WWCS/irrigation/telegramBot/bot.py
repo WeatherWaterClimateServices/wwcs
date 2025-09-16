@@ -157,7 +157,7 @@ async def get_irrigation_data(chat_id=None):
                 f"[DEBUG] irrigation_app: {irrigation_app}, irrigation_need: {irrigation_need}")
 
             # 1. Check: if irrigation is already applied
-            if irrigation_app is not None and irrigation_app != 'NA':
+            if irrigation_app is not None and irrigation_app != 'NULL':
                 try:
                     if float(irrigation_app) > 0:
                         await send_message_safe(
