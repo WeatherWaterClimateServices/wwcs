@@ -494,8 +494,9 @@ async def handle_recommendation(message):
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_water_level_control')
 async def handle_water_level_control(message):
     chat_id = message.chat.id
+
     try:
-        water_level = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+        water_level = int(message.text)
 
         print(f"[DEBUG] Water level input: {water_level} for chat {chat_id}")
         print(f"[DEBUG] Current user_irrigation_data: {user_irrigation_data.get(chat_id)}")
@@ -552,12 +553,12 @@ async def handle_water_level_control(message):
 async def handle_counter_start(message):
     chat_id = message.chat.id
     try:
-        start_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
         row = await get_irrigation_data(chat_id)
         if row is None:
             return
 
         # Store initial value for ANY field type
+        start_counter = int(message.text)
         user_irrigation_data[chat_id] = {
             'start_counter': start_counter,
             'type': row['type'],  # "control" or "treatment"
@@ -599,7 +600,7 @@ async def handle_counter_start(message):
 async def handle_water_level(message):
     chat_id = message.chat.id
     try:
-        water_level = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+        water_level = int(message.text)
 
         # We check that the water level is within the acceptable range.
         if water_level < 0 or water_level > 25:
@@ -769,7 +770,7 @@ async def handle_send_data(message):
 async def handle_traditional_start(message):
     chat_id = message.chat.id
     try:
-        start_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+        start_counter = int(message.text)
 
         user_irrigation_data[chat_id] = {
             'start_counter': start_counter,
@@ -790,7 +791,7 @@ async def handle_traditional_start(message):
 async def handle_traditional_end(message):
     chat_id = message.chat.id
     try:
-        end_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+        end_counter = int(message.text)
 
         if chat_id not in user_irrigation_data:
             await send_message_safe(chat_id, _("❌ Your data was not found in the system"))
@@ -832,7 +833,7 @@ async def handle_traditional_end(message):
 async def handle_counter_end(message):
     chat_id = message.chat.id
     try:
-        end_counter = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+        end_counter = int(message.text)
 
         if chat_id not in user_irrigation_data or 'start_counter' not in user_irrigation_data[chat_id]:
             await send_message_safe(chat_id, _("❌ Error: No start data found. Please restart."))
@@ -864,7 +865,7 @@ async def handle_counter_end(message):
 async def handle_actual_data(message):
     chat_id = message.chat.id
     try:
-        actual_m3 = float("".join(filter(lambda x: x.isdigit() or x == '.', message.text)))
+        actual_m3 = int(message.text)
         row = await get_irrigation_data(chat_id)
         if row is None:
             return
