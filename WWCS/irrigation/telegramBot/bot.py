@@ -393,21 +393,19 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
         print(remaining_m3)
         flow_rate = WATER_FLOW_RATES.get(water_level, 0)
         print(flow_rate)
-        remaining_time = (remaining_m3 / flow_rate) / 60 if flow_rate > 0 else 0
-        print(remaining_time)
+        remaining_time = round(remaining_m3 / flow_rate) if flow_rate > 0 else 0
+        hours, minutes = remaining_time // 60, remaining_time % 60
+        print(f'{remaining_time=} minutes')
 
         # Here we are planning a notification of completion
         if remaining_time > 0:
-            hours = int(remaining_time)
-            print(hours)
-            minutes = round((remaining_time - hours) * 60)
-            print(minutes)
+            print(hours, minutes)
             schedule_polyv_completion_notification(chat_id, hours, minutes)
 
         return {
             'used_m3': user_irrigation_data[chat_id]['total_used_m3'],
             'remaining_m3': remaining_m3,
-            'remaining_time': remaining_time,
+            'remaining_time': (hours, minutes),
             'is_completed': remaining_m3 <= 0,
         }
     except Exception as e:
@@ -641,8 +639,7 @@ async def handle_water_level(message):
             if calculation['is_completed']:
                 msg = _("✅ Irrigation completed! Enough water.")
             else:
-                hours = int(calculation['remaining_time'])
-                minutes = round((calculation['remaining_time'] - hours) * 60)
+                hours, minutes = calculation['remaining_time']
 
                 msg = _(
                     "Thank you. 💦 At this level {water_level} cm, the recommended irrigation duration is ⏱ {hours}h {minutes}m\n"
@@ -909,8 +906,7 @@ async def send_recommendation(chat_id, fieldtype, device, irrigation_need, area,
             if calculation['is_completed']:
                 msg = _("✅ Irrigation completed! Enough water.")
             else:
-                hours = int(calculation['remaining_time'])
-                minutes = round((calculation['remaining_time'] - hours) * 60)
+                hours, minutes = calculation['remaining_time']
 
                 msg = _(
                     "💦 Current level: {water_level} cm\n"
