@@ -157,16 +157,13 @@ async def get_irrigation_data(chat_id=None):
                 f"[DEBUG] irrigation_app: {irrigation_app}, irrigation_need: {irrigation_need}")
 
             # 1. Check: if irrigation is already applied
-            if irrigation_app is not None and irrigation_app != 'NULL':
-                try:
-                    if float(irrigation_app) > 0:
-                        await send_message_safe(
-                            chat_id,
-                            _("❌ I am sorry, you have already registered your irrigation. Please contact support.")
+            if irrigation_app is not None and irrigation_app > 0:
+                await send_message_safe(
+                        chat_id,
+                          _("❌ I am sorry, you have already registered your irrigation. Please contact support.")
                         )
-                        return False  # here bot exits
-                except (ValueError, TypeError):
-                    pass
+                return False  # here bot exits
+
 
             return row
         except Exception as e:
@@ -393,13 +390,18 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
             data['is_active'] = True
 
         remaining_m3 = max(0, total_needed_m3 - user_irrigation_data[chat_id]['total_used_m3'])
+        print(remaining_m3)
         flow_rate = WATER_FLOW_RATES.get(water_level, 0)
+        print(flow_rate)
         remaining_time = (remaining_m3 / flow_rate) / 60 if flow_rate > 0 else 0
+        print(remaining_time)
 
         # Here we are planning a notification of completion
         if remaining_time > 0:
             hours = int(remaining_time)
-            minutes = int((remaining_time - hours) * 60)
+            print(hours)
+            minutes = round((remaining_time - hours) * 60)
+            print(minutes)
             schedule_polyv_completion_notification(chat_id, hours, minutes)
 
         return {
@@ -640,7 +642,7 @@ async def handle_water_level(message):
                 msg = _("✅ Irrigation completed! Enough water.")
             else:
                 hours = int(calculation['remaining_time'])
-                minutes = int((calculation['remaining_time'] - hours) * 60)
+                minutes = round((calculation['remaining_time'] - hours) * 60)
 
                 msg = _(
                     "Thank you. 💦 At this level {water_level} cm, the recommended irrigation duration is ⏱ {hours}h {minutes}m\n"
@@ -908,7 +910,7 @@ async def send_recommendation(chat_id, fieldtype, device, irrigation_need, area,
                 msg = _("✅ Irrigation completed! Enough water.")
             else:
                 hours = int(calculation['remaining_time'])
-                minutes = int((calculation['remaining_time'] - hours) * 60)
+                minutes = round((calculation['remaining_time'] - hours) * 60)
 
                 msg = _(
                     "💦 Current level: {water_level} cm\n"
