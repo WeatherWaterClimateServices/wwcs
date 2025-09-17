@@ -258,8 +258,8 @@ async def check_irrigation(chat_id):
         print(f"[DEBUG] Processing irrigation for: {row['firstName']} (type: {row['type']}, device: {row['device']})")
 
         crop = row['crop'] if 'crop' in row else 'crop'
-        phic = float(row['phic']) if row['phic'] is not None and row['phic'] != 'NULL' else None
-        phit = float(row['phit']) if row['phit'] is not None and row['phit'] != 'NULL' else None
+        phic = row['phic']
+        phit = row['phit']
 
         if 'irrigationNeed' not in row or 'area' not in row or 'wa' not in row or 'ie' not in row:
             print(f"[ERROR] Missing required fields in row data for chat_id: {chat_id}")
