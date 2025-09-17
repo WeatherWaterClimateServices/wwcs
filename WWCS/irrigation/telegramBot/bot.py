@@ -431,10 +431,8 @@ async def start(message):
         if no_irrigation_key in user_states:
             del user_states[no_irrigation_key]
 
-        markup = create_reply_keyboard()
-        success = await check_irrigation(message.chat.id)
-        if success:
-            await send_message_safe(message.chat.id, "The bot has started successfully", reply_markup=markup)
+        await send_message_safe(message.chat.id, "The bot has started successfully")
+        await check_irrigation(message.chat.id)
     except Exception as e:
         print(f"[ERROR] in start command: {str(e)}")
         traceback.print_exc()
