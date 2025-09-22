@@ -689,11 +689,7 @@ async def handle_send_data(message):
                 print("[SAVE_DATA_COUNTER] Requesting end counter value")
                 await send_message_safe(chat_id, _("Enter the (m³) on your counter after irrigation:"))
                 user_states[chat_id] = "waiting_for_counter_end"
-            else:
-                print("[SAVE_DATA_COUNTER] Requesting start counter value")
-                await send_message_safe(chat_id, _("Please send your counter number BEFORE irrigation (m³):"))
-                user_states[chat_id] = "waiting_for_counter_start"
-            return
+                return
 
         if row['type'] == "control" and row['device'] == "total_meter":
             print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
@@ -707,10 +703,7 @@ async def handle_send_data(message):
                 await send_message_safe(chat_id, _("Enter the m³ on your counter after irrigation:"))
                 user_states[chat_id] = "waiting_for_counter_end"
                 return
-            else:
-                print("[SAVE_DATA_CONTROL] Start counter missing")
-                await send_message_safe(chat_id, _("❌ Please first send start counter via 'Start irrigation'"))
-                return
+            
 
         if row['type'] == "control" and row['device'] == "thomson_profile":
             if chat_id in user_irrigation_data and 'levels' in user_irrigation_data[chat_id]:
@@ -841,21 +834,28 @@ async def handle_counter_end(message):
             return
 
         start_counter = user_irrigation_data[chat_id]['start_counter']
-        if end_counter < start_counter:
-            await send_message_safe(chat_id, _("⚠️ Error: End value cannot be less than start value!"))
+        if end_counter <= start_counter:
+            await send_message_safe(chat_id, _("⚠️ Error: End value cannot be less or equal than start value!"))
+            # We do NOT reset the state so that the user can enter the correct value.
             return
 
         used_m3 = end_counter - start_counter
         success, message_text = await save_irrigation_data(chat_id, used_m3)
         await send_message_safe(chat_id, message_text)
 
+        # Only upon successful completion we reset the state
+        user_states[chat_id] = None
+        if chat_id in user_irrigation_data:
+            del user_irrigation_data[chat_id]
+
     except ValueError:
         await send_message_safe(chat_id, _("⚠️ Please enter a valid number (e.g., 150.5)"))
+        # We do NOT reset the state so that the user can repeat the input.
     except Exception as e:
         print(f"[ERROR] in handle_counter_end: {str(e)}")
         traceback.print_exc()
         await send_message_safe(chat_id, "⚠️ An error occurred. Please try again.")
-    finally:
+        # We reset the state only in case of critical errors
         user_states[chat_id] = None
         if chat_id in user_irrigation_data:
             del user_irrigation_data[chat_id]
