@@ -759,69 +759,6 @@ async def handle_send_data(message):
         await send_message_safe(chat_id, "⚠️ An error occurred. Please try again.")
 
 
-@bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_traditional_start')
-async def handle_traditional_start(message):
-    chat_id = message.chat.id
-    try:
-        start_counter = int(message.text)
-
-        user_irrigation_data[chat_id] = {
-            'start_counter': start_counter,
-            'type': "traditional"
-        }
-
-        await send_message_safe(chat_id, _("Enter the m³ on your counter after irrigation:"))
-        user_states[chat_id] = "waiting_for_traditional_end"
-    except ValueError:
-        await send_message_safe(chat_id, _("⚠️ Type correct number (like 125.5)"))
-    except Exception as e:
-        print(f"[ERROR] in handle_traditional_start: {str(e)}")
-        traceback.print_exc()
-        await send_message_safe(chat_id, "⚠️ An error occurred. Please try again.")
-
-
-@bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_traditional_end')
-async def handle_traditional_end(message):
-    chat_id = message.chat.id
-    try:
-        end_counter = int(message.text)
-
-        if chat_id not in user_irrigation_data:
-            await send_message_safe(chat_id, _("❌ Your data was not found in the system"))
-            return
-
-        start_counter = user_irrigation_data[chat_id]['start_counter']
-
-        if start_counter > end_counter:
-            await send_message_safe(chat_id, _("⚠️ Error: start value is greater than end value!"))
-            return
-
-        used_m3 = end_counter - start_counter
-
-        # Save in the DB (similar to counter)
-        row = await get_irrigation_data(chat_id)
-        if row is None:
-            return
-
-        success, msg = await save_irrigation_data(chat_id, used_m3, row['siteID'])
-        if success:
-            await send_message_safe(chat_id, msg)
-        else:
-            await send_message_safe(chat_id, "❌ Failed to save data. Please contact support.")
-
-    except ValueError:
-        await send_message_safe(chat_id, _("⚠️ Type correct number (like 125.5)"))
-    except Exception as e:
-        print(f"[ERROR] in handle_traditional_end: {str(e)}")
-        traceback.print_exc()
-        await send_message_safe(chat_id, "⚠️ An error occurred. Please try again.")
-    finally:
-        # Clearing the state
-        user_states[chat_id] = None
-        if chat_id in user_irrigation_data:
-            del user_irrigation_data[chat_id]
-
-
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_counter_end')
 async def handle_counter_end(message):
     chat_id = message.chat.id
