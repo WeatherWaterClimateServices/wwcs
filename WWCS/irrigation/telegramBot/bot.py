@@ -393,7 +393,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
         print(f'{remaining_time=} minutes')
 
         # Here we are planning a notification of completion
-        if remaining_time > 0:
+        if remaining_time >= 0:
             print(hours, minutes)
             schedule_polyv_completion_notification(chat_id, hours, minutes)
 
