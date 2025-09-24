@@ -208,7 +208,7 @@ def start_irrigation_notifications(chat_id):
 async def send_water_check_notification(chat_id):
     """Sends a notification about checking the water level"""
     if chat_id in user_irrigation_data:
-        message = _("🔄 Please check the current water level in the channel and send its value")
+        message = _("🔄 Please check the current water level in the channel. If it has changed by more than 2cm, press 'Start irrigation' again and update the water level.")
         await send_message_safe(chat_id, message)
 
 
@@ -454,7 +454,7 @@ async def handle_recommendation(message):
         if row['type'] == "treatment" and row['device'] == "thomson_profile":
             user_states[chat_id] = "waiting_for_water_level"
             await send_message_safe(chat_id,
-                                    _("Please allow water to flow. As soon as the water level has stabilized, enter the water level (in cm):"))
+                                    _("As soon as the water level has stabilized, enter the water level (in cm):"))
 
         elif row['type'] == "treatment" and row['device'] == "incremental_meter":
             user_states[chat_id] = "waiting_for_counter_start"
