@@ -693,6 +693,9 @@ async def handle_send_data(message):
                 await send_message_safe(chat_id, _("Enter the (m³) on your counter after irrigation:"))
                 user_states[chat_id] = "waiting_for_counter_end"
                 return
+            else:
+                await send_message_safe(chat_id, _("Press 'Start irrigation' button first"))
+                return
 
         if row['type'] == "control" and row['device'] == "total_meter":
             print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
@@ -705,6 +708,9 @@ async def handle_send_data(message):
                 print("[SAVE_DATA_CONTROL] Requesting end counter")
                 await send_message_safe(chat_id, _("Enter the m³ on your counter after irrigation:"))
                 user_states[chat_id] = "waiting_for_counter_end"
+                return
+            else:
+                await send_message_safe(chat_id, _("Press 'Start irrigation' button first"))
                 return
             
 
