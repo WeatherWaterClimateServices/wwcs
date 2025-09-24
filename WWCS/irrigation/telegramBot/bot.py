@@ -148,7 +148,7 @@ async def get_irrigation_data(chat_id=None):
                 )
 
                 if user_exists:
-                    await send_message_safe(chat_id, _("❌ Irrigation data not found, please contact support or simply come back tomorrow."))
+                    await send_message_safe(chat_id, _("❌ I don't find the required irrigation data in the system. Please contact support or try again tomorrow."))
                     return None
                 else:
                     # The user is not in the system at all
@@ -220,7 +220,7 @@ def schedule_polyv_completion_notification(chat_id, hours, minutes):
 
 async def notify_polyv_completion(chat_id):
     if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
-        message = _("⏰ Watering time is over! Please click the 'Save data' button to save the results.")
+        message = _("⏰ Watering time is over! Please stop the water flow and then click the 'Irrigation finished' button.")
         await send_message_safe(chat_id, message)
         notification_manager.remove_job(chat_id, 'water_check')
 
@@ -606,7 +606,7 @@ async def handle_water_level(message):
         if water_level < 0 or water_level > 25:
             await send_message_safe(
                 chat_id,
-                _("⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
+                _("⚠️ Incorrect water level! Acceptable values from 0 to 25 cm.\n"
                   "Please enter the correct value:")
             )
             return  # We do not continue processing.
