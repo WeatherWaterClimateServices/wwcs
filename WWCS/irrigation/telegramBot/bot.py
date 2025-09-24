@@ -559,6 +559,9 @@ async def handle_counter_start(message):
 
         # Store initial value for ANY field type
         start_counter = int(message.text)
+        if start_counter < 0:
+            await send_message_safe(chat_id, "⚠️Error: The value can not be negative. Please send correct number")
+            return
         user_irrigation_data[chat_id] = {
             'start_counter': start_counter,
             'type': row['type'],  # "control" or "treatment"
