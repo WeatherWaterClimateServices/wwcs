@@ -469,10 +469,10 @@ async def handle_recommendation(message):
 
         elif row['type'] == "treatment" and row['device'] == "incremental_meter":
             user_states[chat_id] = "waiting_for_counter_start"
-            await send_message_safe(chat_id, _("Enter the current m³ on your counter (before irrigation):"))
+            await send_message_safe(chat_id, _("Enter the m³ on your counter BEFORE irrigation:"))
 
         elif row['type'] == "control" and row['device'] == "incremental_meter":
-            await send_message_safe(chat_id, _("Enter the current m³ on your counter (before irrigation):"))
+            await send_message_safe(chat_id, _("Enter the m³ on your counter BEFORE irrigation:"))
             user_states[chat_id] = "waiting_for_counter_start"
             return
 
@@ -530,7 +530,7 @@ async def handle_water_level_control(message):
             }
             await send_message_safe(
                 chat_id,
-                _("✅ Thank you. Whenever the water level changes by >2cm press 'Start irrigation' and enter the new level.\n"
+                _("✅ Thank you. Whenever the water level changes by more than 2cm press 'Start irrigation' and enter the new level.\n"
                   "Enter 0 if water stops. Press 'Irrigation finished' when done.")
             )
         else:
@@ -546,7 +546,8 @@ async def handle_water_level_control(message):
             await send_message_safe(
                 chat_id,
                 _("🔄 Updated: +{used_water:.2f} m³ used (total: {total_used:.2f} m³).\n"
-                  "Continue or press 'Irrigation finished'.").format(
+                  "Whenever the water level changes by more than 2cm press 'Start irrigation' and enter the new level.\n"
+                  "Enter 0 if water stops. Press 'Irrigation finished' when done.").format(
                     used_water=used_water,
                     total_used=user_irrigation_data[chat_id]['total_used']
                 )
@@ -706,11 +707,11 @@ async def handle_send_data(message):
         if row['type'] == "treatment" and row['device'] == "incremental_meter":
             if chat_id in user_irrigation_data and 'start_counter' in user_irrigation_data[chat_id]:
                 print("[SAVE_DATA_COUNTER] Requesting end counter value")
-                await send_message_safe(chat_id, _("Enter the (m³) on your counter after irrigation:"))
+                await send_message_safe(chat_id, _("Enter the m³ on your counter AFTER irrigation:"))
                 user_states[chat_id] = "waiting_for_counter_end"
                 return
             else:
-                await send_message_safe(chat_id, _("Press 'Start irrigation' button first"))
+                await send_message_safe(chat_id, _("Press 'Start irrigation' button first."))
                 return
 
         if row['type'] == "control" and row['device'] == "total_meter":
@@ -722,11 +723,11 @@ async def handle_send_data(message):
         if row['type'] == "control" and row['device'] == "incremental_meter":
             if chat_id in user_irrigation_data and 'start_counter' in user_irrigation_data[chat_id]:
                 print("[SAVE_DATA_CONTROL] Requesting end counter")
-                await send_message_safe(chat_id, _("Enter the m³ on your counter after irrigation:"))
+                await send_message_safe(chat_id, _("Enter the m³ on your counter AFTER irrigation:"))
                 user_states[chat_id] = "waiting_for_counter_end"
                 return
             else:
-                await send_message_safe(chat_id, _("Press 'Start irrigation' button first"))
+                await send_message_safe(chat_id, _("Press 'Start irrigation' button first."))
                 return
             
 
@@ -752,7 +753,7 @@ async def handle_send_data(message):
                     )
                     del user_irrigation_data[chat_id]
             else:
-                await send_message_safe(chat_id, _("❌ No irrigation data found. Start irrigation first!"))
+                await send_message_safe(chat_id, _("❌ No irrigation data found. Press 'Start irrigation' button."))
             return
 
         elif row['type'] == "treatment" and row['device'] == "thomson_profile":
@@ -774,7 +775,7 @@ async def handle_send_data(message):
                     print(f"Error while saving: {str(e)}")
                     await send_message_safe(chat_id, _("⚠️ Error saving data"))
             else:
-                await send_message_safe(chat_id, _("❌ No active irrigation session found"))
+                await send_message_safe(chat_id, _("❌ No active irrigation session found. Press 'Start irrigation' button."))
 
         else:
             await send_message_safe(chat_id, _("Wrong fieldtype"))
@@ -941,7 +942,8 @@ async def save_irrigation_data(chat_id, used_m3, site_id=None):
         success_msg = _(
             "✅ Data saved!\n"
             "Water used: {used_m3:.2f} m³\n"
-            "Equivalent to: {actual_mm:.2f} mm"
+            "Equivalent to: {actual_mm:.2f} mm\n"
+            "See you tomorrow!"
         ).format(used_m3=used_m3, actual_mm=actual_mm)
 
         print(f"[SAVE_DATA_SUCCESS] {success_msg}")
