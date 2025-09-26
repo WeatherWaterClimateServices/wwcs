@@ -258,7 +258,7 @@ async def check_irrigation(chat_id):
             print(f"[ERROR] Invalid row data for chat_id: {chat_id}")
             await send_message_safe(
                 chat_id,
-                _("❌ Your data was not found in the system. Please check if you have registered correctly and filled in all required fields. If the problem persists, please contact support.")
+                _("❌ I have not found field type (control/treatment) or meter type in my database for your site. Please contact support.")
             )
             return False
 
@@ -272,7 +272,7 @@ async def check_irrigation(chat_id):
             print(f"[ERROR] Missing required fields in row data for chat_id: {chat_id}")
             await send_message_safe(
                 chat_id,
-                _("❌ Configuration error: required data is missing. Please check your profile and fill in all required fields or contact support.")
+                _("❌ Configuration error: required data is missing (irrigationNeed, area, wetted area or irrigation efficiency). Please contact support.")
             )
             return False
 
@@ -317,7 +317,7 @@ async def check_irrigation(chat_id):
                     "If you want to irrigate today, press 'Start irrigation'. Otherwise simply come back tomorrow."
                 )
         else:
-            await send_message_safe(chat_id, _("ERROR! Unknown plot type or device configuration."))
+            await send_message_safe(chat_id, _("ERROR! Unknown plot type or device configuration. Please contact support."))
             return False
 
         message = text.format(
@@ -477,14 +477,14 @@ async def handle_recommendation(message):
             return
 
         elif row['type'] == "control" and row['device'] == "thomson_profile":
-            await send_message_safe(chat_id, _("Enter the water level in your profile in (cm):"))
+            await send_message_safe(chat_id, _("As soon as the water level has stabilized, enter the water level (in cm):"))
             user_states[chat_id] = "waiting_for_water_level_control"
             return
 
         elif row['type'] == "treatment" and row['device'] == "total_meter":
             await send_message_safe(
                 chat_id,
-                _("For your plot and device type you need to press 'Irrigation finished and enter m³ used water in total'")
+                _("Press 'Irrigation finished' and enter m³ used water in total")
             )
             return
 
@@ -501,7 +501,7 @@ async def handle_recommendation(message):
     except Exception as e:
         print(f"[ERROR] in handle_recommendation: {str(e)}")
         traceback.print_exc()
-        await send_message_safe(chat_id, _("⚠️ An error occurred. Please try again."))
+        await send_message_safe(chat_id, _("⚠️ An error occurred. Please try again. If the problem persists contact support."))
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_water_level_control')
@@ -515,7 +515,8 @@ async def handle_water_level_control(message):
         print(f"[DEBUG] Current user_irrigation_data: {user_irrigation_data.get(chat_id)}")
 
         if water_level < 0 or water_level > 25:
-            await send_message_safe(chat_id, _("⚠️ Invalid level! Enter 0-25 cm."))
+            await send_message_safe(chat_id, _("⚠️ Incorrect water level! Acceptable values from 0 to 25 cm.\n"
+                  "Please enter the correct value:"))
             return
 
         current_time = datetime.now()
@@ -576,7 +577,7 @@ async def handle_counter_start(message):
         if start_counter < 0:
             await send_message_safe(
                 chat_id,
-                _("⚠️Error: The value can not be negative. Please send correct number")
+                _("⚠️Error: The value can not be negative. Please try again with a positive number.")
             )
             return
         user_irrigation_data[chat_id] = {
@@ -773,12 +774,12 @@ async def handle_send_data(message):
                     return
                 except Exception as e:
                     print(f"Error while saving: {str(e)}")
-                    await send_message_safe(chat_id, _("⚠️ Error saving data"))
+                    await send_message_safe(chat_id, _("⚠️ Error saving data. Please contact support."))
             else:
                 await send_message_safe(chat_id, _("❌ No active irrigation session found. Press 'Start irrigation' button."))
 
         else:
-            await send_message_safe(chat_id, _("Wrong fieldtype"))
+            await send_message_safe(chat_id, _("❌ It seems that your fieldtype or meter type are wrongly configured. Please contact support."))
     except Exception as e:
         print(f"[ERROR] in handle_send_data: {str(e)}")
         traceback.print_exc()
@@ -792,7 +793,7 @@ async def handle_counter_end(message):
         end_counter = int(message.text)
 
         if chat_id not in user_irrigation_data or 'start_counter' not in user_irrigation_data[chat_id]:
-            await send_message_safe(chat_id, _("❌ Error: No start data found. Please restart."))
+            await send_message_safe(chat_id, _("❌ Error: No start data found. Please press 'Start irrigation' to restart."))
             user_states[chat_id] = None
             return
 
@@ -839,7 +840,7 @@ async def handle_actual_data(message):
         else:
             await send_message_safe(chat_id, _("❌ Failed to save data. Please contact support."))
     except ValueError:
-        await send_message_safe(chat_id, _("⚠️ Please enter a valid number (e.g. 150 or 75.5)"))
+        await send_message_safe(chat_id, _("⚠️ Please enter a valid number (e.g., 150.5)"))
     except Exception as e:
         print(f"[ERROR] in handle_actual_data: {str(e)}")
         traceback.print_exc()
@@ -854,7 +855,7 @@ async def send_recommendation(chat_id, fieldtype, device, irrigation_need, area,
             calculation = await calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, wa)
 
             if calculation['is_completed']:
-                msg = _("✅ Irrigation completed! Enough water.")
+                msg = _("✅ Stop irrigaiton, enough water.")
             else:
                 hours, minutes = calculation['remaining_time']
 
