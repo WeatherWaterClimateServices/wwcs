@@ -806,6 +806,10 @@ async def handle_actual_data(message):
     chat_id = message.chat.id
     try:
         actual_m3 = int(message.text)
+        if actual_m3 < 0:
+            await send_message_safe(chat_id, _("⚠️Error: The value can not be negative. Please send correct number"))
+            return
+            
         row = await get_irrigation_data(chat_id)
         if row is None:
             return
