@@ -451,10 +451,7 @@ async def start(message):
 async def handle_recommendation(message):
     chat_id = message.chat.id
     try:
-        # if chat_id in user_irrigation_data:
-        #     print(f"[DEBUG] Clearing previous irrigation data for {chat_id}")
-        #     del user_irrigation_data[chat_id]
-
+        
         row = await get_irrigation_data(chat_id)
         if row is None:
             print("[DEBUG] Row is False, returning")
@@ -467,21 +464,19 @@ async def handle_recommendation(message):
                 _("As soon as the water level has stabilized, enter the water level (in cm):")
             )
 
-        elif row['type'] == "treatment" and row['device'] == "incremental_meter":
-            user_states[chat_id] = "waiting_for_counter_start"
-            await send_message_safe(chat_id, _("Enter the m³ on your counter BEFORE irrigation:"))
+        
+        if row['device'] == "incremental_meter":
+            if row['type'] in ["control", "treatment"]:
+                await send_message_safe(chat_id, _("Enter the current m³ on your counter (before irrigation):"))
+                user_states[chat_id] = "waiting_for_counter_start"
+                return
 
-        elif row['type'] == "control" and row['device'] == "incremental_meter":
-            await send_message_safe(chat_id, _("Enter the m³ on your counter BEFORE irrigation:"))
-            user_states[chat_id] = "waiting_for_counter_start"
-            return
-
-        elif row['type'] == "control" and row['device'] == "thomson_profile":
+        if row['type'] == "control" and row['device'] == "thomson_profile":
             await send_message_safe(chat_id, _("As soon as the water level has stabilized, enter the water level (in cm):"))
             user_states[chat_id] = "waiting_for_water_level_control"
             return
 
-        elif row['type'] == "treatment" and row['device'] == "total_meter":
+        if row['type'] == "treatment" and row['device'] == "total_meter":
             await send_message_safe(
                 chat_id,
                 _("Press 'Irrigation finished' and enter m³ used water in total")
@@ -705,15 +700,17 @@ async def handle_send_data(message):
             user_states[chat_id] = "waiting_for_actual_data"
             return
 
-        if row['type'] == "treatment" and row['device'] == "incremental_meter":
-            if chat_id in user_irrigation_data and 'start_counter' in user_irrigation_data[chat_id]:
-                print("[SAVE_DATA_COUNTER] Requesting end counter value")
-                await send_message_safe(chat_id, _("Enter the m³ on your counter AFTER irrigation:"))
-                user_states[chat_id] = "waiting_for_counter_end"
-                return
-            else:
-                await send_message_safe(chat_id, _("Press 'Start irrigation' button first."))
-                return
+        if row['device'] == "incremental_meter":
+            if row['type'] in ["treatment", "control"]:
+                if chat_id in user_irrigation_data and 'start_counter' in user_irrigation_data[chat_id]:
+                    print("[SAVE_DATA_COUNTER] Requesting end counter value")
+                    await send_message_safe(chat_id, _("Enter the (m³) on your counter after irrigation:"))
+                    user_states[chat_id] = "waiting_for_counter_end"
+                    return
+                else:
+                    await send_message_safe(chat_id, "Press Start irrigation button first")
+                    return
+            return
 
         if row['type'] == "control" and row['device'] == "total_meter":
             print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
@@ -721,16 +718,7 @@ async def handle_send_data(message):
             user_states[chat_id] = "waiting_for_actual_data"
             return
 
-        if row['type'] == "control" and row['device'] == "incremental_meter":
-            if chat_id in user_irrigation_data and 'start_counter' in user_irrigation_data[chat_id]:
-                print("[SAVE_DATA_CONTROL] Requesting end counter")
-                await send_message_safe(chat_id, _("Enter the m³ on your counter AFTER irrigation:"))
-                user_states[chat_id] = "waiting_for_counter_end"
-                return
-            else:
-                await send_message_safe(chat_id, _("Press 'Start irrigation' button first."))
-                return
-            
+                  
 
         if row['type'] == "control" and row['device'] == "thomson_profile":
             if chat_id in user_irrigation_data and 'levels' in user_irrigation_data[chat_id]:
