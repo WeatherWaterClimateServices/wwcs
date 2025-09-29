@@ -476,12 +476,10 @@ async def handle_recommendation(message):
             user_states[chat_id] = "waiting_for_water_level_control"
             return
 
-        if row['type'] == "treatment" and row['device'] == "total_meter":
-            await send_message_safe(
-                chat_id,
-                _("Press 'Irrigation finished' and enter m³ used water in total")
-            )
-            return
+        if row['device'] == "total_meter":
+            if row['type'] in ["treatment", "control"]:
+                await send_message_safe(chat_id, _("For your plot and device type you need to press 'Irrigation finished and enter m³ used water in total'"))
+                return
 
         else:
             await send_recommendation(
@@ -694,10 +692,12 @@ async def handle_send_data(message):
         except (ValueError, TypeError):
             print(f"[DEBUG] Could not convert irrigation_app to float: {irrigation_app}")
 
-        if row['type'] == "treatment" and row['device'] == "total_meter":
-            print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
-            await send_message_safe(chat_id, _("Please enter the volume that you irrigated today (in m³):"))
-            user_states[chat_id] = "waiting_for_actual_data"
+        if row['device'] == "total_meter":
+            if row['type'] in ["treatment", "control"]:
+                print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
+                await send_message_safe(chat_id, _("Please enter the volume that you irrigated today (in m³):"))
+                user_states[chat_id] = "waiting_for_actual_data"
+                return
             return
 
         if row['device'] == "incremental_meter":
@@ -710,12 +710,6 @@ async def handle_send_data(message):
                 else:
                     await send_message_safe(chat_id, "Press Start irrigation button first")
                     return
-            return
-
-        if row['type'] == "control" and row['device'] == "total_meter":
-            print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
-            await send_message_safe(chat_id, _("Please enter the volume that you irrigated today (in m³):"))
-            user_states[chat_id] = "waiting_for_actual_data"
             return
 
                   
