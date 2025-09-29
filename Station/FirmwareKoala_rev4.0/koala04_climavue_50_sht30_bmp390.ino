@@ -580,7 +580,7 @@ void modem_on(bool* modemTurnedOn){
   delay(100); // Ton 73 ms  
   digitalWrite(PWR_PIN, LOW);
   delay(6000);
-
+  
   *modemTurnedOn = true;
 }
 
@@ -639,12 +639,12 @@ void modem_off(bool* modemTurnedOn) {
  * input :        void
  * output :       boolean - whether everything needed to connect to apn worked out
  * ------------------------------------------------------------------------------------------------------------------------------*/
-bool connect_to_network(float* signalStrength){
+bool connect_to_network(float* signalStrength){  
 // establish communication with and initialize modem....................................................................................................   
   SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX); // establish serial connection with modem
   delay(1000);
-  if (modem.init()) {
-    Serial.println("   ... init modem successful ...");
+  if (modem.init()) {    
+    Serial.printf("   ... init modem successful ... with IMEI %s\n", modem.getIMEI().c_str());
   } else {  
     *signalStrength = -333.0;                      // error code - init failed                           
     Serial.println("  failed to init modem. Try a soft / hard reset of the modem.");
@@ -656,7 +656,7 @@ bool connect_to_network(float* signalStrength){
       esp_task_wdt_reset();
       modem_reset();
       if (modem.init()){                            //        after hardware reset, try a init
-        Serial.println("Init modem successful after hard reset.");
+        Serial.printf("Init modem successful after hard reset... with IMEI %s\n", modem.getIMEI().c_str());
       } else {
         *signalStrength = -555.0;                  // error code - hard reset failed
         Serial.println("Failed to init modem after hard reset.");
