@@ -463,6 +463,7 @@ async def handle_recommendation(message):
                 chat_id,
                 _("As soon as the water level has stabilized, enter the water level (in cm):")
             )
+            return
 
         
         if row['device'] == "incremental_meter":
