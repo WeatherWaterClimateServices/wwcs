@@ -727,13 +727,7 @@ async def handle_send_data(message):
 
                     # Saving data
                     success, msg = await save_irrigation_data(chat_id, data['total_used'], row['siteID'])
-                    await send_message_safe(
-                        chat_id,
-                        _("✅ Thank you! Total water used: {total_used:.2f} m³.\n"
-                          "See you tomorrow!").format(
-                            total_used=data['total_used']
-                        )
-                    )
+                    await send_message_safe(chat_id, msg)
                     del user_irrigation_data[chat_id]
             else:
                 await send_message_safe(chat_id, _("❌ No irrigation data found. Press 'Start irrigation' button."))
