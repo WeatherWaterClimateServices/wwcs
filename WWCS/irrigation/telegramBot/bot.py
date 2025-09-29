@@ -397,7 +397,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
         print(remaining_m3)
         flow_rate = WATER_FLOW_RATES.get(water_level, 0)
         print(flow_rate)
-        remaining_time = round(remaining_m3 / flow_rate) if flow_rate > 0 else 0
+        remaining_time = round(remaining_m3 / flow_rate) if flow_rate > 0 else 24 * 60
         hours, minutes = remaining_time // 60, remaining_time % 60
         print(f'{remaining_time=} minutes')
 
