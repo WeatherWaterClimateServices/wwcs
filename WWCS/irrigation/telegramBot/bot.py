@@ -729,8 +729,7 @@ async def handle_send_data(message):
                     data['total_used'] += flow_rate * time_diff
 
                     # Saving data
-                    success, msg = await save_irrigation_data(chat_id, data['total_used'], row)
-                    await send_message_safe(chat_id, msg)
+                    await save_irrigation_data(chat_id, data['total_used'], row)
                     del user_irrigation_data[chat_id]
             else:
                 await send_message_safe(chat_id, _("❌ No irrigation data found. Press 'Start irrigation' button."))
@@ -746,8 +745,7 @@ async def handle_send_data(message):
                     additional_used = flow_rate * (time_elapsed / 60)
                     data['total_used_m3'] += additional_used
 
-                    success, message_text = await save_irrigation_data(chat_id, data['total_used_m3'], row)
-                    await send_message_safe(chat_id, message_text)
+                    await save_irrigation_data(chat_id, data['total_used_m3'], row)
 
                     data['is_active'] = False
                     return
@@ -792,8 +790,7 @@ async def handle_counter_end(message):
         if row is None:
             return
 
-        success, message_text = await save_irrigation_data(chat_id, used_m3, row)
-        await send_message_safe(chat_id, message_text)
+        await save_irrigation_data(chat_id, used_m3, row)
 
         # Only upon successful completion we reset the state
         user_states[chat_id] = None
@@ -826,11 +823,7 @@ async def handle_actual_data(message):
         if row is None:
             return
 
-        success, msg = await save_irrigation_data(chat_id, actual_m3, row)
-        if success:
-            await send_message_safe(chat_id, msg)
-        else:
-            await send_message_safe(chat_id, _("❌ Failed to save data. Please contact support."))
+        await save_irrigation_data(chat_id, actual_m3, row)
     except ValueError:
         await send_message_safe(chat_id, _("⚠️ Please enter a valid number (e.g., 150.5)"))
     except Exception as e:
@@ -878,26 +871,19 @@ async def send_recommendation(chat_id, fieldtype, device, irrigation_need, area,
         await send_message_safe(chat_id, _("⚠️ An error occurred. Please try again."))
 
 
-async def save_irrigation_data(chat_id, used_m3, row=None):
+async def save_irrigation_data(chat_id, used_m3, row):
     """
-    When row is None:
-    - Return (False, error_message) if there was an error
-    - Return (True, success_message) on success
+    Output values:
+    - False if there was an error
+    - True on success
+    """
 
-    When row is provided:
-    - Use the provided row data instead of querying database again
-    """
+    # This must never happen, it's only for development
+    if row is None:
+        raise ValueError('row must not be None')
+
     try:
         print(f"[SAVE_DATA_START] chat_id: {chat_id}, used_m3: {used_m3}")
-
-        # If row is not provided, fetch it
-        if row is None:
-            row = await get_irrigation_data(chat_id)
-            if row is None:
-                error_msg = _("❌ Your data was not found in the system")
-                print(f"[SAVE_DATA_ERROR] {error_msg}")
-                return False, error_msg
-
         site_id = row['siteID']
         print(f"[SAVE_DATA_DEBUG] Using site_id: {site_id} for chat_id: {chat_id}")
 
@@ -932,12 +918,14 @@ async def save_irrigation_data(chat_id, used_m3, row=None):
         ).format(used_m3=used_m3, actual_mm=actual_mm)
 
         print(f"[SAVE_DATA_SUCCESS] {success_msg}")
-        return True, success_msg
+        await send_message_safe(chat_id, success_msg)
+        return True
 
     except Exception as e:
-        error_msg = _("⚠️ Error saving data: {error}").format(error=str(e))
-        print(f"[SAVE_DATA_EXCEPTION] {error_msg}\nTraceback: {traceback.format_exc()}")
-        return False, error_msg
+        print(f"[SAVE_DATA_EXCEPTION] Error saving data: {e}\nTraceback: {traceback.format_exc()}")
+        error_msg = _("❌ Failed to save data. Please contact support.")
+        await send_message_safe(chat_id, error_msg)
+        return False
 
 
 async def main():
