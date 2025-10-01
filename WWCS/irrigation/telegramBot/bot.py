@@ -225,7 +225,8 @@ def schedule_polyv_completion_notification(chat_id, hours, minutes):
 
 async def notify_polyv_completion(chat_id):
     if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
-        message = _("⏰ Watering time is over! Please stop the water flow and then click the 'Irrigation finished' button.")
+        message = _(
+            "⏰ Watering time is over! Please stop the water flow and then click the 'Irrigation finished' button.")
         await send_message_safe(chat_id, message)
         notification_manager.remove_job(chat_id, 'water_check')
 
@@ -317,7 +318,8 @@ async def check_irrigation(chat_id):
                     "If you want to irrigate today, press 'Start irrigation'. Otherwise simply come back tomorrow."
                 )
         else:
-            await send_message_safe(chat_id, _("ERROR! Unknown plot type or device configuration. Please contact support."))
+            await send_message_safe(chat_id,
+                                    _("ERROR! Unknown plot type or device configuration. Please contact support."))
             return False
 
         message = text.format(
@@ -451,7 +453,7 @@ async def start(message):
 async def handle_recommendation(message):
     chat_id = message.chat.id
     try:
-        
+
         row = await get_irrigation_data(chat_id)
         if row is None:
             print("[DEBUG] Row is False, returning")
@@ -465,7 +467,6 @@ async def handle_recommendation(message):
             )
             return
 
-        
         if row['device'] == "incremental_meter":
             if row['type'] in ["control", "treatment"]:
                 await send_message_safe(chat_id, _("Enter the current m³ on your counter (before irrigation):"))
@@ -473,13 +474,15 @@ async def handle_recommendation(message):
                 return
 
         if row['type'] == "control" and row['device'] == "thomson_profile":
-            await send_message_safe(chat_id, _("As soon as the water level has stabilized, enter the water level (in cm):"))
+            await send_message_safe(chat_id,
+                                    _("As soon as the water level has stabilized, enter the water level (in cm):"))
             user_states[chat_id] = "waiting_for_water_level_control"
             return
 
         if row['device'] == "total_meter":
             if row['type'] in ["treatment", "control"]:
-                await send_message_safe(chat_id, _("For your plot and device type you need to press 'Irrigation finished and enter m³ used water in total'"))
+                await send_message_safe(chat_id,
+                                        _("For your plot and device type you need to press 'Irrigation finished and enter m³ used water in total'"))
                 return
 
         else:
@@ -495,7 +498,8 @@ async def handle_recommendation(message):
     except Exception as e:
         print(f"[ERROR] in handle_recommendation: {str(e)}")
         traceback.print_exc()
-        await send_message_safe(chat_id, _("⚠️ An error occurred. Please try again. If the problem persists contact support."))
+        await send_message_safe(chat_id,
+                                _("⚠️ An error occurred. Please try again. If the problem persists contact support."))
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_water_level_control')
@@ -510,7 +514,7 @@ async def handle_water_level_control(message):
 
         if water_level < 0 or water_level > 25:
             await send_message_safe(chat_id, _("⚠️ Incorrect water level! Acceptable values from 0 to 25 cm.\n"
-                  "Please enter the correct value:"))
+                                               "Please enter the correct value:"))
             return
 
         current_time = datetime.now()
@@ -713,8 +717,6 @@ async def handle_send_data(message):
                     return
             return
 
-                  
-
         if row['type'] == "control" and row['device'] == "thomson_profile":
             if chat_id in user_irrigation_data and 'levels' in user_irrigation_data[chat_id]:
                 data = user_irrigation_data[chat_id]
@@ -727,7 +729,7 @@ async def handle_send_data(message):
                     data['total_used'] += flow_rate * time_diff
 
                     # Saving data
-                    success, msg = await save_irrigation_data(chat_id, data['total_used'], row['siteID'])
+                    success, msg = await save_irrigation_data(chat_id, data['total_used'], row)
                     await send_message_safe(chat_id, msg)
                     del user_irrigation_data[chat_id]
             else:
@@ -744,7 +746,7 @@ async def handle_send_data(message):
                     additional_used = flow_rate * (time_elapsed / 60)
                     data['total_used_m3'] += additional_used
 
-                    success, message_text = await save_irrigation_data(chat_id, data['total_used_m3'], row['siteID'])
+                    success, message_text = await save_irrigation_data(chat_id, data['total_used_m3'], row)
                     await send_message_safe(chat_id, message_text)
 
                     data['is_active'] = False
@@ -753,10 +755,12 @@ async def handle_send_data(message):
                     print(f"Error while saving: {str(e)}")
                     await send_message_safe(chat_id, _("⚠️ Error saving data. Please contact support."))
             else:
-                await send_message_safe(chat_id, _("❌ No active irrigation session found. Press 'Start irrigation' button."))
+                await send_message_safe(chat_id,
+                                        _("❌ No active irrigation session found. Press 'Start irrigation' button."))
 
         else:
-            await send_message_safe(chat_id, _("❌ It seems that your fieldtype or meter type are wrongly configured. Please contact support."))
+            await send_message_safe(chat_id,
+                                    _("❌ It seems that your fieldtype or meter type are wrongly configured. Please contact support."))
     except Exception as e:
         print(f"[ERROR] in handle_send_data: {str(e)}")
         traceback.print_exc()
@@ -770,7 +774,8 @@ async def handle_counter_end(message):
         end_counter = int(message.text)
 
         if chat_id not in user_irrigation_data or 'start_counter' not in user_irrigation_data[chat_id]:
-            await send_message_safe(chat_id, _("❌ Error: No start data found. Please press 'Start irrigation' to restart."))
+            await send_message_safe(chat_id,
+                                    _("❌ Error: No start data found. Please press 'Start irrigation' to restart."))
             user_states[chat_id] = None
             return
 
@@ -781,7 +786,13 @@ async def handle_counter_end(message):
             return
 
         used_m3 = end_counter - start_counter
-        success, message_text = await save_irrigation_data(chat_id, used_m3)
+
+        # OPTIMIZED: Get row once and pass to save_irrigation_data
+        row = await get_irrigation_data(chat_id)
+        if row is None:
+            return
+
+        success, message_text = await save_irrigation_data(chat_id, used_m3, row)
         await send_message_safe(chat_id, message_text)
 
         # Only upon successful completion we reset the state
@@ -810,12 +821,12 @@ async def handle_actual_data(message):
         if actual_m3 < 0:
             await send_message_safe(chat_id, _("⚠️Error: The value can not be negative. Please send correct number"))
             return
-            
+
         row = await get_irrigation_data(chat_id)
         if row is None:
             return
 
-        success, msg = await save_irrigation_data(chat_id, actual_m3, row['siteID'])
+        success, msg = await save_irrigation_data(chat_id, actual_m3, row)
         if success:
             await send_message_safe(chat_id, msg)
         else:
@@ -867,38 +878,30 @@ async def send_recommendation(chat_id, fieldtype, device, irrigation_need, area,
         await send_message_safe(chat_id, _("⚠️ An error occurred. Please try again."))
 
 
-async def save_irrigation_data(chat_id, used_m3, site_id=None):
-    try:
-        print(f"[SAVE_DATA_START] chat_id: {chat_id}, used_m3: {used_m3}, site_id: {site_id or 'not provided'}")
+async def save_irrigation_data(chat_id, used_m3, row=None):
+    """
+    When row is None:
+    - Return (False, error_message) if there was an error
+    - Return (True, success_message) on success
 
-        if not site_id:
+    When row is provided:
+    - Use the provided row data instead of querying database again
+    """
+    try:
+        print(f"[SAVE_DATA_START] chat_id: {chat_id}, used_m3: {used_m3}")
+
+        # If row is not provided, fetch it
+        if row is None:
             row = await get_irrigation_data(chat_id)
             if row is None:
-                print("[SAVE_DATA_ERROR] Your data was not found in the system")
-                return False, None
+                error_msg = _("❌ Your data was not found in the system")
+                print(f"[SAVE_DATA_ERROR] {error_msg}")
+                return False, error_msg
 
-            site_id = row['siteID']
-            print(f"[SAVE_DATA_DEBUG] Found site_id: {site_id} for chat_id: {chat_id}")
+        site_id = row['siteID']
+        print(f"[SAVE_DATA_DEBUG] Using site_id: {site_id} for chat_id: {chat_id}")
 
-        # Get site parameters
-        query = """
-        SELECT
-            JSON_EXTRACT(fieldproperties, '$.area') AS area,
-            JSON_EXTRACT(fieldproperties, '$.IE') AS ie,
-            JSON_EXTRACT(fieldproperties, '$.WA') AS wa
-        FROM SitesHumans.Sites
-        WHERE siteID = :site_id
-        """
-        print(f"[SAVE_DATA_QUERY] Executing query for site_id: {site_id}")
-
-        row = await database.fetch_one(query=query, values={"site_id": site_id})
-        if row is None:
-            error_msg = _("❌ Site configuration not found")
-            print(f"[SAVE_DATA_ERROR] {error_msg}")
-            return False, error_msg
-
-        print(f"[SAVE_DATA_DEBUG] Site params: {row}")
-
+        # Extract parameters from the row we already have
         area = float(row['area'])
         ie = float(row['ie'])
         wa = float(row['wa'])
