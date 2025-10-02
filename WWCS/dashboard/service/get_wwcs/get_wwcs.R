@@ -77,8 +77,13 @@ for (i in 1:nstat) {
           Solar = ifelse(Solar < -100, NA, Solar),
           Battery = ifelse(Battery < -100, NA, Battery),
           Signal = ifelse(Signal < -100, NA, Signal), 
-          time = as.POSIXct(ifelse(time < as.POSIXct("2021-01-01", tz = timezone_country), as.POSIXct("2021-01-01", tz = timezone_country), time)), 
-          time = as.POSIXct(ifelse(time > Sys.time() + days(1), as.POSIXct("2021-01-01", tz = timezone_country), time))
+          time = as.POSIXct(time, tz = timezone_country),
+          time = if_else(time < as.POSIXct("2021-01-01", tz = timezone_country),
+                         as.POSIXct("2021-01-01", tz = timezone_country),
+                         time),
+          time = if_else(time > Sys.time() + days(1),
+                         as.POSIXct("2021-01-01", tz = timezone_country),
+                         time)
         )
     }
     
