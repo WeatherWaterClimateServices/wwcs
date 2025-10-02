@@ -196,4 +196,8 @@ ui <- tagList(
   )
 )
 
-# ui <- secure_app(ui)
+if (use_pass == FALSE) {
+  ui
+  } else {
+  ui <- secure_app(ui)
+}

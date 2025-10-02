@@ -2,6 +2,7 @@
 
 servicepass: "wwcs1234" # Password for service applications
 wwcs_domain: "164.90.231.18" # Domain name of the server
+use_pass: "FALSE" # Define if a password is needed to login to services
 
 # Define area of WWCS application                                                  
 # 45.7910882210682, 5.7761397522042435
