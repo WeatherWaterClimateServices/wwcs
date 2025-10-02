@@ -127,10 +127,10 @@ for i in dat:
             "output_es.grb")
         # Postprocess Data
         # --------------------------------
-        cdo.copy(input="output_es.grb", output="output_es.nc", options='-t ecmwf -f nc')
-        cdo.copy(input="output_em.grb", output="output_em.nc", options='-t ecmwf -f nc')
-        cdo.chname("T2M,IFS_T_std", input="output_es.nc", output="output_es_rn.nc")
-        cdo.chname("T2M,IFS_T_mea", input="output_em.nc", output="output_em_rn.nc")
+        cdo.copy(input="output_es.grb", output="output_es.nc", options='-f nc')
+        cdo.copy(input="output_em.grb", output="output_em.nc", options='-f nc')
+        cdo.chname("\2t,IFS_T_std", input="output_es.nc", output="output_es_rn.nc")
+        cdo.chname("\2t,IFS_T_mea", input="output_em.nc", output="output_em_rn.nc")
         cdo.merge(input="output_es_rn.nc output_em_rn.nc", output="tj_area_" + str(i) + ".nc")
 
     # Interpolate Data to Stations
