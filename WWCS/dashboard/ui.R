@@ -196,8 +196,13 @@ ui <- tagList(
   )
 )
 
-if (use_pass == FALSE) {
-  ui
+if (exists("use_pass")) {
+  # Second layer: existing logic
+  if (use_pass == FALSE) {
+    ui
   } else {
-  ui <- secure_app(ui)
+    ui <- secure_app(ui)
+  }
+} else {
+  ui
 }
