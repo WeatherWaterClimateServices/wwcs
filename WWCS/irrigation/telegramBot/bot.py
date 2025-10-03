@@ -559,7 +559,7 @@ async def handle_water_level_control(message):
     except Exception as e:
         print(f"[ERROR] in handle_water_level_control: {str(e)}")
         traceback.print_exc()
-        await send_message_safe(chat_id, "⚠️ An error occurred. Please try again.")
+        await send_message_safe(chat_id, _("⚠️ An error occurred. Please try again."))
 
 
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_counter_start')
@@ -713,7 +713,7 @@ async def handle_send_data(message):
                     user_states[chat_id] = "waiting_for_counter_end"
                     return
                 else:
-                    await send_message_safe(chat_id, "Press Start irrigation button first")
+                    await send_message_safe(chat_id, _("Press Start irrigation button first"))
                     return
             return
 
