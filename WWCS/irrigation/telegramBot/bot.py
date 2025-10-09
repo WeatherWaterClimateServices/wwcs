@@ -699,24 +699,22 @@ async def handle_send_data(message):
             print(f"[DEBUG] Could not convert irrigation_app to float: {irrigation_app}")
 
         if row['device'] == "total_meter":
-            if row['type'] in ["treatment", "control"]:
-                print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
-                await send_message_safe(chat_id, _("Please enter the volume that you irrigated today (in m³):"))
-                user_states[chat_id] = "waiting_for_actual_data"
-                return
+            print("[SAVE_DATA_TOTAL_METER] Requesting actual water usage")
+            await send_message_safe(chat_id, _("Please enter the volume that you irrigated today (in m³):"))
+            user_states[chat_id] = "waiting_for_actual_data"
             return
 
+
         if row['device'] == "incremental_meter":
-            if row['type'] in ["treatment", "control"]:
-                if chat_id in user_irrigation_data and 'start_counter' in user_irrigation_data[chat_id]:
-                    print("[SAVE_DATA_COUNTER] Requesting end counter value")
-                    await send_message_safe(chat_id, _("Enter the m³ on your counter AFTER irrigation:"))
-                    user_states[chat_id] = "waiting_for_counter_end"
-                    return
-                else:
-                    await send_message_safe(chat_id, _("I don't have the m³ on your counter from before the irrigation. Press 'Start irrigation' button to enter this first."))
-                    return
-            return
+            if chat_id in user_irrigation_data and 'start_counter' in user_irrigation_data[chat_id]:
+                print("[SAVE_DATA_COUNTER] Requesting end counter value")
+                await send_message_safe(chat_id, _("Enter the m³ on your counter AFTER irrigation:"))
+                user_states[chat_id] = "waiting_for_counter_end"
+                return
+            else:
+                await send_message_safe(chat_id, _("I don't have the m³ on your counter from before the irrigation. Press 'Start irrigation' button to enter this first."))
+                return
+
 
         if row['type'] == "control" and row['device'] == "thomson_profile":
             if chat_id in user_irrigation_data and 'levels' in user_irrigation_data[chat_id]:
