@@ -469,10 +469,9 @@ async def handle_recommendation(message):
             return
 
         if row['device'] == "incremental_meter":
-            if row['type'] in ["control", "treatment"]:
-                await send_message_safe(chat_id, _("Enter the m³ on your counter BEFORE irrigation:"))
-                user_states[chat_id] = "waiting_for_counter_start"
-                return
+            await send_message_safe(chat_id, _("Enter the m³ on your counter BEFORE irrigation:"))
+            user_states[chat_id] = "waiting_for_counter_start"
+            return
 
         if row['type'] == "control" and row['device'] == "thomson_profile":
             await send_message_safe(chat_id,
@@ -481,10 +480,8 @@ async def handle_recommendation(message):
             return
 
         if row['device'] == "total_meter":
-            if row['type'] in ["treatment", "control"]:
-                await send_message_safe(chat_id,
-                                        _("After irrigation, press 'Irrigation finished' and enter m³ used water in total"))
-                return
+            await send_message_safe(chat_id, _("After irrigation, press 'Irrigation finished' and enter m³ used water in total"))
+            return
 
         else:
             await send_recommendation(
