@@ -824,14 +824,15 @@ async def handle_actual_data(message):
             return
 
         await save_irrigation_data(chat_id, actual_m3, row)
+        user_states[chat_id]=None
+        
     except ValueError:
         await send_message_safe(chat_id, _("⚠️ Please enter a valid positive number (e.g., 125.5)."))
     except Exception as e:
         print(f"[ERROR] in handle_actual_data: {str(e)}")
         traceback.print_exc()
         await send_message_safe(chat_id, _("⚠️ An error occurred. Please try again. If you get this message again, contact support."))
-    finally:
-        user_states[chat_id] = None
+    
 
 
 async def send_recommendation(chat_id, fieldtype, device, irrigation_need, area, ie, wa, water_level=None):
