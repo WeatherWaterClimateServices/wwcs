@@ -625,7 +625,7 @@ async def handle_water_level(message):
             await send_message_safe(
                 chat_id,
                 _("⚠️ I need a water level from 0 to 25 cm.\n"
-                    "Please enter the correct value as a whole number (e.g. 0, 1, 2...):")
+                  "Please enter the correct value as a whole number (e.g. 0, 1, 2...):")
             )
             return  # We do not continue processing.
 
@@ -642,9 +642,7 @@ async def handle_water_level(message):
             float(row['wa']),
         )
 
-        if calculation['is_completed']:
-            msg = _("✅ Enough water, please stop irrigation.")
-        else:
+        if not calculation['is_completed']:
             hours, minutes = calculation['remaining_time']
 
             msg = _(
@@ -660,16 +658,17 @@ async def handle_water_level(message):
                 total_m3=calculation['used_m3'] + calculation['remaining_m3'],
             )
 
-        await send_message_safe(chat_id, msg)
+            await send_message_safe(chat_id, msg)
+
         user_states[chat_id] = None
     except ValueError:
         await send_message_safe(chat_id, _("⚠️ I need a water level from 0 to 25 cm.\n"
-                                            "Please enter the correct value as a whole number (e.g. 0, 1, 2...):"))
+                                           "Please enter the correct value as a whole number (e.g. 0, 1, 2...):"))
     except Exception as e:
         print(f"[ERROR] in handle_water_level: {str(e)}")
         traceback.print_exc()
         await send_message_safe(chat_id, _("⚠️ I need a water level from 0 to 25 cm.\n"
-                                            "Please enter the correct value as a whole number (e.g. 0, 1, 2...):"))
+                                           "Please enter the correct value as a whole number (e.g. 0, 1, 2...):"))
 
 
 @bot.message_handler(func=lambda message: message.text == BUTTONS["irrigation_finished"])
