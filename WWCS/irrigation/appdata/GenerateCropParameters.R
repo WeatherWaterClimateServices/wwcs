@@ -112,6 +112,22 @@ if (file.exists(kc_path) && file.exists(rd_path)) {
   crop.parameters <- full_join(crop.parameters, winterwheat, by = "Index")
 }
 
+## winter wheat for Uzbekistan - as from ICARDA, but with a higher Kc_init
+Ls <- c(ini=29, dev=46, mid=119, late=81)
+Kc <- c(ini=0.7, mid=1.15, end=.25)
+Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
+         seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
+         rep(Kc[["mid"]], Ls[["mid"]]),
+         seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
+RDs <- RD[, 1]
+WinterWheatUzbekistan <-
+  data.frame(Index=1:nrow(crop.parameters),
+             WinterWheatUzbekistan_Kc=c(Kcs,
+                                   rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             WinterWheatUzbekistan_RD=c(RDs,
+                                   rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, WinterWheatUzbekistan, by = "Index")
+
 ## cotton from ICARDA
 kc_path <- "Cotton/Cotton_Kc_Only.xlsx"
 rd_path <- "Cotton/Estimated_Rooting_Depths.csv"
