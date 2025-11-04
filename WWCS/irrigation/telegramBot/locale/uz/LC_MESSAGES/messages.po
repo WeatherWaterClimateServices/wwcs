@@ -3,201 +3,391 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-27 11:41+0200\n"
-"PO-Revision-Date: 2025-06-27 11:43+0200\n"
+"POT-Creation-Date: 2025-10-22 09:57+0500\n"
+"PO-Revision-Date: 2025-10-30 10:49+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: uz\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.0.1\n"
+"X-Generator: Poedit 3.6\n"
 
-#: bot.py:154
-msgid "Send recommendation"
-msgstr "Tavsiya yuboring"
-
-#: bot.py:155
-msgid "No water"
-msgstr "Suv yo'q"
-
-#: bot.py:156
-msgid "Save data"
-msgstr "Maʼlumotlarni saqlash"
-
-#: bot.py:199
+#: bot.py:153
 msgid ""
-"🔄 Please check the current water level in the channel and send its value"
+"❌ I have you registered, but I don't find the required irrigation data in "
+"the system. Please contact support or try again tomorrow."
 msgstr ""
-"🔄 Iltimos, kanaldagi hozirgi suv darajasini tekshiring va uning qiymatini "
-"yuboring"
+"❌ Siz ro‘yxatdan o‘tgansiz, lekin tizimda kerakli sug‘orish ma’lumotlari "
+"topilmadi. Iltimos, qo‘llab-quvvatlash xizmatiga murojaat qiling yoki ertaga "
+"yana urinib ko‘ring."
 
-#: bot.py:233
+#: bot.py:160
 msgid ""
-"⏰ Watering time is over! Please click the 'Save data' button to save the "
-"results."
+"❌ I am sorry, your telegramID is not in our system. Please contact support."
 msgstr ""
-"⏰ Sug'orish vaqti tugadi! Iltimos, saqlash uchun \"Ma'lumotlarni saqlash\" "
+"❌ Kechirasiz, sizning telegramID tizimimizda topilmadi. Iltimos, qo‘llab-"
+"quvvatlash xizmatiga murojaat qiling."
+
+#: bot.py:174 bot.py:693
+msgid ""
+"❌ I am sorry, you have already registered your irrigation. Please contact "
+"support."
+msgstr ""
+"❌ Kechirasiz, siz allaqachon sug‘orishni ro‘yxatdan o‘tkazgansiz. Iltimos, "
+"qo‘llab-quvvatlash xizmatiga murojaat qiling."
+
+#: bot.py:183 bot.py:338 bot.py:500
+msgid "⚠️ I cannot read from the database. Try again later or contact support."
+msgstr ""
+"⚠️ Ma’lumotlar bazasidan o‘qib bo‘lmadi. Iltimos, birozdan so‘ng yana urinib "
+"ko‘ring yoki qo‘llab-quvvatlash xizmatiga murojaat qiling."
+
+#: bot.py:191
+msgid "Start Irrigation"
+msgstr "Sug‘orishni boshlash"
+
+#: bot.py:192
+msgid "Irrigation finished"
+msgstr "Sug‘orish yakunlandi"
+
+#: bot.py:216
+msgid ""
+"🔄 Please check the current water level in the channel. If it has changed by "
+"more than 2cm, press 'Start irrigation' again and update the water level."
+msgstr ""
+"🔄 Iltimos, hozirgi kanal suv sathini tekshiring. Agar u 2 sm dan ko‘p "
+"o‘zgargan bo‘lsa, ‘Sug‘orishni boshlash’ tugmasini qayta bosing va suv "
+"darajasi yangilang."
+
+#: bot.py:229
+msgid ""
+"⏰ Watering time is over! Please stop the water flow and then click the "
+"'Irrigation finished' button."
+msgstr ""
+"⏰ Sug‘orish vaqti tugadi! Iltimos, suv oqimini to‘xtating va so‘ngra "
+"‘Sug‘orish tugadi’ tugmasini bosing."
+
+#: bot.py:262
+msgid ""
+"❌ Missing information: I have not found field type (control/treatment) or "
+"meter type in my database for your site. Please contact support."
+msgstr ""
+"❌ Yetarli ma’lumot topilmadi: sizning maydoningiz uchun maydon turi "
+"(nazorat/tajriba) yoki o‘lchagich turi bazada topilmadi. Iltimos, qo‘llab-"
+"quvvatlash xizmatiga murojaat qiling."
+
+#: bot.py:276
+msgid ""
+"❌ Missing information: I have not found irrigationNeed, area, wetted area "
+"or irrigation efficiency in my database for your site. Please contact "
+"support."
+msgstr ""
+"❌ Yetarli ma’lumot topilmadi: sizning maydoningiz uchun sug‘orish talabi, "
+"maydon, namlangan maydon yoki sug‘orish samaradorligi bazada topilmadi. "
+"Iltimos, qo‘llab-quvvatlash xizmatiga murojaat qiling."
+
+#: bot.py:285
+#, python-brace-format
+msgid ""
+"🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+"I will give you a recommendation for irrigation and will guide you through "
+"the data entry.\n"
+"💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
+"If you want to irrigate, press 'Start irrigation'. Otherwise simply come "
+"back tomorrow."
+msgstr ""
+"🌤 Xayrli tong, {first_name}, sizning tajriba maydonchangizda {crop} "
+"o‘stirilmoqda.\n"
+"Men sizga sug‘orish bo‘yicha tavsiya beraman va ma’lumotlarni kiritishda "
+"yordam beraman.\n"
+"💧 Sizning maydonchangizga {water:.2f} m³ sug‘orish kerak.\n"
+"Agar siz sug‘orishni boshlamoqchi bo‘lsangiz, “Sug‘orishni oshlash” "
+"tugmasini bosing. Aks holda, ertaga qaytib keling."
+
+#: bot.py:292
+#, python-brace-format
+msgid ""
+"🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+"I will give you a recommendation for irrigation and will guide you through "
+"the data entry.\n"
+"💧 Please irrigate: {water:.2f} m³.\n"
+"When finished, press the 'Irrigation finished' button."
+msgstr ""
+"🌤 Xayrli tong, {first_name}, sizning tajriba maydonchangizda {crop} "
+"o‘stirilmoqda.\n"
+"Men sizga sug‘orish bo‘yicha tavsiya beraman va ma’lumotlarni kiritishda "
+"yordam beraman.\n"
+"💧 Iltimos, sug'oring: {water:.2f} m3.\n"
+"Tugatganingizdan so‘ng, “Sug‘orish ugadi” tugmasini bosing."
+
+#: bot.py:299
+#, python-brace-format
+msgid ""
+"🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+"I will give you a recommendation for irrigation and will guide you through "
+"the data entry:\n"
+"💧 Your plot is currently not under water stress, and I don't recommend to "
+"irrigate.\n"
+"If you want to irrigate nevertheless, don't apply more than {water:.2f} m³ "
+"of irrigation.\n"
+"Press 'Start irrigation' if you want to irrigate. Otherwise simply come back "
+"tomorrow."
+msgstr ""
+"🌤 Xayrli tong, {first_name}, sizning tajriba maydonchangizda {crop} "
+"o‘stirilmoqda.\n"
+"Men sizga sug‘orish bo‘yicha tavsiya beraman va ma’lumotlarni kiritishda "
+"yordam beraman:\n"
+"💧 Sizning maydonchangiz hozircha suv tanqisligida emas, shuning uchun "
+"sug‘orishni tavsiya etmayman.\n"
+"Agar baribir sug‘orishni xohlasangiz, {water:.2f} m³ dan ortiq suv "
+"qo‘llamang.\n"
+"Agar sug‘orishni boshlamoqchi bo‘lsangiz, “Sug‘orishni boshlash” tugmasini "
+"bosing. Aks holda, ertaga qaytib keling."
+
+#: bot.py:310
+#, python-brace-format
+msgid ""
+"🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
+"I will guide you through the irrigation data entry.\n"
+"If you want to irrigation today, please go ahead.\n"
+"When you have finished irrigation, press button 'Irrigation finished'. "
+"Otherwise simply come back tomorrow."
+msgstr ""
+"🌤 Xayrli tong, {first_name}, sizning nazorat maydonchangizda {crop} "
+"o‘stirilmoqda.\n"
+"Men sizga sug‘orish ma’lumotlarini kiritishda yordam beraman.\n"
+"Agar bugun sug‘orishni xohlasangiz, boshlashingiz mumkin.\n"
+"Sug‘orishni tugatganingizdan so‘ng, “Sug‘orish tugadi” tugmsini bosing. Aks "
+"holda, ertaga qaytib keling."
+
+#: bot.py:317
+#, python-brace-format
+msgid ""
+"🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
+"I will guide you through the irrigation data entry.\n"
+"If you want to irrigate today, press 'Start irrigation'. Otherwise simply "
+"come back tomorrow."
+msgstr ""
+"🌤 Xayrli tong, {first_name}, sizning nazorat maydonchangizda {crop} "
+"o‘stirilmoqda.\n"
+"Men sizga sug‘orish ma’lumotlarini kiritishda yordam beraman.\n"
+"Agar bugun sug‘orishni xohlasangiz, “Sug‘orishni boshlash” tugasini bosing. "
+"Aks holda, ertaga qaytib keling."
+
+#: bot.py:323 bot.py:759
+msgid ""
+"⚠️ The plot type or metering device information in the database is wrong for "
+"your site. Please contact support."
+msgstr ""
+"⚠️ Sizning maydonchangiz uchun bazadagi maydon turi yoki o‘lchash qurilmasi "
+"haqida ma’lumot noto‘g‘ri. Iltimos, qo‘llab-quvvatlash  xizmatiga murojaat "
+"qiling."
+
+#: bot.py:446
+msgid "The bot has started successfully"
+msgstr "Bot muvaffaqiyatli ishga tushdi."
+
+#: bot.py:467 bot.py:478
+msgid ""
+"As soon as the water level has stabilized, enter the water level (in cm):"
+msgstr "Suv darajasi barqarorlashgach, suv darajasini (sm da) kiriting:"
+
+#: bot.py:472
+msgid "Enter the m³ on your counter BEFORE irrigation:"
+msgstr "Sug‘orishdan OLDIN hisoblagichdagi m³ ni kiriting:"
+
+#: bot.py:483
+msgid ""
+"After irrigation, press 'Irrigation finished' and enter m³ used water in "
+"total"
+msgstr ""
+"Sug‘orishdan so‘ng, “Sug‘orish tugadi” tugmasini bosing va ishlatilgan suv "
+"miqdorini (m³) kiriting."
+
+#: bot.py:514 bot.py:556 bot.py:627 bot.py:665 bot.py:670
+msgid ""
+"⚠️ I need a water level from 0 to 25 cm.\n"
+"Please enter the correct value as a whole number (e.g. 0, 1, 2...):"
+msgstr ""
+"⚠️ Menga 0 dan 25 sm gacha bo‘lgan suv darajasi kerak.\n"
+"Iltimos, to‘g‘ri qiymatni butun son shaklida kiriting (masalan: 0, 1, 2…):"
+
+#: bot.py:530
+msgid ""
+"✅ Thank you. Whenever the water level changes by more than 2cm press 'Start "
+"irrigation' and enter the new level.\n"
+"Enter 0 if water stops. Press 'Irrigation finished' when done."
+msgstr ""
+"✅ Rahmat. Suv darajasi 2 sm dan ortiq o‘zgarganda, “Sug‘orishni boshlash” "
+"tugmasini bosing va yangi darajani kiriting.\n"
+"Suv to‘xtasa, 0 ni kiriting. Tugatganingizdan so‘ng, “Sug‘orish tugadi” "
 "tugmasini bosing."
 
-#: bot.py:247 bot.py:254
+#: bot.py:545
 #, python-brace-format
 msgid ""
-"🌤 Good morning, {first_name}!\n"
-"Your plot is ready for irrigation.\n"
-"💧 Water required: {water:.2f} m³"
+"🔄 Updated: +{used_water:.2f} m³ used (total: {total_used:.2f} m³).\n"
+"Whenever the water level changes by more than 2cm press 'Start irrigation' "
+"and enter the new level.\n"
+"Enter 0 if water stops. Press 'Irrigation finished' when done."
 msgstr ""
-"🌤 Xayrli tong, {first_name}!\n"
-"Sizning uchastkangiz sug'orishga tayyor.\n"
-"💧 Kerakli suv: {water:.2f}  m³"
+"🔄 Yangilandi: +{used_water:.2f} m³ ishlatildi (jami {total_used:.2f} m³).\n"
+"Suv darajasi 2 sm dan ortiq o‘zgarganda, “Sug‘orishni boshlash” tugmasini "
+"bosing va yangi darajani kiriting.\n"
+"Suv to‘xtasa, 0 nikiriting. Tugatganingizdan so‘ng, “Sug‘orish tugadi” "
+"tugmasini bosing."
 
-#: bot.py:261
+#: bot.py:561 bot.py:614 bot.py:763 bot.py:805 bot.py:833 bot.py:871
+msgid ""
+"⚠️ An error occurred. Please try again. If you get this message again, "
+"contact support."
+msgstr ""
+"⚠️ Xatolik yuz berdi. Iltimos, qayta urinib ko‘ring. Agar bu xabar qayta "
+"paydo bo‘lsa, qo‘llab-quvvatlash xizmatiga murojaat qiling."
+
+#: bot.py:577
+msgid ""
+"⚠️ The value cannot be negative. Please try again with a positive number."
+msgstr ""
+"⚠️ Qiymat manfiy bo‘lishi mumkin emas. Iltimos, ijobiy son bilan qayta urinib "
+"ko‘ring."
+
+#: bot.py:593
 #, python-brace-format
 msgid ""
-"Hello, {first_name}!\n"
-"If your irrigation complete please push Save data button and enter you "
-"counter numbers Before and After irrigation\n"
-"and save your data"
+"✅ Thank you. Irrigate until your counter is at: {target_counter:.2f} m³\n"
+"💧 Water needed: {m3_needed:.2f} m³\n"
+"When you have finished irrigation, press button ‘Irrigation finished.'"
 msgstr ""
-"Salom, {first_name}!\n"
-"Agar sug'orish tugallangan bo'lsa, \"Ma'lumotlarni saqlash\" tugmasini "
-"bosing va sug'orishdan oldin va keyin hisoblagich raqamlarini kiriting \n"
-"va ma'lumotlaringizni saqlang"
+"✅ Rahmat. Hisoblagichingiz {target_counter:.2f} m³ ga yetguncha sug‘oring.\n"
+"💧 Kerakli suv miqdori: {m3_needed:.2f} m³.\n"
+"Tugatganingizdan so‘ng ‘Sug‘orish tugadi’ tgmasini bosing."
 
-#: bot.py:268
-msgid "ERROR!"
-msgstr "XATO!"
+#: bot.py:604
+msgid ""
+"✅ When you have finished irrigation, press button 'Irrigation finished.'"
+msgstr "✅ Tugatganingizdan so‘ng ‘Sug‘orish tugadi’ tugmasini bosing."
 
-#: bot.py:354
-msgid "Enter the current water level in the channel (in cm):"
-msgstr "Kanaldagi joriy suv darajasini kiriting (sm bilan):"
+#: bot.py:610 bot.py:800 bot.py:829
+msgid "⚠️ Please enter a valid positive number (e.g., 125.5)."
+msgstr "⚠️ Iltimos, to‘g‘ri musbat son kiriting (masalan: 125.5)."
 
-#: bot.py:358
-msgid "Please, send the counter value before irrigation (m³):"
-msgstr "Iltimos, sug'orishdan oldin hisoblagich qiymatini yuboring (m³):"
-
-#: bot.py:370 bot.py:403 bot.py:456 bot.py:521 bot.py:551 bot.py:590 bot.py:652
-#: bot.py:697
-msgid "❌ Your data was not found in the system"
-msgstr "❌ Sizning ma'lumotlaringiz tizimda topilmadi"
-
-#: bot.py:388
+#: bot.py:649
 #, python-brace-format
 msgid ""
-"Irrigate untill you counter is: {target_counter:.2f} m³\n"
-"Water need: {m3_needed:.2f} m³"
+"Thank you. 💦 At this level {water_level} cm, the recommended irrigation "
+"duration is ⏱ {hours}h {minutes}m\n"
+"Whenever the water level changes by more than 2cm, press 'Start irrigation' "
+"one more time and enter the new water level.\n"
+"Enter 0 if no water flows. Press 'Irrigation finished' when you stop.\n"
+"📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
 msgstr ""
-"Hisoblagich: {target_counter:.2f} m³ bo'lguncha sug'oring\n"
-"Suvga bo'lgan ehtiyoj: {m3_needed:.2f} m³"
+"Rahmat 💦. Suv sathi {water_level} sm bo‘lganda, tavsiya etilgan sug‘orish "
+"davomiyligi ⏱ {hours} soat {minutes} daqiqa.\n"
+"Suv darajasi 2 sm dan ko‘p o‘zgarsa, ‘Sug‘orishni boshlash’ tugmasini yana "
+"bosing va yangi darajasini kiriting\n"
+"Suv oqmasa, 0 ni kiriting. To‘xtatganingizda ‘Sug‘orish tugadi’ tugmasini "
+"bosing.\n"
+"📊 Ishlatilgan suv: {used_m3:.2f} m³  jami: {total_m3:.2f} m³"
 
-#: bot.py:405
-msgid "⚠️ Please, type number (125.5)"
-msgstr "⚠️ Iltimos, raqam kiriting (125.5)"
+#: bot.py:702
+msgid "Please enter the volume that you irrigated today (in m³):"
+msgstr "Iltimos, bugun sug'orish uchun sarflagan hajmingizni kiriting (m3 da):"
 
-#: bot.py:418
+#: bot.py:710
+msgid "Enter the m³ on your counter AFTER irrigation:"
+msgstr "Sug‘orishdan KEYIN hisoblagichdagi m³ ni kiriting:"
+
+#: bot.py:714 bot.py:774
 msgid ""
-"⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
-"Please enter the correct value:"
+"I don't have the m³ on your counter from before the irrigation. Press 'Start "
+"irrigation' button to enter this first."
 msgstr ""
-"⚠️ Suv darajasi noto'g'ri! Qabul qilinadigan qiymatlar 1 dan 25 sm.\n"
-"\"Iltimos, to'g'ri qiymatni kiriting:"
+"Sug‘orishdan oldingi hisoblagichdagi m³ ma’lumotim yo‘q. Avval ‘Sug‘orishni "
+"boshlash’ tugmasini bosing va shuni kiriting."
 
-#: bot.py:436 bot.py:710
-msgid "✅ Irrigation completed! Enough water."
-msgstr "✅ Sug'orish tugallandi! Suv yetarli."
+#: bot.py:733 bot.py:755
+msgid ""
+"❌ No active irrigation session found. Press 'Start irrigation' button to "
+"start one."
+msgstr ""
+"❌ Faol sug‘orish sessiyasi topilmadi. Iltimos, ‘Sug‘orishni boshlash’ "
+"tugmasini bosing."
 
-#: bot.py:442 bot.py:716
+#: bot.py:752 bot.py:926
+msgid "⚠️ Error saving data. Please contact support."
+msgstr ""
+"⚠️ Ma’lumotni saqlashda xato yuz berdi. Iltimos, qo‘llab-quvvatlash xizmatiga "
+"murojaat qiling."
+
+#: bot.py:780
+msgid ""
+"⚠️ The m³ on your counter after irrigation must be more than what it was "
+"before irrigation.\n"
+"Please enter the m³ on your counter after irrigation again!"
+msgstr ""
+"⚠️ Sug‘orishdan keyingi hisoblagichdagi m³, oldingisidan ko‘p bo‘lishi "
+"kerak.\n"
+"Sug'orishdan keyin hisoblagichingizga m³ ni qayta kiriting!"
+
+#: bot.py:818
+msgid ""
+"⚠️Error: The value cannot be negative. Please try again with a positive "
+"number."
+msgstr ""
+"⚠️ Xato: Qiymat manfiy bo‘lishi mumkin emas. Iltimos, musbat son kiriting."
+
+#: bot.py:843
+msgid "✅ Enough water, please stop irrigation."
+msgstr "✅ Suv yetarli. Iltimos, sug‘orishni to‘xtating."
+
+#: bot.py:848
 #, python-brace-format
 msgid ""
 "💦 Current level: {water_level} cm\n"
 "⏱ Time left: {hours}h {minutes}m\n"
 "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
 msgstr ""
-"💦 Joriy daraja: {water_level} sm\n"
-"⏱  Vaqt qoldi: {hours}s {minutes} d\n"
-"📊  Ishlatilgan: {used_m3:.2f} m³ / {total_m3:.2f} m³"
+"💦 Joriy suv darajasi: {water_level} sm\n"
+"⏱ Qolgan vaqt: {hours} s {minutes} d\n"
+"📊 Ishlatilgan suv: {used_m3:.2f} m³ / jami: {total_m3:.2f} m³"
 
-#: bot.py:458
-msgid "⚠️ Please enter a valid number (water level in cm)"
-msgstr "⚠️ Iltimos, to‘g‘ri raqamni kiriting (suv darajasi sm)"
-
-#: bot.py:473
-msgid "Please, send your counter number after irrigation (m³):"
-msgstr "Iltimos, sug'orishdan keyin hisoblagich raqamingizni yuboring (m³):"
-
-#: bot.py:478
-msgid "Please, send your counter number BEFORE irrigation (m³)"
-msgstr "Iltimos, sug'orishdan oldin hisoblagich raqamingizni yuboring (m³)"
-
-#: bot.py:505
+#: bot.py:861
 #, python-brace-format
-msgid "✅ Data saved! Used: {used_m3:.2f} m³"
-msgstr "✅ Maʼlumotlar saqlandi! Ishlatilgan: {used_m3:.2f} m³"
+msgid "🔢 Required: {m3_need} m³ water"
+msgstr "🔢 Kerakli suv miqdori: {m3_need} m³"
 
-#: bot.py:511
-msgid "⚠️ Error saving data"
-msgstr "⚠️ Maʼlumotlarni saqlashda xatolik yuz berdi"
-
-#: bot.py:514
-msgid "❌ No active irrigation session found"
+#: bot.py:863
+msgid ""
+"❌ I cannot provide you with a recommendation for your field type / metering "
+"device. Please contact support."
 msgstr ""
+"❌ Sizning maydon turi yoki o‘lchov qurilmasi uchun tavsiya bera olmayman. "
+"Iltimos, qo‘llab-quvvatlash xizmatiga murojaat qiling."
 
-#: bot.py:518
-msgid "Wrong fieldtype"
-msgstr "Noto'g'ri maydon turi"
+#: bot.py:867
+msgid ""
+"⚠️ I could not calculate the recommended irrigation duration and volume. "
+"Please contact support."
+msgstr ""
+"⚠️ Tavsiya etilgan sug‘orish hajmi va davomiyligini hisoblab bo‘lmadi. "
+"Iltimos, qo‘llab-quvvatlash xizmatiga murojaat qiling."
 
-#: bot.py:536
-msgid "Now send counter value AFTER irrigation (m³)"
-msgstr "Endi hisoblagich qiymatini sug'orishdan keyin yuboring (m³)"
-
-#: bot.py:539 bot.py:593 bot.py:656
-msgid "⚠️ Type correct number (like 125.5)"
-msgstr "⚠️ To'g'ri raqamni kiriting (masalan, 125,5)"
-
-#: bot.py:557
-msgid "⚠️ Error: start value is greater than end value!"
-msgstr "⚠️ Xato: boshlang'ich qiymati yakuniy qiymatdan kattaroq!"
-
-#: bot.py:579 bot.py:640 bot.py:687
+#: bot.py:914
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {actual_mm:.2f} mm"
+"Equivalent to: {actual_mm:.2f} mm\n"
+"See you tomorrow!"
 msgstr ""
-"✅  Maʼlumotlar saqlandi!\n"
+"✅ Ma’lumot saqlandi!\n"
 "Ishlatilgan suv: {used_m3:.2f} m³\n"
-"Ekvivalent: {actual_mm:.2f} mm"
-
-#: bot.py:610
-msgid "❌ Error: No start data found"
-msgstr "❌ Xato: Boshlanish maʼlumotlari topilmadi"
-
-#: bot.py:617
-msgid ""
-"⚠️ Error: The initial value of the counter cannot be greater than the final "
-"value!\n"
-"Please enter correct data."
-msgstr ""
-"⚠️ Xato: Hisoblagichning dastlabki qiymati yakuniy qiymatdan katta boʻlishi "
-"mumkin emas!\n"
-"Iltimos, toʻgʻri maʼlumotlarni kiriting."
-
-#: bot.py:699
-msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
-msgstr "⚠️ Yaroqli raqamni kiriting (masalan, 150 yoki 75,5)"
-
-#: bot.py:730
-msgid "❌ Unsupported field type"
-msgstr ""
-
-#: bot.py:734
-msgid "⚠️ Input data error"
-msgstr ""
-
-#~ msgid "Enter actual water consumption (m³):"
-#~ msgstr "Haqiqiy suv sarfini kiriting (m³)"
+"Teng: {actual_mm:.2f} mm\n"
+"Ertaga ko‘rishamiz!"
