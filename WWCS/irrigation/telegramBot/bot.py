@@ -563,7 +563,7 @@ async def handle_counter_start(message):
             return
 
         # Store initial value for ANY field type
-        start_counter = int(message.text)
+        start_counter = float(message.text)
         if start_counter < 0:
             await send_message_safe(
                 chat_id,
@@ -762,7 +762,7 @@ async def handle_send_data(message):
 async def handle_counter_end(message):
     chat_id = message.chat.id
     try:
-        end_counter = int(message.text)
+        end_counter = float(message.text)
 
         if chat_id not in user_irrigation_data or 'start_counter' not in user_irrigation_data[chat_id]:
             await send_message_safe(chat_id,
@@ -810,7 +810,7 @@ async def handle_counter_end(message):
 async def handle_actual_data(message):
     chat_id = message.chat.id
     try:
-        actual_m3 = int(message.text)
+        actual_m3 = float(message.text)
         if actual_m3 < 0:
             await send_message_safe(chat_id,
                                     _("⚠️Error: The value cannot be negative. Please try again with a positive number."))
