@@ -1,7 +1,7 @@
 # Configuration file for the WWCS application
 
 servicepass: "wwcs1234" # Password for service applications
-wwcs_domain: "climate-babel.ch" # Domain name of the server
+wwcs_domain: "wwcs.uz" # Domain name of the server
 use_pass: "FALSE" # Define if a password is needed to login to services
 
 # Define area of WWCS application
