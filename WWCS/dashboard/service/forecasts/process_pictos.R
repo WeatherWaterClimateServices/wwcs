@@ -23,7 +23,7 @@ source('/home/wwcs/wwcs/WWCS/.Rprofile')
 maxlead <- forecast_days * 24
 
 
-curr_date <- Sys.Date() 
+curr_date <- Sys.Date()
 read_start_date <- curr_date - lubridate::days(forecast_days + train_period)
 
 dates <-
@@ -251,7 +251,6 @@ for (i in station_id) {
           # from m to mm
           siteID = i
         ) %>%
-        dplyr::select(-c(lat, lon)) %>%
         dplyr::group_by(reftime, siteID, number) %>%
         dplyr::mutate(tp = c(tp[1], diff(tp))) %>%
         dplyr::mutate(tp = ifelse(tp < 0, 0, tp)) %>%
