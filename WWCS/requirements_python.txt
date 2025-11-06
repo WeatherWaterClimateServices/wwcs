@@ -10,3 +10,4 @@ pandas
 mysql-connector-python
 pyyaml
 python-dotenv
+ecmwf-opendata
