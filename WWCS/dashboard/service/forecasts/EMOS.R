@@ -16,7 +16,7 @@ library(DBI)
 # PARALLEL COMPUTING
 # ------------------------------------------------
 
-numOfCores <- parallel::detectCores() - 2
+numOfCores <- parallel::detectCores() - 1
 # Register all the cores
 doParallel::registerDoParallel(numOfCores)
 
@@ -53,7 +53,6 @@ ifs_time <- ifelse(ifs_time > 24, ifs_time - 24, ifs_time) %>% sort()
 obs <- fst::read_fst("/srv/shiny-server/dashboard/appdata/obs.fst")
 
 station_id <- unique(obs$siteID)
-
 
 # READ STATION DATA
 # ------------------------------------------------
@@ -94,25 +93,14 @@ for (i in station_id) {
     if (file.exists(file)) {
       
       # Get metadata information
-      nc <- RNetCDF::open.nc(file_ext)
-      
-      # Extract reftime unit string
-      reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units")
-      RNetCDF::close.nc(nc)
-      
-      # Extract the reference date from the unit string
-      # Format is typically "days since YYYY-MM-DD HH:MM:SS"
-      ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since "
-      reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct
-      
       nc <- tidync::tidync(file)
       ifs <- nc %>%
         tidync::hyper_tibble() %>%
-        dplyr::select(-c(lat, lon)) %>%
+        dplyr::mutate(time = as.numeric(time)) %>%
         dplyr::rename(lead = time) %>%
         dplyr::mutate(
-          reftime = lubridate::with_tz(as.POSIXct(reference_time + days(reftime), tz = "UTC"), tz = timezone_country),
-          time = as.POSIXct(reftime + as.difftime(lead, units = 'hours'), tz = timezone_country),
+          reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
+          time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
           siteID = i,
           IFS_T_mea = IFS_T_mea - 273.15
         )
@@ -143,10 +131,11 @@ for (i in station_id) {
         nc <- tidync(file_ext)
         ifs_pr <- nc %>% 
           tidync::hyper_tibble() %>%
+          dplyr::mutate(time = as.numeric(time)) %>%
           dplyr::rename(lead = time) %>%
           dplyr::mutate(
-            reftime = lubridate::with_tz(as.POSIXct(read_start_date + days(reftime), tz = "UTC"), tz = timezone_country),
-            time = as.POSIXct(reftime + as.difftime(lead, units = 'hours'), tz = timezone_country),
+            reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
+            time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
             siteID = i
           ) %>%
           dplyr::group_by(reftime, siteID, number) %>%
@@ -224,7 +213,7 @@ for (s in station_id) {
           tibble::as_tibble() %>%
           dplyr::arrange(reftime, lead)
       }, error = function(e) {
-        print(paste0("Error in station ", s, " at lead ", l))
+        message(paste0("Error in station ", s, " at lead ", l))
         return(NULL)
       })
     }

@@ -81,14 +81,14 @@ for coord in coordinates:
         for date, file_name in zip(dates, file_names):
             file_path = os.path.join(outdir, file_name)
             if os.path.exists(file_path):
-                ds = xr.open_dataset(file_path)
+                ds = xr.open_dataset(file_path, decode_times=True)               
                 reftime = np.datetime64(datetime.strptime(date, '%Y-%m-%d'))
                 ds.coords['reftime'] = np.array([reftime])
                 ds['time'] = (ds['time'].values.astype('datetime64[ns]') - reftime) / np.timedelta64(1, 'h')
                 datasets.append(ds)
 
         if datasets:
-            merged_ds = xr.concat(datasets, dim='reftime')
+            merged_ds = xr.concat(datasets, dim='reftime', join="outer", data_vars="all")
             merged_ds.to_netcdf(merged_file_path)
             print(f"Created merged file {merged_file_path}")
         else:
@@ -114,7 +114,7 @@ for coord in coordinates:
                 datasets.append(ds)
         
         if datasets:
-            merged_ds = xr.concat(datasets, dim='reftime')
+            merged_ds = xr.concat(datasets, dim='reftime', join="outer", data_vars="all")
             merged_ds.to_netcdf(extended_merged_file_path)
             print(f"Created extended merged file {extended_merged_file_path}")
         else:

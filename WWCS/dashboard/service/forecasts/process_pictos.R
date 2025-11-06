@@ -215,7 +215,6 @@ ifs_extended <- data.frame()
 
 print(paste0("---READING IFS DATA---"))
 
-
 # READ IFS DATA FOR ALL STATIONS
 
 for (i in station_id) {
@@ -239,25 +238,14 @@ for (i in station_id) {
         dplyr::summarize(altitude = altitude[1]) %>%
         unlist()
       
-      # Get metadata information
-      nc <- RNetCDF::open.nc(file)
-      
-      # Extract reftime unit string
-      reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units")
-      RNetCDF::close.nc(nc)
-      
-      # Extract the reference date from the unit string
-      # Format is typically "days since YYYY-MM-DD HH:MM:SS"
-      ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since "
-      reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct
-      
       nc <- tidync::tidync(file)
       ifs <- nc %>%
         tidync::hyper_tibble() %>%
+        dplyr::mutate(time = as.numeric(time)) %>%
         dplyr::rename(lead = time) %>%
         dplyr::mutate(
-          reftime = lubridate::with_tz(as.POSIXct(reference_time + days(reftime), tz = "UTC"), tz = timezone_country),
-          time = as.POSIXct(reftime + as.difftime(lead, units = 'hours'), tz = timezone_country),
+          reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
+          time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
           z = as.numeric(z) / 9.807,
           tp = tp * 1000,
           # from m to mm
@@ -286,12 +274,12 @@ for (i in station_id) {
       reftimes <- unique(ifs$reftime)
       ifs_hourly <- data.frame()
       
-      for (j in reftimes) {
-        time = as.POSIXct(j, tz = timezone_country) + as.difftime(seq(0, maxlead), units = 'hours')
+      for (j in 1:length(reftimes)) {
+        time = as.POSIXct(reftimes[j], tz = timezone_country) + as.difftime(seq(0, maxlead), units = 'hours')
         ifs_hourly <- data.frame("time" = time) %>%
           tibble::as_tibble() %>%
           dplyr::mutate(
-            reftime = as.POSIXct(j, tz = timezone_country),
+            reftime = as.POSIXct(reftimes[j], tz = timezone_country),
             lead = as.numeric(time - reftime, units = 'hours'),
             siteID = i
           ) %>%
