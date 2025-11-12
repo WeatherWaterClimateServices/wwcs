@@ -17,7 +17,7 @@ Every 3 months: Clean solar panel, radiation shield and sensors. Check cabling f
   Brush all loose dirt off. If more effort is needed, use warm, soapy water and a soft cloth or brush to thoroughly clean the shield.
   Allow the shield to dry before remounting.
 - Sensors: For airprobes such as SHT30, use a brush or dry clothes, no water or detergents!
-- ClimaeVUE50 / Atmos41: follow the [supplier's instructions]([https://metergroup.com/expertise-library/video-atmos-41-cleaning-instructions/)
+- ClimaeVUE50 / Atmos41: follow the [supplier's instructions](https://metergroup.com/expertise-library/video-atmos-41-cleaning-instructions/)
 
 # Replacement
 - Battery: a replacement every 3 years is recommended
