@@ -38,7 +38,7 @@ warning_default_station = config$warning_default_station
 # Irrigation parameters
 
 irrigation_default_station = config$irrigation_default_station
-servicepass = config$servicepass
+servicepass = Sys.getenv("SERVICE_PASSWORD")
 window = config$window
 
 # Planting parameters
