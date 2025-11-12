@@ -2,7 +2,7 @@
 
 The sketches in this folder can be compiled and uploaded to the boards in different ways
 - by use of the code in the FlashBoard directory, which supports defining constants in the code and some related entries into the DB
-- manually using the Arduino IDE (make sure to have the libraries at the versions indicated in the sketch.yaml files). This requires a configured code beforehand (siteID etc.) and manual entries in the DB.
+- manually using the Arduino IDE (make sure to have the libraries at the versions indicated in the sketch.yaml files). This requires a configured code beforehand (siteID etc.) and manual entries in the DB (see comments in the Manuals folder, instructions for Assembly).
 - arduino command line, same as with the IDE.
 
 ## Arduino command line
