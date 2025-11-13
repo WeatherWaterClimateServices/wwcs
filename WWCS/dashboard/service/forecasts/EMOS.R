@@ -16,7 +16,7 @@ library(DBI)
 # PARALLEL COMPUTING
 # ------------------------------------------------
 
-numOfCores <- parallel::detectCores() - 1
+numOfCores <- parallel::detectCores() 
 # Register all the cores
 doParallel::registerDoParallel(numOfCores)
 
@@ -92,19 +92,50 @@ for (i in station_id) {
     
     if (file.exists(file)) {
       
+      nc <- RNetCDF::open.nc(file)
+      
+      # Extract reftime unit string
+      reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units")
+      RNetCDF::close.nc(nc)
+      
+      # Extract the reference date from the unit string
+      # Format is typically "days since YYYY-MM-DD HH:MM:SS"
+      ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since "
+      reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct
+      
       # Get metadata information
       nc <- tidync::tidync(file)
-      ifs <- nc %>%
-        tidync::hyper_tibble() %>%
-        dplyr::mutate(time = as.numeric(time)) %>%
-        dplyr::rename(lead = time) %>%
-        dplyr::mutate(
-          reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
-          time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
-          siteID = i,
-          IFS_T_mea = IFS_T_mea - 273.15
-        )
+      cdo_version_raw <- system("cdo --version", intern = TRUE)
+      cdo_version <- gsub(".*([0-9]+\\.[0-9]+\\.[0-9]+).*", "\\1", cdo_version_raw)
       
+      if (cdo_version[1] == "2.0.4") {
+        
+        ifs <- nc %>%
+          tidync::hyper_tibble() %>%
+          dplyr::mutate(time = as.numeric(time)) %>%
+          dplyr::rename(lead = time) %>%
+          dplyr::mutate(
+            reftime = lubridate::with_tz(as.POSIXct(reference_time + days(reftime), tz = "UTC"), tz = timezone_country),
+            time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = "hours"),
+                              tz = timezone_country),
+            siteID = i,
+            IFS_T_mea = IFS_T_mea - 273.15
+          )
+        
+      } else if (cdo_version[1] == "2.1.1") {
+        
+        ifs <- nc %>%
+          tidync::hyper_tibble() %>%
+          dplyr::mutate(time = as.numeric(time)) %>%
+          dplyr::rename(lead = time) %>%
+          dplyr::mutate(
+            reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
+            time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = "hours"),
+                              tz = timezone_country),
+            siteID = i,
+            IFS_T_mea = IFS_T_mea - 273.15
+          )      
+      }
       
       # Calculate Daily Temperature Range (DTR)
       # ----------------------------------------------
@@ -150,13 +181,13 @@ for (i in station_id) {
           dplyr::left_join(ifs_pr, by = c("time", "siteID", "reftime", "lead"))
       }
     }
-      
-      # MERGE STATION AND IFS
-      dmo <- ifs %>%
-        dplyr::left_join(station, by = c("time", "siteID")) %>%
-        dplyr::bind_rows(dmo) %>%
-        dplyr::arrange(reftime, lead, time)
-    }
+    
+    # MERGE STATION AND IFS
+    dmo <- ifs %>%
+      dplyr::left_join(station, by = c("time", "siteID")) %>%
+      dplyr::bind_rows(dmo) %>%
+      dplyr::arrange(reftime, lead, time)
+  }
 }
 
 # Set last DTR value to the day before if full-day is missing
@@ -213,7 +244,7 @@ for (s in station_id) {
           dplyr::arrange(reftime, lead)
       }, error = function(e) {
         message(paste0("Error in station ", s, " at lead ", l))
-        return(NULL)
+        return(message(paste0("Error in station ", s, " at lead ", l)))
       })
     }
   }

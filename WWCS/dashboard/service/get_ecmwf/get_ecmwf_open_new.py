@@ -39,7 +39,7 @@ for filename in os.listdir(directory_path):
         year, month, day = map(int, match.groups())
         try:
             if datetime(year, month, day) < two_months_ago:
-                os.remove(os.path.join(directory_path, filename))
+                # os.remove(os.path.join(directory_path, filename))
                 print(f"Deleted old file: {filename}")
         except ValueError:
             print(f"Invalid date in filename: {filename}")
@@ -47,12 +47,12 @@ for filename in os.listdir(directory_path):
 # ---------------------------------------------------------------------
 # Setup variables
 # ---------------------------------------------------------------------
-outdir = "/srv/shiny-server/dashboard/ifsdata"
+outdir = "/home/omar/wwcs/WWCS/dashboard/ifsdata"
 tmpdir = os.path.join(outdir, "tmp")
 os.makedirs(tmpdir, exist_ok=True)
 
 client = Client(source="ecmwf")
-steps = list(range(0, 243, 3))  # 0–240 hours
+steps = list(range(0, 147, 3)) + list(range(150, 243, 6))
 
 datelist = [d.strftime("%Y-%m-%d") for d in pd.date_range(
     datetime.today() - timedelta(days=total_days), datetime.today())]
@@ -73,7 +73,7 @@ for dat in datelist:
     # Check if station files exist
     missing_files = []
     for s in stations:
-        station_file = os.path.join(outdir, f"ifs_{s['siteID'].replace(' ', '')}_{dat}.nc")
+        station_file = os.path.join(directory_path, f"ifs_{s['siteID'].replace(' ', '')}_{dat}.nc")
         if not os.path.isfile(station_file):
             missing_files.append(s)
 
@@ -85,27 +85,12 @@ for dat in datelist:
     if not os.path.isfile(tj_file):
         print(f"\n=== Downloading ECMWF open data for {dat} ===")
 
-        # Download control forecast
-        for step in steps:
-            target_cf = os.path.join(tmpdir, f"cf_step_{step}.grb")
-            if not os.path.isfile(target_cf):
-                client.retrieve(
-                    date=dat,
-                    time=0,
-                    step=step,
-                    stream="enfo",
-                    levtype="sfc",
-                    param="2t",
-                    type="cf",
-                    target=target_cf
-                )
 
         # Download ensemble members (pf = perturbed forecasts)
-        members = range(1, 51)  # ECMWF open data: 50 members
-        for m in members:
-            for step in steps:
-                target_pf = os.path.join(tmpdir, f"pf{m:02d}_step_{step}.grb")
-                if not os.path.isfile(target_pf):
+
+        for step in steps:
+            target_pf = os.path.join(tmpdir, f"_step_{step}.grb")
+            if not os.path.isfile(target_pf):
                     client.retrieve(
                         date=dat,
                         time=0,
@@ -113,10 +98,9 @@ for dat in datelist:
                         stream="enfo",
                         levtype="sfc",
                         param="2t",
-                        type="pf",
-                        number=m,
+                        type="ef",
                         target=target_pf
-                    )
+                )
 
         # -----------------------------------------------------------------
         # Convert GRIBs to NetCDF and subset to area
