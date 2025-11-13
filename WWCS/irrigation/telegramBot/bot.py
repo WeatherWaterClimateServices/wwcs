@@ -12,19 +12,18 @@ from apscheduler.triggers.interval import IntervalTrigger
 from databases import Database
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
-import dotenv
 import traceback
 
+from common import USERNAME, PASSWORD
+
+
 # Configuration
-dotenv.load_dotenv()
-DB_USERNAME = os.environ.get('DB_USERNAME', 'root')
-DB_PASSWORD = os.environ['DB_PASSWORD']
 BOT_TOKEN = os.environ['BOT_TOKEN']
 LANGUAGE = os.environ.get('LANGUAGE', 'en')
 TIMEZONE = os.environ.get('TIMEZONE')  # Defaults to local timezone
 
 # Database
-DATABASE_URL = f'mysql+asyncmy://{DB_USERNAME}:{DB_PASSWORD}@localhost:3306/SitesHumans'
+DATABASE_URL = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/SitesHumans'
 database = Database(DATABASE_URL)
 
 # Initialize gettext
