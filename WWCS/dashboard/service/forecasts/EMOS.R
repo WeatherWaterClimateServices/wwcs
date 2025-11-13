@@ -193,7 +193,6 @@ for (s in station_id) {
     if (sum(!is.na(train$Temperature_mean)) / nrow(train) > 0.5) {
       # Fit EMOS
       tryCatch({
-        emos_formula <- as.formula(paste0("Temperature_mean ~ IFS_T_mea + IFS_T_std"))
         emosfit <- crch::crch(
           formula = emos_formula,
           dat     = train,
