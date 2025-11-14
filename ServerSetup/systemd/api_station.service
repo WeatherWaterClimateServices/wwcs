@@ -14,7 +14,5 @@ WorkingDirectory=/home/wwcs/wwcs/API
 User=wwcs
 Group=wwcs
 
-Environment="ENV=PROD"
-
 [Install]
 WantedBy=multi-user.target

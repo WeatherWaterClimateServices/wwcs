@@ -7,7 +7,7 @@ Listens port 5000.
 
 In development run the program with:
 
-    uvicorn api:app --reload
+    uvicorn api_station:app --reload
 
 In production the program is started by a Systemd service file.
 
