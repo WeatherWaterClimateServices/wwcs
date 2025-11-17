@@ -3,200 +3,396 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-27 11:41+0200\n"
-"PO-Revision-Date: 2025-06-27 11:43+0200\n"
+"POT-Creation-Date: 2025-10-22 09:57+0500\n"
+"PO-Revision-Date: 2025-11-17 09:22+0500\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: tg\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.0.1\n"
+"X-Generator: Poedit 3.6\n"
 
-#: bot.py:154
-msgid "Send recommendation"
-msgstr "Сатхи об ва тавсия"
-
-#: bot.py:155
-msgid "No water"
-msgstr "Об нест"
-
-#: bot.py:156
-msgid "Save data"
-msgstr "Сабти маълумот"
-
-#: bot.py:199
+#: bot.py:153
 msgid ""
-"🔄 Please check the current water level in the channel and send its value"
+"❌ I have you registered, but I don't find the required irrigation data in "
+"the system. Please contact support or try again tomorrow."
 msgstr ""
-"🔄 Лутфан сатҳи ҳозираи обро дар обченкунак санҷед ва арзиши онро равон кунед"
+"❌ Ман шуморо сабти ном кардам, аммо дар система маълумоти зарурӣ оиди обёрии "
+"замини Шумо наёфтам. Лутфан ба ёвари хизматрасонӣ тамос гиред ё фардо дубора "
+"кӯшиш кунед."
 
-#: bot.py:233
+#: bot.py:160
 msgid ""
-"⏰ Watering time is over! Please click the 'Save data' button to save the "
-"results."
+"❌ I am sorry, your telegramID is not in our system. Please contact support."
 msgstr ""
-"⏰ Вақти обёрӣ ба охир расид! Лутфан тугмачаи 'Сабти маълумот' -ро пахш "
-"кунед, то натиҷаҳо сабт карда шаванд."
+"❌ Бубахшед, Telegram ID-и шумо дар системаи мо вуҷуд надорад. Лутфан барои "
+"бақайдгирии он ба ёвари хизматрасонӣ тамос гиред."
 
-#: bot.py:247 bot.py:254
+#: bot.py:174 bot.py:693
+msgid ""
+"❌ I am sorry, you have already registered your irrigation. Please contact "
+"support."
+msgstr ""
+"❌ Бубахшед, шумо аллакай ҳаҷми обёрии худро дар система сабт кардаед. Лутфан "
+"барои кӯмак ба ёвари хизматрасонӣ тамос гиред."
+
+#: bot.py:183 bot.py:338 bot.py:500
+msgid "⚠️ I cannot read from the database. Try again later or contact support."
+msgstr ""
+"⚠️ Ман аз базаи маълумотҳо хонда ва ё ёфта натавониста истодаам. Баъдтар бори "
+"дигар кӯшиш кунед ё барои кӯмак ба ёвари хизматрасонӣ тамос гиред."
+
+#: bot.py:191
+msgid "Start Irrigation"
+msgstr "Оғози обёрӣ"
+
+#: bot.py:192
+msgid "Irrigation finished"
+msgstr "Анҷоми обёрӣ"
+
+#: bot.py:216
+msgid ""
+"🔄 Please check the current water level in the channel. If it has changed by "
+"more than 2cm, press 'Start irrigation' again and update the water level."
+msgstr ""
+"🔄 Лутфан сатҳи ҳозираи обро дар канал санҷед. Агар сатҳи об зиёда аз 2 см "
+"тағйир ёфта бошад, тугмаи «Оғози обёрӣ»-ро боз пахш кунед ва сатҳи нави обро "
+"ворид намоед."
+
+#: bot.py:229
+msgid ""
+"⏰ Watering time is over! Please stop the water flow and then click the "
+"'Irrigation finished' button."
+msgstr ""
+"⏰ Вақти обёрии замин ба охир расид! Лутфан ҷараёни обро қатъ кунед ва сипас "
+"тугмаи «Анҷоми обёрӣ» -ро пахш кунед."
+
+#: bot.py:262
+msgid ""
+"❌ Missing information: I have not found field type (control/treatment) or "
+"meter type in my database for your site. Please contact support."
+msgstr ""
+"❌ Маълумот намерасад: Ман дар базаи маълумотҳо барои майдони замини шумо "
+"намуди майдон (муқарарӣ/таҷрибавӣ) ё намуди обченкунакро наёфтам. Лутфан "
+"барои кӯмак ба ёвари хизматрасонӣ тамос гиред."
+
+#: bot.py:276
+msgid ""
+"❌ Missing information: I have not found irrigationNeed, area, wetted area or "
+"irrigation efficiency in my database for your site. Please contact support."
+msgstr ""
+"❌ Маълумот намерасад: Ман дар базаи маълумотҳо барои замини шумо маълумот "
+"оид ба ҳаҷми обёрӣ, андозаи замин, андозаи замини таршуда ва ё коэффисиенти "
+"самаранокии обёриро пайдо карда натавонистам. Лутфан ба ёвари хизматрасонӣ "
+"тамос гиред."
+
+#: bot.py:285
 #, python-brace-format
 msgid ""
-"🌤 Good morning, {first_name}!\n"
-"Your plot is ready for irrigation.\n"
-"💧 Water required: {water:.2f} m³"
+"🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+"I will give you a recommendation for irrigation and will guide you through "
+"the data entry.\n"
+"💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
+"If you want to irrigate, press 'Start irrigation'. Otherwise simply come back "
+"tomorrow."
 msgstr ""
-"🌤 Салом, {first_name}!\n"
-"Имрӯз Шумо бояд заминро обёрӣ кунед.\n"
-"💧Ҳаҷми зарурии об: {water:.2f} м³"
+"🌤 Субҳ ба хайр, {first_name}, дар замини таҷрибавии шумо {crop} парвариш "
+"карда мешавад.\n"
+"Ман ба шумо оиди ҳаҷмӣ зарурии обёрии ин зирот тавсия пешниҳод мекунам ва "
+"шуморо дар ворид кардани маълумот роҳнамоӣ мекунам.\n"
+"💧 Қитъаи замини шумо барои обёрӣ ба {water:.2f} м³ ниёз дорад.\n"
+"Агар шумо хоҳед, ки обёрӣ кунед, тугмаи «Оғози обёрӣ» -ро пахш унед. Агар не, "
+"пагоҳ боз баргардед."
 
-#: bot.py:261
+#: bot.py:292
 #, python-brace-format
 msgid ""
-"Hello, {first_name}!\n"
-"If your irrigation complete please push Save data button and enter you "
-"counter numbers Before and After irrigation\n"
-"and save your data"
+"🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+"I will give you a recommendation for irrigation and will guide you through "
+"the data entry.\n"
+"💧 Please irrigate: {water:.2f} m³.\n"
+"When finished, press the 'Irrigation finished' button."
 msgstr ""
-"Салом, {first_name}!\\n\"\n"
-"Агар обёрии шумо ба итмом расад, лутфан тугмаи Сабти маълумотро пахш кунед "
-"ва рақамҳои ҳисобкуниро пеш аз обёрӣ ва пас аз обёрӣ ворид кунед \n"
-"ва маълумоти худро сабт кунед"
+"🌤 Субҳ ба хайр, {first_name}, дар замини таҷрибавии шумо {crop} парвариш "
+"карда мешавад.\n"
+"Ман ба шумо оиди ҳаҷмӣ зарурии обёрии ин зирот тавсия пешниҳод мекунам ва "
+"шуморо дар ворид кардани маълумот роҳнамоӣ мекунам.\n"
+"💧 Лутфан обёрӣ кунед дар ҳаҷми: {water:.2f} м³.\n"
+"Ҳангоми анҷоми обёрӣ тугмаи «Анҷоми обёрӣ»-ро пахш кунед."
 
-#: bot.py:268
-msgid "ERROR!"
-msgstr "Хато!"
-
-#: bot.py:354
-msgid "Enter the current water level in the channel (in cm):"
-msgstr "Лутфан, ҳозир сатҳи обро аз руи обченкунак равон кунед (см):"
-
-#: bot.py:358
-msgid "Please, send the counter value before irrigation (m³):"
-msgstr "Лутфан, арзиши ҳисобкунакро пеш аз обёрӣ фиристед (м³):"
-
-#: bot.py:370 bot.py:403 bot.py:456 bot.py:521 bot.py:551 bot.py:590 bot.py:652
-#: bot.py:697
-msgid "❌ Your data was not found in the system"
-msgstr "❌ Маълумоти шумо дар система ёфт нашуд"
-
-#: bot.py:388
+#: bot.py:299
 #, python-brace-format
 msgid ""
-"Irrigate untill you counter is: {target_counter:.2f} m³\n"
-"Water need: {m3_needed:.2f} m³"
+"🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
+"I will give you a recommendation for irrigation and will guide you through "
+"the data entry:\n"
+"💧 Your plot is currently not under water stress, and I don't recommend to "
+"irrigate.\n"
+"If you want to irrigate nevertheless, don't apply more than {water:.2f} m³ of "
+"irrigation.\n"
+"Press 'Start irrigation' if you want to irrigate. Otherwise simply come back "
+"tomorrow."
 msgstr ""
-"Обёрӣ кунед, то он даме, ки ҳисобкунаки шумо баробар шавад ба: "
-"{target_counter:.2f} м³\n"
-"Ҳаҷми зарурии об : {m3_needed:.2f} м³"
+"🌤 Субҳ ба хайр, {first_name}, дар замини таҷрибавии шумо {crop} парвариш "
+"карда мешавад.\n"
+"Ман ба шумо оиди ҳаҷмӣ зарурии обёрии ин зирот тавсия пешниҳод мекунам ва "
+"шуморо дар ворид кардани маълумот роҳнамоӣ мекунам.\n"
+"💧 Қитъаи замини шумо айни ҳоло зери фишори беобӣ нест, бинобар ин тавсия "
+"намедиҳам, ки обёрӣ кунед.\n"
+"Агар шумо бо вуҷуди ин обёрӣ кардан хоҳед, аз {water:.2f} м3 зиёд обёрӣ "
+"накунед.\n"
+"Барои сар кардани обёрӣ тугмаи «Оғози обёрӣ»-ро пахш кунед. Агар не, пагоҳ "
+"боз баргардед."
 
-#: bot.py:405
-msgid "⚠️ Please, type number (125.5)"
-msgstr "⚠️ Лутфан рақам нависед (125.5)"
-
-#: bot.py:418
+#: bot.py:310
+#, python-brace-format
 msgid ""
-"⚠️ Incorrect water level! Acceptable values from 1 to 25 cm.\n"
-"Please enter the correct value:"
+"🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
+"I will guide you through the irrigation data entry.\n"
+"If you want to irrigation today, please go ahead.\n"
+"When you have finished irrigation, press button 'Irrigation finished'. "
+"Otherwise simply come back tomorrow."
 msgstr ""
-"⚠️ Сатҳи об нодуруст! Арзишҳои қобили қабул аз 1 то 25 см.\n"
-"Лутфан арзиши дурустро ворид кунед:"
+"🌤 Субҳ ба хайр, {first_name}, дар қитъаи назоратии шумо {crop} парвариш карда "
+"мешавад.\n"
+"Ман шуморо дар ворид кардани маълумот роҳнамоӣ мекунам.\n"
+"Агар шумо имруз обёрӣ кардан хоҳед, пас обёри кунед.\n"
+"Вақте ки шумо обёриро анҷом додед, тугмаи «Анҷоми обёрӣ» -ро пахш кунед. Дар "
+"акси ҳол, пагоҳ баргардед."
 
-#: bot.py:436 bot.py:710
-msgid "✅ Irrigation completed! Enough water."
-msgstr "✅ Обёрӣ анҷом ёфт! Оби кофӣ."
+#: bot.py:317
+#, python-brace-format
+msgid ""
+"🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
+"I will guide you through the irrigation data entry.\n"
+"If you want to irrigate today, press 'Start irrigation'. Otherwise simply "
+"come back tomorrow."
+msgstr ""
+"🌤 Субҳ ба хайр, {first_name}, дар қитъаи назоратии шумо {crop} парвариш карда "
+"мешавад.\n"
+"Ман шуморо дар ворид кардани маълумот роҳнамоӣ мекунам.\n"
+"Агар шумо имруз обёрӣ кардан хоҳед, пас тугмаи «Оғози обёрӣ»-ро пахш кунед. "
+"Дар акси ҳол, пагоҳ баргардед."
 
-#: bot.py:442 bot.py:716
+#: bot.py:323 bot.py:759
+msgid ""
+"⚠️ The plot type or metering device information in the database is wrong for "
+"your site. Please contact support."
+msgstr ""
+"⚠️ Маълумоти намуди майдон ё  намуди обченкунак дар базаи маълумотҳо барои "
+"қитъаи замини шумо нодуруст ба қайд гирифта шудааст. Лутфан барои кӯмак бо "
+"ёвари хизматрасонӣ тамос гиред."
+
+#: bot.py:446
+msgid "The bot has started successfully"
+msgstr "Бот бомуваффақият ба кор шурӯъ кард."
+
+#: bot.py:467 bot.py:478
+msgid ""
+"As soon as the water level has stabilized, enter the water level (in cm):"
+msgstr ""
+"Ҳамин ки сатҳи об дар дастгоҳи обченкунак мӯътадил шуд, баландии сатҳи обро "
+"ворид кунед (см):"
+
+#: bot.py:472
+msgid "Enter the m³ on your counter BEFORE irrigation:"
+msgstr "Нишондоди ҳисобкунаки обро ПЕШ аз обёрӣ бо м³ ворид кунед:"
+
+#: bot.py:483
+msgid ""
+"After irrigation, press 'Irrigation finished' and enter m³ used water in total"
+msgstr ""
+"Пас аз анҷоми обёрӣ, тугмаи «Анҷоми обёрӣ» -ро пахш кунед ва ҳаҷми умумии оби "
+"истифодашударо ворид кунед"
+
+#: bot.py:514 bot.py:556 bot.py:627 bot.py:665 bot.py:670
+msgid ""
+"⚠️ I need a water level from 0 to 25 cm.\n"
+"Please enter the correct value as a whole number (e.g. 0, 1, 2...):"
+msgstr ""
+"⚠️ Ба ман сатҳи об аз 0 то 25 см лозим аст.\n"
+"Лутфан рақами дурустро ҳамчун пурра (бе бутун) ворид кунед (масалан, 0. 1. "
+"2...):"
+
+#: bot.py:530
+msgid ""
+"✅ Thank you. Whenever the water level changes by more than 2cm press 'Start "
+"irrigation' and enter the new level.\n"
+"Enter 0 if water stops. Press 'Irrigation finished' when done."
+msgstr ""
+"✅ Раҳмат. Ҳар вақте ки сатҳи об зиёда аз 2 см тағйир ёбад, тугмаи «Оғози "
+"обёрӣ»-ро боз пахш кунед ва сатҳи навро ворид намоед.\n"
+"Агар дар давоми обёрӣ об қатъ шавад, рақами 0 ворид кунед. Аммо,  вақте ки "
+"обёрӣ аз рӯи тавсия анҷом ёбад, тугмаи  «Анҷоми обёрӣ» -ро пахш кунед."
+
+#: bot.py:545
+#, python-brace-format
+msgid ""
+"🔄 Updated: +{used_water:.2f} m³ used (total: {total_used:.2f} m³).\n"
+"Whenever the water level changes by more than 2cm press 'Start irrigation' "
+"and enter the new level.\n"
+"Enter 0 if water stops. Press 'Irrigation finished' when done."
+msgstr ""
+"🔄 Маълумоти навшуда: +{used_water:.2f} м³ истифода шудааст (ҳамагӣ:  "
+"{total_used:.2f} м³).\n"
+"Ҳар вақте ки сатҳи об зиёда аз 2 см тағйир ёбад, тугмаи «Оғози обёрӣ»-ро боз "
+"пахш кунед ва сатҳи навро ворид намоед.\n"
+"Агар дар давоми обёрӣ об қатъ шавад, рақами 0 ворид кунед. Аммо,  вақте ки "
+"обёрӣ аз рӯи тавсия анҷом ёбад, тугмаи  «Анҷоми обёрӣ» -ро пахш кунед."
+
+#: bot.py:561 bot.py:614 bot.py:763 bot.py:805 bot.py:833 bot.py:871
+msgid ""
+"⚠️ An error occurred. Please try again. If you get this message again, contact "
+"support."
+msgstr ""
+"⚠️ Хатогие рух дод. Лутфан бори дигар кӯшиш кунед. Агар шумо ин паёмакро "
+"дубора дарёфт кардед, бо ёвари хизматрасонӣ барои кӯмак тамос гиред."
+
+#: bot.py:577
+msgid "⚠️ The value cannot be negative. Please try again with a positive number."
+msgstr ""
+"⚠️ Рақами воридкардашуда набояд манфӣ (минус) бошад. Лутфан, рақами мусбат (бе "
+"минус) ворид кунед."
+
+#: bot.py:593
+#, python-brace-format
+msgid ""
+"✅ Thank you. Irrigate until your counter is at: {target_counter:.2f} m³\n"
+"💧 Water needed: {m3_needed:.2f} m³\n"
+"When you have finished irrigation, press button ‘Irrigation finished.'"
+msgstr ""
+"✅ Раҳмат. То он даме обёри кунед, ки нишондиҳандаи ҳисобкунаки оби шумо ба "
+"{target_counter:.2f} м³ расад.\n"
+"💧 Ҳаҷми оби зарурӣ: {m3_needed:.2f} м³\n"
+"Вақте ки шумо обёриро анҷом додед, тугмаи «Анҷоми обёрӣ» -ро пахш кунед."
+
+#: bot.py:604
+msgid ""
+"✅ When you have finished irrigation, press button 'Irrigation finished.'"
+msgstr ""
+"✅ Вақте ки шумо обёриро анҷом додед, тугмаи «Анҷоми обёрӣ» -ро пахш кунед."
+
+#: bot.py:610 bot.py:800 bot.py:829
+msgid "⚠️ Please enter a valid positive number (e.g., 125.5)."
+msgstr "⚠️ Лутфан рақами мусбати дурустро ворид кунед (масалан, 125,5)."
+
+#: bot.py:649
+#, python-brace-format
+msgid ""
+"Thank you. 💦 At this level {water_level} cm, the recommended irrigation "
+"duration is ⏱ {hours}h {minutes}m\n"
+"Whenever the water level changes by more than 2cm, press 'Start irrigation' "
+"one more time and enter the new water level.\n"
+"Enter 0 if no water flows. Press 'Irrigation finished' when you stop.\n"
+"📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
+msgstr ""
+"Раҳмат. 💦 Дар ҳамин сатҳи {water_level} см, вақти тавсияшавандаи обёрӣ ⏱ "
+"{hours} соат ва {minutes} дақиқа мебошад.\n"
+"Ҳар вақте ки сатҳи об зиёда аз 2 см тағйир ёбад, тугмаи «Оғози обёрӣ»-ро боз "
+"пахш кунед ва сатҳи навро ворид намоед.\n"
+"Агар дар давоми обёрӣ об қатъ шавад, рақами 0 ворид кунед. Аммо,  вақте ки "
+"обёрӣ аз рӯи тавсия анҷом ёбад, тугмаи  «Онҷоми обёрӣ» -ро пахш кунед.\n"
+"📊 Истифодашуда: {used_m3:.2f} м³ аз {total_m3:.2f} м³"
+
+#: bot.py:702
+msgid "Please enter the volume that you irrigated today (in m³):"
+msgstr "Лутфан ҳаҷми обе, ки имрӯз обёрӣ кардед, бо м³ ворид кунед:"
+
+#: bot.py:710
+msgid "Enter the m³ on your counter AFTER irrigation:"
+msgstr "Нишондоди ҳисобкунаки обро БАЪД аз обёрӣ бо м³ ворид кунед:"
+
+#: bot.py:714 bot.py:774
+msgid ""
+"I don't have the m³ on your counter from before the irrigation. Press 'Start "
+"irrigation' button to enter this first."
+msgstr ""
+"Ман нишондиҳандаи ҳисобкунаки оби шуморо ПЕШ аз обёрӣ надорам. Барои ворид "
+"кардани ин тугмаи «Оғози обёрӣ»-ро пахш кунед"
+
+#: bot.py:733 bot.py:755
+msgid ""
+"❌ No active irrigation session found. Press 'Start irrigation' button to "
+"start one."
+msgstr ""
+"❌ Ягон фаъолияти фаъоли обёрӣ ёфт нашуд. Барои оғози фаъолияти обёрӣ тугмаи "
+"\"Оғози обёрӣ\"-ро пахш кунед."
+
+#: bot.py:752 bot.py:926
+msgid "⚠️ Error saving data. Please contact support."
+msgstr ""
+"⚠️ Хато ҳангоми сабткунии маълумот. Лутфан барои кӯмак бо ёвари хизматрасонӣ "
+"тамос гиред."
+
+#: bot.py:780
+msgid ""
+"⚠️ The m³ on your counter after irrigation must be more than what it was "
+"before irrigation.\n"
+"Please enter the m³ on your counter after irrigation again!"
+msgstr ""
+"⚠️ Нишондоди обченкунак БАД аз обёрӣ (м³) бояд аз нишондоди ПЕШ аз обёрӣ (м³) "
+"зиёд бошад.\n"
+"Лутфан,   дубора нишондоди ПАС аз обёрии обченкунакро  бо м³ ворид кунед!"
+
+#: bot.py:818
+msgid ""
+"⚠️Error: The value cannot be negative. Please try again with a positive number."
+msgstr ""
+"⚠️Хато: Арзиш манфӣ шуда наметавоанад. Лутфан бо рақами мусбат бори дигар "
+"ворид кунед. "
+
+#: bot.py:843
+msgid "✅ Enough water, please stop irrigation."
+msgstr "✅ Обёрии кофӣ, лутфан обдиҳии заминро ба охир расонед."
+
+#: bot.py:848
 #, python-brace-format
 msgid ""
 "💦 Current level: {water_level} cm\n"
 "⏱ Time left: {hours}h {minutes}m\n"
 "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
 msgstr ""
-"💦 Сатҳи ҳозира:  {water_level} см\n"
-"⏱ Мӯҳлати обёрӣ: {hours} соат {minutes} дакика\n"
-"📊 Истифода шуд: {used_m3:.2f} м³ аз {total_m3:.2f} м³"
+"💦 Сатҳи ҷорӣ:  {water_level} см\n"
+"⏱ Вақти боқимонда: {hours} соат вa {minutes} дақиқа\n"
+"📊 Истифодашуда: {used_m3:.2f} м³ аз {total_m3:.2f} м³"
 
-#: bot.py:458
-msgid "⚠️ Please enter a valid number (water level in cm)"
-msgstr "⚠️ Лутфан рақами дурустро ворид кунед (сатҳи об дар см)"
-
-#: bot.py:473
-msgid "Please, send your counter number after irrigation (m³):"
-msgstr "Лутфан, рақами ҳисобкунаки худро баъд аз обёрӣ фиристед (м³):"
-
-#: bot.py:478
-msgid "Please, send your counter number BEFORE irrigation (m³)"
-msgstr "Лутфан, рақами ҳисобкунаки худро пеш аз обёрӣ фиристед (м³)"
-
-#: bot.py:505
+#: bot.py:861
 #, python-brace-format
-msgid "✅ Data saved! Used: {used_m3:.2f} m³"
-msgstr "✅ Натиҷаҳо сабт шуданд! Ҳамагӣ об истифода шуд:  {used_m3:.2f} м³"
+msgid "🔢 Required: {m3_need} m³ water"
+msgstr "🔢 Ниёз ба об: {m3_need} м³"
 
-#: bot.py:511
-msgid "⚠️ Error saving data"
-msgstr "⚠️ Хато ҳангоми сабти маълумот"
-
-#: bot.py:514
-msgid "❌ No active irrigation session found"
+#: bot.py:863
+msgid ""
+"❌ I cannot provide you with a recommendation for your field type / metering "
+"device. Please contact support."
 msgstr ""
+"❌ Айни ҳол ман наметавонам ба шумо оиди навъи майдон ва ё намуди обченкунак "
+"тавсия диҳам. Лутфан барои кӯмак бо ёвари хизматрасонӣ тамос гиред."
 
-#: bot.py:518
-msgid "Wrong fieldtype"
-msgstr "Навъи майдони нодуруст"
+#: bot.py:867
+msgid ""
+"⚠️ I could not calculate the recommended irrigation duration and volume. "
+"Please contact support."
+msgstr ""
+"⚠️ Айни ҳол ман оиди давомнокии тавсияшавандаи обёрӣ ва ё ҳаҷми зарури обёриро "
+"ҳисоб карда натавониста истодаам. Лутфан барои кӯмак бо ёвари хизматрасонӣ "
+"тамос гиред."
 
-#: bot.py:536
-msgid "Now send counter value AFTER irrigation (m³)"
-msgstr "Акнун арзиши ҳисобкунакро баъд аз обёрӣ фиристед (м³)"
-
-#: bot.py:539 bot.py:593 bot.py:656
-msgid "⚠️ Type correct number (like 125.5)"
-msgstr "⚠️ Рақами дурустро нависед (масъалан 125,5)"
-
-#: bot.py:557
-msgid "⚠️ Error: start value is greater than end value!"
-msgstr "⚠️ Хатогӣ: арзиши ибтидоӣ аз арзиши ниҳоӣ бузургтар аст!"
-
-#: bot.py:579 bot.py:640 bot.py:687
+#: bot.py:914
 #, python-brace-format
 msgid ""
 "✅ Data saved!\n"
 "Water used: {used_m3:.2f} m³\n"
-"Equivalent to: {actual_mm:.2f} mm"
+"Equivalent to: {actual_mm:.2f} mm\n"
+"See you tomorrow!"
 msgstr ""
-"✅ Натиҷаҳо сабт шуданд!\n"
-"Истифода шуд: {used_m3:.2f} м³\n"
-"Баробар аст ба: {actual_mm:.2f} мм"
-
-#: bot.py:610
-msgid "❌ Error: No start data found"
-msgstr "❌ Хатогӣ: Маълумоти  ёфт нашуд"
-
-#: bot.py:617
-msgid ""
-"⚠️ Error: The initial value of the counter cannot be greater than the final "
-"value!\n"
-"Please enter correct data."
-msgstr ""
-"⚠️ Хатогӣ: Қимати ибтидоии ҳисобкунак наметавонад аз арзиши ниҳоӣ зиёд\n"
-"Лутфан маълумоти дурустро ворид кунед."
-
-#: bot.py:699
-msgid "⚠️ Please enter a valid number (e.g. 150 or 75.5)"
-msgstr "⚠️ Лутфан рақами дурустро ворид кунед (масалан, 150 ё 75,5)"
-
-#: bot.py:730
-msgid "❌ Unsupported field type"
-msgstr ""
-
-#: bot.py:734
-msgid "⚠️ Input data error"
-msgstr ""
-
-#~ msgid "Enter actual water consumption (m³):"
-#~ msgstr "Истеъмоли воқеии обро ворид кунед (м³):"
+"✅ Маълумот сабт карда шуд!\n"
+"Оби истифодашуда: {used_m3:.2f} м³\n"
+"Баробар аст ба: {actual_mm:.2f} мм\n"
+"То пагоҳ! 🌞"
