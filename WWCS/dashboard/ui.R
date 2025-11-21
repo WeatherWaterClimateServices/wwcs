@@ -84,7 +84,7 @@ sidebar <- dashboardSidebar(
     tags$ul(
       tags$li("Service development and operation:", tags$div(style = "flex: 0; display: flex; align-items: center;", 
                                                                       tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
-                                                                             img(src = "logo_logo_meteoswiss.png", height = "30px")))),
+                                                                             img(src = "logo_meteoswiss.png", height = "30px")))),
       tags$li("Station management:", 
               tags$a(style = "flex: 0; display: flex; align-items: center;", 
                      # Optional Link to hydromet: e.g. href = "https://www.meteo.tj", target = "_blank",  # Opens link in a new tab
@@ -131,7 +131,7 @@ body <- dashboardBody(
           # Image part
           tags$div(style = "flex: 0; display: flex; align-items: center;", 
                    tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
-                          img(src = "logo_logo_meteoswiss.png", height = "30px")))
+                          img(src = "logo_meteoswiss.png", height = "30px")))
         )
       ),
       tabPanel(
