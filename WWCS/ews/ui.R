@@ -37,7 +37,7 @@ sidebar <-  dashboardSidebar(
                                                                              img(src = "logo_meteoswiss.png", height = "30px")))),
       tags$li("Station management:", 
               tags$a(style = "flex: 0; display: flex; align-items: center;", 
-                     href = "https://www.meteo.tj", target = "_blank",  # Opens link in a new tab
+                     # optional link, e.g. href = "https://www.meteo.tj", target = "_blank",  # Opens link in a new tab
                      img(src = "logo_hydromet.png", height = "30px")),
               tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
                      img(src = "logo_caritas.png", height = "10px"))),
