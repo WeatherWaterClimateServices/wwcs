@@ -9,7 +9,7 @@ source('/home/wwcs/wwcs/WWCS/.Rprofile')
 shinyUI(# Include a fliudPage above the navbar to incorporate a icon in the header
   fluidPage(
     list(tags$head(
-      HTML('<link rel="icon", href="meteoswiss.png",
+      HTML('<link rel="icon", href="logo_meteoswiss.png",
                         type="image/png" />')
     )),
     div(style = "padding: 0px 0px; width: '100%'",
@@ -32,7 +32,7 @@ shinyUI(# Include a fliudPage above the navbar to incorporate a icon in the head
             div(
             style = "display: flex; align-items: center; padding: 10px;",
             tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
-                   img(src = "meteoswiss.png", height = "50px")),  # Clickable MeteoSwiss logo
+                   img(src = "logo_meteoswiss.png", height = "50px")),  # Clickable MeteoSwiss logo
             span("Access page for prototype services developed by MeteoSwiss.",
                  style = "margin-left: 10px;"),  # Adds spacing after the logo
             style = "font-size: 22px"),
