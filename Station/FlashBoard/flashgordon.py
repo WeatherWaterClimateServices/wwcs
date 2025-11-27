@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QLabel, QMessageBox,
 
 DEV = os.environ.get('WWCS_DEV', False)
 
-DOWNLOAD_URL = 'https://wwcs.tj/downloads/Ij6iez6u/Firmware.zip'
+DOWNLOAD_URL = 'https://github.com/WeatherWaterClimateServices/wwcs/releases/download/firmware-stable/Firmware.zip'
 
 if DEV:
     DOWNLOAD_DIR = Path('/tmp')
@@ -53,9 +53,8 @@ try:
 except ImportError:
     pass
 
-def download(url, path, content_type=None):
-    # Download URL to the given path. If the content_type argument is given, check whether
-    # the response content type is as expected.
+def download(url, path):
+    # Download URL to the given path.
     #
     # Return whether the file changed or not.
 
@@ -67,12 +66,9 @@ def download(url, path, content_type=None):
     else:
         headers = None
 
-    response = httpx.get(url, headers=headers)
+    response = httpx.get(url, headers=headers, follow_redirects=True)
     if response.status_code == 200:
         headers = response.headers
-        if content_type is not None:
-            assert headers['content-type'] == content_type
-
         with path.open('wb') as file:
             file.write(response.content)
         last_modified = dateutil.parser.parse(headers['last-modified'])
@@ -317,7 +313,7 @@ class Widget(QWidget):
                 # In development run zip_firmware.py manually
                 status_code = 304
             else:
-                status_code = download(DOWNLOAD_URL, zip_file, 'application/zip')
+                status_code = download(DOWNLOAD_URL, zip_file)
         except Exception:
             if zip_file.exists():
                 self.message("Firmware download failed, will use version from cache.")
