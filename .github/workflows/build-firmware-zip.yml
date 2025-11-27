@@ -1,0 +1,35 @@
+name: Build Firmware ZIP
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Station/Firmware**'
+      - 'Station/zip_firmware.py'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run firmware ZIP generator
+        env:
+          FIRMWARE_OUTPUT_DIR: ${{ github.workspace }}
+        run: |
+          python3 Station/zip_firmware.py
+
+      - name: Upload Firmware.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Firmware.zip
+          path: ${{ github.workspace }}/Firmware.zip

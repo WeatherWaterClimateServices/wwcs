@@ -16,6 +16,7 @@ In a local development environment the Zip file will be saved to /tmp/Firmware.z
 
 import argparse
 import json
+import os
 import pathlib
 import subprocess
 import zipfile
@@ -34,10 +35,8 @@ def zip_firmware():
     metadata = json.dumps(metadata)
 
     # The output directory
-    output_dir = '/var/www/html/downloads/Ij6iez6u'
+    output_dir = os.environ.get('FIRMWARE_OUTPUT_DIR', '/tmp')
     output_dir = pathlib.Path(output_dir)
-    if not output_dir.exists():
-        output_dir = pathlib.Path('/tmp')
 
     # Get the mtime of the zip file, if it exists.
     zip_path = output_dir / 'Firmware.zip'
