@@ -4,8 +4,8 @@
    description :  log data SHT30 and BMP390, possibly from climavue50, and send to cloud
    @authors :     Boris Orlowsky & Jacques Grandjean & David Ibanez
  * ------------------------------------------------------------------------------------------------------------------------------*/
-//....................................................................................................  
-//....................................................................................................  
+//....................................................................................................
+//....................................................................................................
 //TODO: can the send_stored_records become more efficient? the copy file operation is slow.
 
 /* CONSTANTS AND CONFIGURATION - TO BE SET / OVERWRITTEN BY FLASHGORDON*/
@@ -18,7 +18,7 @@ const int TRANSMIT_EVERY_MINS = 30;
 const char DEFAULT_APN[] = "FlashProvider";                 // dummy APN
 const char GPRS_USER[] = "";                     // GPRS credential
 const char GPRS_PASS[] = "";                     // GPRS credential
-const int NETWORK_MODE = 1234;                     // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only 
+const int NETWORK_MODE = 1234;                     // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only
 const char SERVER[] = "wwcs.tj"; // domain name: example.com, maker.ifttt.com, etc
 const char RESOURCE[] = "/post/insert";           // resource path, for example: /post-data.php
 const int  PORT = 443;
@@ -31,18 +31,18 @@ const bool CLIMAVUE50 = false;                     // whether the climavue50 is 
 #define SerialAT Serial1                           // Serial communication with Modem
 #define uS_TO_S_FACTOR 1000000ULL                  // Conversion factor for micro seconds to seconds
 #define UART_BAUD   9600                            // for the modem
-#define PIN_DTR     25                              
-#define PIN_TX      27                              
-#define PIN_RX      26                              
-#define PWR_PIN     33                              
-#define MODEM_RST   32                              
+#define PIN_DTR     25
+#define PIN_TX      27
+#define PIN_RX      26
+#define PWR_PIN     33
+#define MODEM_RST   32
 #define LED_PIN     12                              // for the LED //12 with old one
-#define PIN_ADC_SOLAR 34                            // for solar panel 
+#define PIN_ADC_SOLAR 34                            // for solar panel
 #define ADC_BATTERY_LEVEL_SAMPLES 10
 
-#define I2C1_SDA 4                                  // I2C1 data pins 
-#define I2C1_SCL 0                                  // I2C1 data pins 
-#define I2C2_SDA 15                                 // I2C2 data pins 
+#define I2C1_SDA 4                                  // I2C1 data pins
+#define I2C1_SCL 0                                  // I2C1 data pins
+#define I2C2_SDA 15                                 // I2C2 data pins
 #define I2C2_SCL 2                                  // I2C2 data pins
 
 #define BMP_SCK 18                                  // SPI connection pin for BMP390
@@ -69,18 +69,18 @@ const bool CLIMAVUE50 = false;                     // whether the climavue50 is 
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP3XX.h>                        // BMP390 library
 #include <SDI12.h>                                 // SDI12 for the ClimaVue50
-#include "esp_err.h"                               
+#include "esp_err.h"
 #include "esp_task_wdt.h"                          // for hardware watchdog
 #include <StreamDebugger.h>
 #include <ArduinoJson.h>
 #include "mbedtls/md.h"
-#include "esp_mac.h"                              
-#include "driver/gpio.h"                          
+#include "esp_mac.h"
+#include "driver/gpio.h"
 
-//....................................................................................................  
-//....................................................................................................  
+//....................................................................................................
+//....................................................................................................
 
-//....................................................................................................  
+//....................................................................................................
 // #define DUMP_AT_COMMANDS                       // See all AT commands, if wanted
 #ifdef DUMP_AT_COMMANDS                           // if enabled it requires the streamDebugger lib
 StreamDebugger debugger(SerialAT, Serial);
@@ -97,7 +97,7 @@ ESP32Time rtc;                                    // object to interact with RTC
 //TinyGsmClientSecure clients(modem);               // network client (secure)
 TinyGsmClient client(modem);                      // several network clients
 SSLClient clients(&client);
-HttpClient https(clients, SERVER, PORT);          // init https client  
+HttpClient https(clients, SERVER, PORT);          // init https client
 
 LTC2942 gaugeBattery(20); // Takes R_SENSE value (in milliohms) as constructor argument, can be omitted if using LTC2942-1
 
@@ -106,7 +106,7 @@ TwoWire I2C_2 = TwoWire(1);  //I2C2 line
 
 // variables that survive in RTC memory during deep sleep
 RTC_DATA_ATTR int sleepDelta = 0;                 // to capture deviation at wakeup due to RCT drift
-RTC_DATA_ATTR int loopCounterRestart = 0;                // count the loops and force ESP to restart every MAX_LOOPS loops 
+RTC_DATA_ATTR int loopCounterRestart = 0;                // count the loops and force ESP to restart every MAX_LOOPS loops
 RTC_DATA_ATTR char storedJSON[4096];              // here measurements are stored for submission every n loops
 RTC_DATA_ATTR int loopCounterTransm = 0;         // count the loops before transmission
 
@@ -119,16 +119,16 @@ char timeStamp[128];                              // GSM datetime
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 void setup() {
-//....................................................................................................  
+//....................................................................................................
   /* variable definition */
   uint8_t mac[6];                                   // MAC address
   char loggerID[18];                                // ID of the logger, include MAC address
-  
-  float batV = -999.99;                            // voltage of battery 1  
+
+  float batV = -999.99;                            // voltage of battery 1
   float batTemp = -999.99;                         // Temperature of battery 1
-  float batCharge = -999.99;                       // Charge of battery 1  
+  float batCharge = -999.99;                       // Charge of battery 1
   uint16_t solarV = -999;                           // voltage of Solar Panel
-  
+
   float shtAirTemp = -999.99;                       // SHT Air Temperature, init with error value
   float shtAirHumi = -999.99;                       // SHT Air Humidity, init with error value
   float shtSoilTemp = -999.99;                      // SHT Soil Temperature, init with error value
@@ -154,21 +154,21 @@ void setup() {
   float climavue50NWS = -999.99;                       // north wind speed (0.00 ... 40.00)
   float climavue50EWS = -999.99;                       // east wind speed (0.00 ... 40.00)
   gpio_num_t power5VEnablePin = (gpio_num_t) POWER5V_ENABLE;  // the climavue50 power pin in proper type
-  
-  float signalStrength = -999.99;                   // network signal strength, init with error value  
+
+  float signalStrength = -999.99;                   // network signal strength, init with error value
   unsigned long millisAtConnection;                 // millis() when initiating network - to compute sleepSecs
   bool postSuccess = false;                         // whether the http response was successful (2XX) or not
-  int sleepSeconds = SENSOR_READ_EVERY_MINS * 60;            // this is the default value, valid if time update from network fails  
-  
+  int sleepSeconds = SENSOR_READ_EVERY_MINS * 60;            // this is the default value, valid if time update from network fails
+
   bool flashOK = false;                                // bool: wether we mount the flash
   bool apnConnected = false;                        // bool: wether we connected to APN
   bool serverConnected = false;                     // bool: wether we connected to the server
-  bool batteryStatus = false;                       // battery ok for turning on the modem?  
-  bool modemTurnedOn = false;                       // bool whether we tried to power on the modem  
-  
+  bool batteryStatus = false;                       // battery ok for turning on the modem?
+  bool modemTurnedOn = false;                       // bool whether we tried to power on the modem
+
   char hashedKey[64];                               // hashed payloag from SHA256 as a string for the JSON
   DynamicJsonDocument singleRecordJSON(2048);               // to store one single record
-  DynamicJsonDocument transmRecordsJSON(sizeof(storedJSON) + 1024); // to store the records of one transmission cycle, allowing for some extra space for JSON admin  
+  DynamicJsonDocument transmRecordsJSON(sizeof(storedJSON) + 1024); // to store the records of one transmission cycle, allowing for some extra space for JSON admin
   int len;                                          // helper variable to store the length of something
   int currentMinute;                                // helper variable to store the minute of timestamp
 //....................................................................................................
@@ -184,17 +184,17 @@ void setup() {
   ESP_ERROR_CHECK(esp_task_wdt_reconfigure(&twdt_config)); // from here: https://forum.arduino.cc/t/watchdog-doesnt-work-with-esp32-3-0-1/1270966
   esp_task_wdt_add(NULL);                           // add current thread to WDT watch
 
-//....................................................................................................  
-/* Communication Init, collect basic information */  
+//....................................................................................................
+/* Communication Init, collect basic information */
   Serial.begin(115200);                               // Init Console and send after several infos
-  delay(1000);       
-  Serial.println("\nGOOD MORNING SECTION");                               
+  delay(1000);
+  Serial.println("\nGOOD MORNING SECTION");
   Serial.print("setup()running on core ");
   Serial.println(xPortGetCoreID());
   Serial.printf("watchdog configured with %d ms timeout...\n", twdt_config.timeout_ms);
   Serial.printf("This is git commit %s\n", GIT_VERSION);
   Serial.printf("Compile date and source file: %s\n", COMPILE_DATE_FILE);
-  
+
   ESP_ERROR_CHECK_WITHOUT_ABORT(esp_efuse_mac_get_default(mac));  // read MAC address
   sprintf(loggerID, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   Serial.printf("MAC: %s\n", loggerID);
@@ -203,29 +203,29 @@ void setup() {
   if (TRANSMIT_EVERY_MINS < SENSOR_READ_EVERY_MINS || // transmission > sensor reading intervals required
       TRANSMIT_EVERY_MINS % SENSOR_READ_EVERY_MINS != 0 || // transmission interval must be multiple of sensor read interval
       60 % TRANSMIT_EVERY_MINS != 0){ // this implicitly requires transmit every <= 60
-    Serial.println("\nThe specified TRANSMIT_EVERY_MINS and / or SENSOR_READ_EVERY_MINS don't work.");       
+    Serial.println("\nThe specified TRANSMIT_EVERY_MINS and / or SENSOR_READ_EVERY_MINS don't work.");
     return;
   }
   const int NB_LOOPS_B4_TRANSM = TRANSMIT_EVERY_MINS / SENSOR_READ_EVERY_MINS;
-  Serial.printf("I'll transmit every %d loops.\n", NB_LOOPS_B4_TRANSM);  
+  Serial.printf("I'll transmit every %d loops.\n", NB_LOOPS_B4_TRANSM);
 
   // init I2C buses
   Serial.print("Init I2C busses... ");
-  I2C_1.begin(I2C1_SDA, I2C1_SCL);   
-  I2C_2.begin(I2C2_SDA, I2C2_SCL);   
+  I2C_1.begin(I2C1_SDA, I2C1_SCL);
+  I2C_2.begin(I2C2_SDA, I2C2_SCL);
   Serial.println("done.");
 
-//....................................................................................................  
+//....................................................................................................
   flashOK = LittleFS.begin(true);
   if(!flashOK){                          // start file system
     Serial.println("An Error has occurred while mounting LittleFS");
   } else {
     read_nb_records();                                // read #records currently stored in flash
   }
-  
-//....................................................................................................  
+
+//....................................................................................................
   // init and battery and solar checks
-  
+
   // connect to coulomb counter (as of rev4.0, there is only one on I2C_1)
   if (!gaugeBattery.begin(I2C_1)){
     Serial.println("Cannot connect to Battery via I2C_1");
@@ -235,22 +235,22 @@ void setup() {
   // only init coulomb counter and potentially power up climavue50 at power start, not a timer wakeup start.
   esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
   wakeup_stuff(wakeup_reason);
-  
+
   // read the battery - voltage, temperature, remaining capacity (=charge)
   if (!read_battery(&batV, &batTemp, &batCharge, &gaugeBattery)){
     Serial.println("Could not read parameters from Battery.");
   } else {
-    Serial.printf("Battery has %d.%01dV, a temp of %d.%01d *C and a remaining charge of %d/5500 mAh\n", 
-            (int)batV, (int)(batV*10)%10, (int)batTemp, (int)(batTemp*10)%10, (int)batCharge);    
+    Serial.printf("Battery has %d.%01dV, a temp of %d.%01d *C and a remaining charge of %d/5500 mAh\n",
+            (int)batV, (int)(batV*10)%10, (int)batTemp, (int)(batTemp*10)%10, (int)batCharge);
   }
-  
+
   if (batV > 3.5 || batV == 0) { // voltage in V BORIS: increased thresh to 3.5
     batteryStatus = true;
   }
   pinMode(PIN_ADC_SOLAR, INPUT);                    // configure ADC for solar panel measurement
   solarV = read_volt_pin(PIN_ADC_SOLAR);            // get value from ADC in solarV
-  
-//....................................................................................................  
+
+//....................................................................................................
 /* Check Time */
   Serial.println("\nTIMING SECTION");
   getTime();                                        // get time from RTC -- will be 1970ies at 1st boot
@@ -272,14 +272,14 @@ void setup() {
   if (sleepDelta < -10){
     sleepDelta = -10;
   }
-  millisAtConnection = millis();                    // store millis when you are here, to compute sleepSecs later   
+  millisAtConnection = millis();                    // store millis when you are here, to compute sleepSecs later
   Serial.printf("RTC time: %s\n", timeStamp);
   Serial.printf("Seconds to sleep when going to sleep: %d\n", sleepSeconds);
   Serial.printf("Correction of sleep seconds based on past connects: %d\n", sleepDelta);
 
-//....................................................................................................  
-  /* sensor measurements*/   
-  Serial.println("\nSENSOR READING SECTION"); 
+//....................................................................................................
+  /* sensor measurements*/
+  Serial.println("\nSENSOR READING SECTION");
   if (!sht30_measurement(&shtAirTemp, &shtAirHumi, &I2C_1)) {
     Serial.println("Could not make a valid SHT30 measurement on I2C1, check wiring!");
   }
@@ -289,17 +289,17 @@ void setup() {
     Serial.println("Could not make a valid SHT30 measurement on I2C2, check wiring!");
   }
   Serial.println("SHT30 measurement on I2C2: " + String(shtSoilTemp) + "; " + String(shtSoilHumi));
-                   
+
   if (!bmp_measurement(&bmpTemp, &bmpPres)) {
     Serial.println("Could not make a valid BMP390 measurement, check wiring!");
   }
   Serial.println("BMP390 measurement: " + String(bmpTemp) + "; " + String(bmpPres));
 
-  /* sensor climavue50 measurements*/ 
-  if (CLIMAVUE50){   
-    climavue50_measurement(&climavue50Solar, &climavue50Precip, &climavue50StrikeCount, &climavue50StrikeDist, &climavue50Wind, &climavue50WDir, &climavue50Gust, &climavue50Temp, &climavue50VPres, &climavue50APres, &climavue50Humi, &climavue50SensorTemp, &climavue50XOrient, &climavue50YOrient, &climavue50Compass, &climavue50NWS, &climavue50EWS);    
-  }  
-//....................................................................................................  
+  /* sensor climavue50 measurements*/
+  if (CLIMAVUE50){
+    climavue50_measurement(&climavue50Solar, &climavue50Precip, &climavue50StrikeCount, &climavue50StrikeDist, &climavue50Wind, &climavue50WDir, &climavue50Gust, &climavue50Temp, &climavue50VPres, &climavue50APres, &climavue50Humi, &climavue50SensorTemp, &climavue50XOrient, &climavue50YOrient, &climavue50Compass, &climavue50NWS, &climavue50EWS);
+  }
+//....................................................................................................
 /* Prepare data to be publish */
   Serial.println("\nPREPARE SENSOR READING SUBMIT OR STORE");
   snprintf(SHA256PayLoad, sizeof(SHA256PayLoad), "%s; %s; %s", SITE_ID, loggerID, timeStamp);
@@ -317,8 +317,8 @@ void setup() {
   singleRecordJSON["Charge_Battery1"] = batCharge;
   singleRecordJSON["U_Solar"] = solarV;
   singleRecordJSON["loggerID"] = loggerID;
-  singleRecordJSON["git_version"] = String(GIT_VERSION);  
-  if (CLIMAVUE50){    
+  singleRecordJSON["git_version"] = String(GIT_VERSION);
+  if (CLIMAVUE50){
     singleRecordJSON["rad"] = climavue50Solar;
     singleRecordJSON["pr"] = climavue50Precip;
     singleRecordJSON["lightning_count"] = climavue50StrikeCount;
@@ -335,9 +335,9 @@ void setup() {
     singleRecordJSON["tilt_y"] = climavue50YOrient;
     singleRecordJSON["compass"] = climavue50Compass;
     singleRecordJSON["wind_speed_N"] = climavue50NWS;
-    singleRecordJSON["wind_speed_E"] = climavue50EWS;      
+    singleRecordJSON["wind_speed_E"] = climavue50EWS;
   }
-  
+
   // check whether one such records fits enough times into the RTC memory
   if (singleRecordJSON.memoryUsage() * NB_LOOPS_B4_TRANSM > sizeof(storedJSON) + 512){
     Serial.println("Cannot store this many data in the RTC. Adjust TRANSMIT_EVERY_MINS / SENSOR_READ_EVERY_MINS.");
@@ -345,40 +345,40 @@ void setup() {
   }
 
   // now we read what we have stored in the RTC and append the current record
-  deserializeJson(transmRecordsJSON, (const char*)storedJSON, sizeof(storedJSON)); // read from RTC   
-  if (transmRecordsJSON.size() == loopCounterTransm){    
+  deserializeJson(transmRecordsJSON, (const char*)storedJSON, sizeof(storedJSON)); // read from RTC
+  if (transmRecordsJSON.size() == loopCounterTransm){
     transmRecordsJSON[loopCounterTransm] = singleRecordJSON;            // append current record
     loopCounterTransm++;
   } else {
-    Serial.printf("Exiting. I am confused about what I found in the RTC memory (%d records, whereas the counter says %d).", 
+    Serial.printf("Exiting. I am confused about what I found in the RTC memory (%d records, whereas the counter says %d).",
       transmRecordsJSON.size(), loopCounterTransm);
     return;
   }
-  
 
-//....................................................................................................  
+
+//....................................................................................................
 /* try to publish to network, publish old values, or store new one in database if no comm */
   Serial.println("\nSUBMIT OR STORE");
   if (!batteryStatus)
      blink_led(4, 200);                              // lightshow: battery low, don't try to init modem
-  
+
   if (loopCounterTransm >= NB_LOOPS_B4_TRANSM ||
-       currentMinute % TRANSMIT_EVERY_MINS == 0){         // ready to transmit                
+       currentMinute % TRANSMIT_EVERY_MINS == 0){         // ready to transmit
     Serial.println("The time is ripe or the RTC is full, I attempt a transmission.");
-    if (batteryStatus){                                    // enough power to discuss with modem 
+    if (batteryStatus){                                    // enough power to discuss with modem
       Serial.println("... and, yes, we have enough battery.");
       modem_on(&modemTurnedOn);                                          // turn modem on
       apnConnected = connect_to_network(&signalStrength);  // connect to network
     } else {
       Serial.println("... but, helas, not enough battery.");
     }
-    
+
     if (apnConnected){                              // if network works
       Serial.println("... OK");
       set_rtc_to_network_datetime();                // get and set current date / time to RTC
       signalStrength = modem.getSignalQuality();       // network signal strength
       Serial.printf("Signal quality: %f\n", signalStrength);
-      
+
       serverConnected = connect_to_server();             // try to connect to the server
       if (serverConnected){
       	// loop through the transmRecordsJSON
@@ -387,13 +387,13 @@ void setup() {
       	  serializeJson(transmRecordsJSON[i], httpRequestData);                  // convert JSON to string for transmission
       	  postSuccess = send_data_to_server(httpRequestData);
       	  if (!postSuccess){
-      	    Serial.println("... fail. Storing measurements to flash, resetting modem and going to sleep.");    
+      	    Serial.println("... fail. Storing measurements to flash, resetting modem and going to sleep.");
       	    if (flashOK && RecordsInFlash < MAX_RECORDS){                     // don't store too many records... reading the file becomes slow.
       	      store_data_on_flash(httpRequestData);
       	    } else {
       	      Serial.printf("Already >= %d records in flash. Current record not stored.\n", MAX_RECORDS);
-      	    } 
-      	  }	 
+      	    }
+      	  }	
       	}
 
       	// send further data from flash - if possible
@@ -403,7 +403,7 @@ void setup() {
       	    transmit_stored_records(5);                    // submit up to 5 records from the flash
       	  }
       	} // end block - send further data from flash
-      } // end block - connect to server      
+      } // end block - connect to server
     } // end block - connect to apn - this is where we try to send to server
 
     if (!apnConnected || !serverConnected) {               // apnconnect or server connect did not work incl case of weak battery
@@ -418,21 +418,21 @@ void setup() {
       } // loop through records in the RTC
     } // end block: apnconnect or server connect did not work - store to flash
 
-    // if no connection despite enough battery      
-    if (batteryStatus && (!apnConnected || !postSuccess)){ 
+    // if no connection despite enough battery
+    if (batteryStatus && (!apnConnected || !postSuccess)){
       blink_led(8, 200);                            // light show: issue with connection
       Serial.println("Something did not work out with the network... hard-resetting modem.");
-      modem_reset();                                // do a hard reset before going to sleep             
+      modem_reset();                                // do a hard reset before going to sleep
     }
 
-    Serial.print("Stopping http client...");    
+    Serial.print("Stopping http client...");
     https.stop();
     Serial.println(" and network client.");
     clients.stop();
-    Serial.print("Powering-off modem");                    
+    Serial.print("Powering-off modem");
     modem_off(&modemTurnedOn);
 
-    // finally, clean RTC memory and reset counter    
+    // finally, clean RTC memory and reset counter
     memset(storedJSON, '\0', sizeof(storedJSON)); // remove records in RTC
     loopCounterTransm = 0;
   } else {// end of transmission attempt(good time or full RTC memory)  --
@@ -441,29 +441,29 @@ void setup() {
     Serial.println("Don't transmit this time - either wrong time, weak battery, or not enough in RTC.");
     serializeJson(transmRecordsJSON, storedJSON);
 
-    Serial.print("Stopping http client...");    
+    Serial.print("Stopping http client...");
     https.stop();
     Serial.println(" and network client.");
     clients.stop();
   }
-//....................................................................................................              
+//....................................................................................................
 /* end of code, initiate sleep mode until next measurement (start again setup function at wakeup) */
   Serial.println("\nGOOD NIGHT SECTION");
   Serial.println("Unmounting file system.");
   LittleFS.end(); // unmount file system
 
   // check whether it's time for a reset of the ESP
-  loopCounterRestart++;  
+  loopCounterRestart++;
   if (loopCounterRestart >= MAX_LOOPS){                                         // restart
     loopCounterRestart = 0;
     Serial.printf("I have gone through %d loops, enough is enough. Restarting the ESP32 now.\n", MAX_LOOPS);
-    ESP.restart();    
+    ESP.restart();
   }
-  
-  // now go to sleep  
+
+  // now go to sleep
   // update sleep time incl network time and delta
-  sleepSeconds = sleepSeconds - (int)((float)(millis() - millisAtConnection) / 1000.0) + 
-    sleepDelta;  
+  sleepSeconds = sleepSeconds - (int)((float)(millis() - millisAtConnection) / 1000.0) +
+    sleepDelta;
   if (sleepSeconds > SENSOR_READ_EVERY_MINS * 60){              // some plausibility checks
     sleepSeconds = SENSOR_READ_EVERY_MINS * 60;
   }
@@ -471,7 +471,7 @@ void setup() {
     sleepSeconds = 0;
   }
   Serial.print("Going to sleep. sleepsecs incl correction for network time and delta: ");
-  Serial.println(sleepSeconds);   
+  Serial.println(sleepSeconds);
   esp_sleep_enable_timer_wakeup((sleepSeconds) * uS_TO_S_FACTOR);
   delay(200);
   blink_led(2, 200);                                    // light show: end of code
@@ -517,31 +517,31 @@ void wakeup_stuff(esp_sleep_wakeup_cause_t wakeup_reason){
     case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;
     case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
-    default : Serial.print("Wakeup was not by timer after deep sleep, will init the coulomb counters now and power on ClimaVue50 (if present). Wakeup-reason: ");      
-      Serial.println(wakeup_reason);     
+    default : Serial.print("Wakeup was not by timer after deep sleep, will init the coulomb counters now and power on ClimaVue50 (if present). Wakeup-reason: ");
+      Serial.println(wakeup_reason);
       gaugeBattery.setBatteryCapacity(fullCapacity);
     //  gaugeBattery.setBatteryToFull(); // Sets accumulated charge registers to the maximum value
       gaugeBattery.setRawAccumulatedCharge(0x7FFF); // Sets accumulated charge registers to medium value
       gaugeBattery.setADCMode(ADC_MODE_SLEEP); // In sleep mode, voltage and temperature measurements will only take place when requested
-      gaugeBattery.startMeasurement();  
-    
-      if (CLIMAVUE50){ 
+      gaugeBattery.startMeasurement();
+
+      if (CLIMAVUE50){
         pinMode(POWER5V_ENABLE, OUTPUT); // start power for climavue50
-        digitalWrite(POWER5V_ENABLE, HIGH);      
+        digitalWrite(POWER5V_ENABLE, HIGH);
         delay(5000);
       } else {
         pinMode(POWER5V_ENABLE, OUTPUT); // don't start power for climavue50
-        digitalWrite(POWER5V_ENABLE, LOW);      
-        delay(1000); 
+        digitalWrite(POWER5V_ENABLE, LOW);
+        delay(1000);
       }
       break;
-  }  
+  }
 }
-  
+
 bool read_battery(float* batV, float* batTemp, float* batCharge, LTC2942* myGaugeBattery){
   bool plausibility = false;
-  
-  float voltage = myGaugeBattery->getVoltage();  
+
+  float voltage = myGaugeBattery->getVoltage();
   if (voltage >= 0) {
     *batV=voltage;
     plausibility = true;
@@ -550,7 +550,7 @@ bool read_battery(float* batV, float* batTemp, float* batCharge, LTC2942* myGaug
   if (temperature >= -80 && temperature <= 100) {
     *batTemp = temperature;
   }
-  
+
 //  unsigned int raw = myGaugeBattery->getRawAccumulatedCharge();
 //  Serial.print(F(" Raw Accumulated Charge: "));
 //  Serial.print(raw, DEC);
@@ -559,7 +559,7 @@ bool read_battery(float* batV, float* batTemp, float* batCharge, LTC2942* myGaug
   if (capacity >= 0){
     *batCharge = capacity;
   }
-  
+
   return(plausibility);
 }
 
@@ -577,10 +577,10 @@ void modem_on(bool* modemTurnedOn){
   Serial.println("Powering on modem... (6s)");
   pinMode(PWR_PIN, OUTPUT);
   digitalWrite(PWR_PIN, HIGH);
-  delay(100); // Ton 73 ms  
+  delay(100); // Ton 73 ms
   digitalWrite(PWR_PIN, LOW);
   delay(6000);
-  
+
   *modemTurnedOn = true;
 }
 
@@ -598,7 +598,7 @@ void modem_reset()
   // note that the koala board has logical inverters between the pins - this means that HIGH=LOW ;-)
   Serial.println("Modem hardware reset... (10s)");
   pinMode(MODEM_RST, OUTPUT);
-  digitalWrite(MODEM_RST, HIGH); 
+  digitalWrite(MODEM_RST, HIGH);
   delay(260); //Treset 252ms
   digitalWrite(MODEM_RST, LOW);
   delay(10000);
@@ -614,7 +614,7 @@ void modem_off(bool* modemTurnedOn) {
   if (modem.poweroff()) {                                  // turn off modem (software)
     Serial.println("... OK");
   } else if (*modemTurnedOn) {                              // if this fails but modem had been turned on: hardware
-    Serial.println("\nHardware modem power down... (8s)");  
+    Serial.println("\nHardware modem power down... (8s)");
     // note that the koala board has logical inverters between the pins - this means that HIGH=LOW ;-)
     pinMode(PWR_PIN, OUTPUT);
     digitalWrite(PWR_PIN, HIGH);
@@ -626,8 +626,8 @@ void modem_off(bool* modemTurnedOn) {
   }
 
   delay(5000);
-  
-//  pinMode(PWR_PIN, OUTPUT);                                 
+
+//  pinMode(PWR_PIN, OUTPUT);
 //  digitalWrite(PWR_PIN, LOW);                              // BORIS: unclear here... does not work on the new board; pull pwr_pin low, to prevent esp from restarting the modem
 
   *modemTurnedOn = false;
@@ -639,14 +639,14 @@ void modem_off(bool* modemTurnedOn) {
  * input :        void
  * output :       boolean - whether everything needed to connect to apn worked out
  * ------------------------------------------------------------------------------------------------------------------------------*/
-bool connect_to_network(float* signalStrength){  
-// establish communication with and initialize modem....................................................................................................   
+bool connect_to_network(float* signalStrength){
+// establish communication with and initialize modem....................................................................................................
   SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX); // establish serial connection with modem
   delay(1000);
-  if (modem.init()) {    
+  if (modem.init()) {
     Serial.printf("   ... init modem successful ... with IMEI %s\n", modem.getIMEI().c_str());
-  } else {  
-    *signalStrength = -333.0;                      // error code - init failed                           
+  } else {
+    *signalStrength = -333.0;                      // error code - init failed
     Serial.println("  failed to init modem. Try a soft / hard reset of the modem.");
     esp_task_wdt_reset();
     if (modem.restart()){
@@ -664,19 +664,19 @@ bool connect_to_network(float* signalStrength){
       }
     }
   }
-  
+
   // get APN from SIM card or use DEFAULT_APN
   const char* APN=get_apn(modem.getIMSI().substring(0, 5).c_str());
   Serial.printf("My APN now is: %s\n", APN);
 
-  // configure modem and connect to network and APN ....................................................................................................     
+  // configure modem and connect to network and APN ....................................................................................................
   modem.sendAT("+SGPIO=0,4,1,0");                   // Set SIM7000G GPIO4 LOW, turn off GPS power (only for board version 20200415)
   if (sizeof(GSM_PIN) != 0 && modem.getSimStatus() != 3) {       // Unlock your SIM card with a PIN if needed
     modem.simUnlock(GSM_PIN);
   }
-  
+
   Serial.print("Setting network modes... ");        // set network modes
-  while (!modem.setNetworkMode(NETWORK_MODE)){                // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only 
+  while (!modem.setNetworkMode(NETWORK_MODE)){                // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only
     delay(100);
   }
   while (!modem.setPreferredMode(1)){               // 1 CAT-M; 2 NB-Iot; 3 CAT-M and NB-IoT
@@ -690,9 +690,9 @@ bool connect_to_network(float* signalStrength){
     //Serial.println("in vain. Setting pdp-context and trying to connect again.");
     Serial.println("in vain.");
     // esp_task_wdt_reset();                           // reset watchdog
-    // set_pdp(APN);                                      // try to set pdp-context explicitly...    
+    // set_pdp(APN);                                      // try to set pdp-context explicitly...
   }
-  
+
   if (modem.isNetworkConnected()) {                 // if successful, we connect to apn
     *signalStrength = -777.0;                       // error code - signalStrength remains at this if apn-connect fails
     Serial.println("Network connected");
@@ -700,7 +700,7 @@ bool connect_to_network(float* signalStrength){
     return modem.gprsConnect(APN, GPRS_USER, GPRS_PASS);
   } else {
     *signalStrength = -666.0;                       // error code - network connect failed
-    return false;   
+    return false;
   }
 }
 
@@ -718,14 +718,14 @@ bool connect_to_server(){
   uint32_t ssl_secs = elapsedSecsToday(now_secs);
   // ignore server ssl certificate verification
   clients.setInsecure();
-  
+
   if (clients.connect(SERVER, PORT)){                         // if server is in reach
     Serial.printf("Connected to %s\n", SERVER);
     success=true;
   } else {
     Serial.printf("Connection to %s failed.\n", SERVER);
   }
-  return(success);  
+  return(success);
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
@@ -741,19 +741,19 @@ bool send_data_to_server(const char* httpRequestData){
   bool success = false;
 
   https.connectionKeepAlive(); // L200 https://github.com/vshymanskyy/TinyGSM/blob/master/examples/HttpsClient/HttpsClient.ino
-  
+
   Serial.printf("Trying post request -> %s\n", httpRequestData);
   https.post(RESOURCE, contentType, httpRequestData);
-  
+
   int responseStatusCode = https.responseStatusCode();
   success = (responseStatusCode >= 200 && responseStatusCode < 300);
   if (success) {
-    Serial.println("Post request successful.");  
+    Serial.println("Post request successful.");
   }
   String response = https.responseBody();
   Serial.printf("Response code: %d; Response body: %s\n", responseStatusCode, response.c_str());
-  
-  return(success);  
+
+  return(success);
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
@@ -769,7 +769,7 @@ bool bmp_measurement(float* temperature, float* pressure) {
   int i = 0;                                                        // init counter i
   int nbMaxTries = 5;                                               // number of try to have good measure
   bool plausibility = false;                                        // init plausibilty to false
-  
+
   while (i < nbMaxTries && !plausibility) {
     if (bmp.begin_SPI(BMP_CS, BMP_SCK, BMP_MISO, BMP_MOSI)) {  // software SPI mode
       // Set up oversampling and filter initialization; following example from the library
@@ -777,18 +777,18 @@ bool bmp_measurement(float* temperature, float* pressure) {
 //      bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);
 //      bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
 //      bmp.setOutputDataRate(BMP3_ODR_50_HZ);
-//          
-    
-      bmp.performReading();                                   // first reading is wrong, 
+//
+
+      bmp.performReading();                                   // first reading is wrong,
 //      delay(1000);                                         // BORIS: I need the delay only if I set oversampling etc as above
       bmp.performReading();
       measureTemp1 = bmp.temperature;                         // first set of values
-      
+
       measurePress1 = bmp.pressure / 100.0;
-      bmp.performReading();                                   
+      bmp.performReading();
       measureTemp2 = bmp.temperature;                         // second set of values
       measurePress2 = bmp.pressure / 100.0;
-      
+
       if (fabs(measureTemp1 - measureTemp2) < 1.0 && measureTemp1 < 99.0 &&
           measureTemp1 > -80.0) {            // check plausibility
         *temperature = (measureTemp1 + measureTemp2) / 2.0;
@@ -812,23 +812,23 @@ bool bmp_measurement(float* temperature, float* pressure) {
    input :        void
    output :       void
    ------------------------------------------------------------------------------------------------------------------------------*/
-bool sht30_measurement(float* temperature, float* humidity, TwoWire* myI2C){  
+bool sht30_measurement(float* temperature, float* humidity, TwoWire* myI2C){
   SHTSensor sht30(SHTSensor::SHT3X);                                           // sensor type SHT3X variable
   float measureTemp1, measureTemp2, measureHum1, measureHum2;
   int i = 0;                                                                   // init counter i
   int nb_try = 5;                                                              // number of try to have good measure
   bool plausibility = false;                                                   // init plausibilty to false
-  
+
   while (i <= nb_try && plausibility != true){                                  // try to have plausible value max nb_try
-    if (sht30.init(*myI2C)){                                                         
+    if (sht30.init(*myI2C)){
       sht30.setAccuracy(SHTSensor::SHT_ACCURACY_HIGH);                         // only supported by SHT3x
       sht30.readSample();
-      measureTemp1 = sht30.getTemperature();                                   // first set of values      
+      measureTemp1 = sht30.getTemperature();                                   // first set of values
       measureHum1 = sht30.getHumidity();
       sht30.readSample();
       measureTemp2 = sht30.getTemperature();                                   // second set of values
       measureHum2 = sht30.getHumidity();
-      
+
       if (fabs(measureTemp1 - measureTemp2) < 1 && measureTemp1 < 99 &&
           measureTemp1 > -80.0) {            // check plausibility
         *temperature = (measureTemp1 + measureTemp2) / 2.0;
@@ -841,7 +841,7 @@ bool sht30_measurement(float* temperature, float* humidity, TwoWire* myI2C){
       }
     }
     i++;
-  } 
+  }
   return plausibility;
 }
 
@@ -856,9 +856,9 @@ void getAtmosValues(String &response, int nb_values, float values[]){
   boolean sign = true;
   uint8_t start = 0;
   uint8_t finish = 0;
-  uint8_t plus, minus;  
+  uint8_t plus, minus;
   int num = 0;
-  
+
   for(num = 0; num < nb_values; num++){
     if(start < 1){
       plus = response.indexOf('+');
@@ -890,7 +890,7 @@ void getAtmosValues(String &response, int nb_values, float values[]){
 
 
 void climavue50_measurement(float* Solar, float* Precip, float* StrikeCount, float* StrikeDist, float* Wind, float* WDir, float* Gust, float* Temp, float* VPres, float* APres, float* Humi, float* SensorTemp, float* XOrienTilt, float* YOrienTilt, float* Compass, float* NWS, float* EWS) {
-  //from https://github.com/EnviroDIY/Arduino-SDI-12  
+  //from https://github.com/EnviroDIY/Arduino-SDI-12
   SDI12 mySDI12(SDI_pin);
 
   const int R0_nb_values=17;  // # parameters from the climavue50
@@ -907,10 +907,10 @@ void climavue50_measurement(float* Solar, float* Precip, float* StrikeCount, flo
     value -9999.00 = no value for atmos41*/
   String cmd = "";
   cmd += String(atmos_addr);
-  cmd += "R0!"; 
+  cmd += "R0!";
   mySDI12.sendCommand(cmd);
   delay(30); //SDI-12 delay before sensor response
-  
+
   while(mySDI12.available()){
    char c = mySDI12.read();
     R0_rawdata += c;
@@ -958,10 +958,10 @@ void climavue50_measurement(float* Solar, float* Precip, float* StrikeCount, flo
   *NWS = atmos_R0_values[15];
   *EWS = atmos_R0_values[16];
 }
- 
+
 /* --------------------------------------------------------------------------------------------------------------------------------
  * name :         store_data_on_flash
- * description :  if needed, append the current data to a file on flash. 
+ * description :  if needed, append the current data to a file on flash.
  * source:        https://techtutorialsx.com/2018/08/13/esp32-arduino-LittleFS-append-content-to-file/
  * input :        httpRequestData: the string to be appended
  * output :       void
@@ -970,13 +970,13 @@ void store_data_on_flash(const char* httpRequestData){
   Serial.printf("Storing to flash -> %s\n", httpRequestData);
   File myFile=LittleFS.open("/mydata.txt","a");
   if(!myFile){
-    Serial.println("There was an error opening the file for appending");        
+    Serial.println("There was an error opening the file for appending");
   } else {
     myFile.print(httpRequestData);
     myFile.print("\n");
     myFile.flush();
     myFile.close();
-  }  
+  }
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
@@ -985,9 +985,9 @@ void store_data_on_flash(const char* httpRequestData){
  * input : void
  * output : void
  * ------------------------------------------------------------------------------------------------------------------------------*/
-void read_nb_records(){ 
+void read_nb_records(){
   File myFile = LittleFS.open("/mydata.txt");         // open content of mydata inside EEPROM
-  if (!myFile) {            
+  if (!myFile) {
       Serial.println("Opening /mydata.txt failed - there is likely no such file of stored records.");
   } else {
     while(myFile.available()){                    // read all mydata file and count nb of records
@@ -997,37 +997,37 @@ void read_nb_records(){
     Serial.printf("Number of records stored in flash: %d\n", RecordsInFlash);
     myFile.flush();
     myFile.close();
-  }  
+  }
 }
 //....................................................................................................
 
 
 /* --------------------------------------------------------------------------------------------------------------------------------
  * name : transmit_stored_records
- * description : send older data to cloud server, nbMaxTransmits at a time to not overdrain 
+ * description : send older data to cloud server, nbMaxTransmits at a time to not overdrain
  * the battery
  * input : max number of transmit authorized by communication
  * output : void
  * ------------------------------------------------------------------------------------------------------------------------------*/
-void transmit_stored_records(int nbMaxTransmits){  
+void transmit_stored_records(int nbMaxTransmits){
   int foundLeftovers = 0;                            // counter for the nb of lines
   int storedAgain = 0;                               // counter for records stored again
   int transmitAttempts = 0;                          // counter for submission attempts
   int successfulSubmissions = 0;                     // counter for successful submissions
-  bool success = false;                              // response code from http post 
-  
+  bool success = false;                              // response code from http post
+
   File myfile = LittleFS.open("/mydata.txt");
   if(!myfile){
-    Serial.println("Failed to open file for reading - cannot transmit stored records.");    
+    Serial.println("Failed to open file for reading - cannot transmit stored records.");
     return;
   }
-  
-  while(myfile.available()){                            // read all lines     
+
+  while(myfile.available()){                            // read all lines
     size_t len = myfile.readBytesUntil('\n', httpRequestData, sizeof(httpRequestData) - 1);
     httpRequestData[len] = '\0';
 
     foundLeftovers++;
-    if (transmitAttempts < nbMaxTransmits){         // try to submit up to nbMaxTransmits records      
+    if (transmitAttempts < nbMaxTransmits){         // try to submit up to nbMaxTransmits records
       Serial.printf("\nAttempt to transmit stored record %d\n", transmitAttempts + 1);
       success = send_data_to_server(httpRequestData);
       if (success){
@@ -1037,7 +1037,7 @@ void transmit_stored_records(int nbMaxTransmits){
         Serial.println("Transmission of stored record failed, storing again.");
         File backup = LittleFS.open("/tmp.txt", "a");
         if (!backup){
-          Serial.println("Failed to open temporary file for appending.");         
+          Serial.println("Failed to open temporary file for appending.");
         } else {
           backup.print(httpRequestData);
           backup.print("\n");
@@ -1050,8 +1050,8 @@ void transmit_stored_records(int nbMaxTransmits){
     } else {                          // store the records that don't belong to the lucky 5 again
       File backup = LittleFS.open("/tmp.txt", "a");
       if (!backup){
-          Serial.println("Failed to open temporary file for appending.");         
-      } else {        
+          Serial.println("Failed to open temporary file for appending.");
+      } else {
         backup.print(httpRequestData);
         backup.print("\n");
         backup.flush();
@@ -1062,17 +1062,17 @@ void transmit_stored_records(int nbMaxTransmits){
   }
   myfile.flush();
   myfile.close();
-  
+
   Serial.printf("Records found in flash: %d\n", foundLeftovers);
   Serial.printf("Records stored again in flash: %d\n", storedAgain);
-  
+
   // clean files up - if all file operations worked out as expected; otherwise we try again next time
   if (successfulSubmissions + storedAgain == foundLeftovers){
     LittleFS.remove("/mydata.txt");
     LittleFS.rename("/tmp.txt", "/mydata.txt");
   }
 }
- 
+
 /* --------------------------------------------------------------------------------------------------------------------------------
  * name : calc_sleepSeconds
  * description : define second to wait until good interval SLEEP_TIME, new time will be a multiple of SLEEP_TIME
@@ -1082,8 +1082,8 @@ void transmit_stored_records(int nbMaxTransmits){
 long calc_sleepSeconds(){
   tmElements_t structNow; // structure to store current time/date
   int prev_min; // previous round SENSOR_READ_EVERY_MINS minute
-  
-  breakTime(rtc.getEpoch(), structNow);  
+
+  breakTime(rtc.getEpoch(), structNow);
   prev_min = floor((float)structNow.Minute / (float)SENSOR_READ_EVERY_MINS) * SENSOR_READ_EVERY_MINS;
   structNow.Minute = prev_min;
   structNow.Second = 0;
@@ -1112,7 +1112,7 @@ void set_rtc_to_network_datetime(){
   int Min = 0;
   int Sec = 0;
   float timezone;
-  
+
   bool got_date_time = modem.getNetworkTime(&Year, &Month, &Day,
     &Hour, &Min, &Sec, &timezone);
 
@@ -1122,7 +1122,7 @@ void set_rtc_to_network_datetime(){
 /* --------------------------------------------------------------------------------------------------------------------------------
  * name : read_volt_pin
  * description : read analogue pin
- * input : pin number 
+ * input : pin number
  * output : voltage [mV] as uint16_6
  * ------------------------------------------------------------------------------------------------------------------------------*/
 uint16_t read_volt_pin(int pin){
@@ -1136,7 +1136,7 @@ uint16_t read_volt_pin(int pin){
   uint16_t mv = ((float)in / 4096) * 3600 * 2;
 
   return(mv);
-} 
+}
 
 /* --------------------------------------------------------------------------------------------------------------------------------
  * name :         blink_led
@@ -1144,10 +1144,10 @@ uint16_t read_volt_pin(int pin){
  * input :        nb of blinking, delay between
  * output :       void
  * ------------------------------------------------------------------------------------------------------------------------------*/
-void blink_led(int nbBlinking, int delayMs){  
+void blink_led(int nbBlinking, int delayMs){
   for (int i=0; i< nbBlinking; i++){
       digitalWrite(LED_PIN, LOW);                 // turn on LED
-      delay(delayMs); 
+      delay(delayMs);
       digitalWrite(LED_PIN, HIGH);                // turn off LED
       delay(delayMs);
   }
@@ -1165,7 +1165,7 @@ void set_pdp(const char* APN){
   int lastIndex=0;
   int numberOfPieces = 24;
   String pieces[24];
-  String input;  
+  String input;
   char buffer[100];
 
   SerialAT.println("AT+CGDCONT?");
@@ -1182,9 +1182,9 @@ void set_pdp(const char* APN){
         pieces[counter] = input.substring(lastIndex, i);
       }
     }
-    
+
     Serial.println(input);
-    
+
     // Reset for reuse
     input = "";
     counter = 0;
@@ -1257,23 +1257,23 @@ const char* get_apn(const char* imsi){
  * ------------------------------------------------------------------------------------------------------------------------------*/
 void hashing(const char* payload, char* hashedKey){
   byte shaResult[32];                            // where to store the output from SHA256
-  
+
   mbedtls_md_context_t ctx;
   mbedtls_md_type_t md_type = MBEDTLS_MD_SHA256;
- 
+
   const size_t payloadLength = strlen(payload);
- 
+
   mbedtls_md_init(&ctx);
   mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(md_type), 0);
   mbedtls_md_starts(&ctx);
   mbedtls_md_update(&ctx, (const unsigned char *) payload, payloadLength);
   mbedtls_md_finish(&ctx, shaResult);
-  mbedtls_md_free(&ctx);  
-  
+  mbedtls_md_free(&ctx);
+
   // convert to readable string
-  for (int i=0; i<sizeof(shaResult); i++){    
+  for (int i=0; i<sizeof(shaResult); i++){
     sprintf(&hashedKey[i*2],  "%02x", shaResult[i]);
-  }  
+  }
 }
 
 /* ------------------------------------------------------------------------------------------------------------
