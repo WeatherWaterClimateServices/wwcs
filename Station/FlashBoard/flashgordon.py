@@ -38,10 +38,8 @@ DEV = os.environ.get('WWCS_DEV', False)
 DOWNLOAD_URL = 'https://wwcs.tj/downloads/Ij6iez6u/Firmware.zip'
 
 if DEV:
-    ServerURLDefault = 'http://127.0.0.1:5000'
     DOWNLOAD_DIR = Path('/tmp')
 else:
-    ServerURLDefault = 'https://wwcs.tj/post'
     DOWNLOAD_DIR = Path.home() / "Downloads"
 
 basedir = Path(os.path.dirname(__file__))
@@ -148,22 +146,6 @@ class Widget(QWidget):
         top = 80
         space = 30
 
-        # Provider selection
-        label = self.TitleProvider = QLabel(self)
-        label.setObjectName("TitleProvider")
-        label.setGeometry(QRect(10, top, 230, 30))
-        top += space
-        label.setTextFormat(Qt.RichText)
-        label.setScaledContents(False)
-        label.setAlignment(Qt.AlignCenter)
-        input = self.Provider = QComboBox(self)
-        input.addItem("")
-        input.addItem("")
-        input.addItem("")
-        input.setObjectName("Provider")
-        input.setGeometry(QRect(10, top, 230, 22))
-        top += space
-
         # Server URL
         label = self.TitleServerURL = QLabel(self)
         label.setObjectName("TitleServerURL")
@@ -172,11 +154,22 @@ class Widget(QWidget):
         label.setAlignment(Qt.AlignCenter)
         input = self.ServerURL = QTextEdit(self)
         input.setObjectName("ServerURL")
-        input.setGeometry(QRect(10, top, 230, 30))
+        input.setGeometry(QRect(10, top, 230, 31))
         top += space
         top += 8
-        input.setPlaceholderText("Enter Server URL")
-        input.setText(ServerURLDefault)
+        input.setPlaceholderText("Enter Server hostname")
+
+        # APN
+        label = self.TitleAPN = QLabel(self)
+        label.setObjectName("TitleAPN")
+        label.setGeometry(QRect(10, top, 230, 30))
+        top += space
+        label.setAlignment(Qt.AlignCenter)
+        input = self.ServerURL = QTextEdit(self)
+        input.setObjectName("APN")
+        input.setGeometry(QRect(10, top, 230, 32))
+        top += space
+        top += 8
 
         # Board type selection
         label = self.TitleBoardType = QLabel(self)
@@ -237,7 +230,7 @@ class Widget(QWidget):
         label.setAlignment(Qt.AlignCenter)
         input = self.StationID = QTextEdit(self)
         input.setObjectName("StationID")
-        input.setGeometry(QRect(50, top, 170, 30))
+        input.setGeometry(QRect(50, top, 170, 31))
         top += space
         top += 2
         input.setPlaceholderText("Enter Station ID")
@@ -281,17 +274,30 @@ class Widget(QWidget):
             os.makedirs(DOWNLOAD_DIR)
         self.download_fw()
 
+    def __get_server_url(self):
+        hostname = self.ServerURL.toPlainText()
+        if hostname:
+            return f'https://{hostname}/post'
+
+        if DEV:
+            return 'http://127.0.0.1:5000'
+
+        return None
+
     def register(self, loggerID):
         self.message("Updating data base with new stationID ...  \n")
         loggerID = loggerID.strip()
-        server_url = self.ServerURL.toPlainText()
+
+        # Save QR
         siteID = self.StationID.toPlainText()
         img = qrcode.make(siteID)
         path = DOWNLOAD_DIR / "QR-StationID"
         path.mkdir(exist_ok=True)
         path = path / f'{siteID}_QR.png'
         img.save(str(path), 'png')
+
         if isConnect():
+            server_url = self.__get_server_url()
             data = {'siteID': siteID, 'loggerID': loggerID, 'git_version': self.gitversion}
             response = httpx.post(f'{server_url}/register', json=data)
             if response.status_code not in [200, 201]:
@@ -385,9 +391,9 @@ class Widget(QWidget):
                 s = s.replace(old_string, new_string)
                 f.write(s)
 
-        inplace_change(filename,"FlashProvider", self.Provider.currentText())
-        inplace_change(filename,"FlashGIT", self.gitversion)
-        inplace_change(filename,"FlashSite", self.StationID.toPlainText())
+        inplace_change(filename, "FlashProvider", self.APN.currentText())
+        inplace_change(filename, "FlashGIT", self.gitversion)
+        inplace_change(filename, "FlashSite", self.StationID.toPlainText())
 
         if self.Network.currentText() == "GSM":
             inplace_change(filename,"1234", "13")
@@ -558,13 +564,10 @@ class Widget(QWidget):
         self.Network.setItemText(0, QCoreApplication.translate("Widget", "GSM", None))
         self.Network.setItemText(1, QCoreApplication.translate("Widget", "LTE", None))
         self.Network.setItemText(2, QCoreApplication.translate("Widget", "GSM/LTE", None))
-        self.Provider.setItemText(0, QCoreApplication.translate("Widget", "TM", None))
-        self.Provider.setItemText(1, QCoreApplication.translate("Widget", "Babilon", None))
-        self.Provider.setItemText(2, QCoreApplication.translate("Widget", "Megafon", None))
         self.Sensortype.setItemText(0, QCoreApplication.translate("Widget", "Sensirion", None))
         self.Sensortype.setItemText(1, QCoreApplication.translate("Widget", "Climavue", None))
-        self.TitleProvider.setText(QCoreApplication.translate("Widget", "Mobile Provider", None))
-        self.TitleServerURL.setText(QCoreApplication.translate("Widget", "Server URL", None))
+        self.TitleServerURL.setText(QCoreApplication.translate("Widget", "Server Hostname", None))
+        self.TitleAPN.setText(QCoreApplication.translate("Widget", "APN", None))
         self.TitleBoardType.setText(QCoreApplication.translate("Widget", "Board Type", None))
         self.TitleSensorType.setText(QCoreApplication.translate("Widget", "Sensor Type", None))
         self.TitleNetwork.setText(QCoreApplication.translate("Widget", "Network", None))
