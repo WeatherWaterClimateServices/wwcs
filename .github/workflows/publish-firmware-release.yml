@@ -1,0 +1,46 @@
+name: Publish Firmware Release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Station/Firmware**'          # Trigger only on firmware changes
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed to push tags
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate Firmware.zip
+        run: |
+          python3 Station/zip_firmware.py
+        env:
+          FIRMWARE_OUTPUT_DIR: .
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Update firmware-stable tag
+        run: |
+          git tag -f firmware-stable
+          git push origin firmware-stable --force
+
+      - name: Create/Update Release and Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: firmware-stable
+          name: Firmware Stable
+          body: "Automatically updated firmware build."
+          files: Firmware.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
