@@ -8,16 +8,17 @@
 #
 # ------------------------------------------------
 
+import email.utils
 import json
 import os
 import os.path
-from pathlib import Path
 import platform
 import shutil
 import socket
 import sys
 import tempfile
 import traceback
+from pathlib import Path
 
 # Requirements
 import dateutil.parser
@@ -54,29 +55,35 @@ except ImportError:
     pass
 
 def download(url, path):
-    # Download URL to the given path.
-    #
-    # Return whether the file changed or not.
-
     path = Path(path)
+    headers = {}
+
+    # If file exists, send both If-Modified-Since
     if path.exists():
-        stat = path.stat()
-        etag = f'"{int(stat.st_mtime):x}-{stat.st_size:x}"'
-        headers = {'If-None-Match': etag}
-    else:
-        headers = None
+        mtime = path.stat().st_mtime
+        headers['If-Modified-Since'] = email.utils.formatdate(mtime, usegmt=True)
 
     response = httpx.get(url, headers=headers, follow_redirects=True)
+
+    # Not modified
+    if response.status_code == 304:
+        return 304
+
+    # Save file
     if response.status_code == 200:
-        headers = response.headers
-        with path.open('wb') as file:
-            file.write(response.content)
-        last_modified = dateutil.parser.parse(headers['last-modified'])
-        last_modified = last_modified.timestamp()
-        os.utime(path, (last_modified, last_modified))
-        return response.status_code
-    elif response.status_code == 304:
-        return response.status_code
+        with path.open('wb') as f:
+            f.write(response.content)
+
+        # Use server's Last-Modified if available
+        if 'last-modified' in response.headers:
+            server_time = dateutil.parser.parse(response.headers['last-modified'])
+            timestamp = server_time.timestamp()
+            os.utime(path, (timestamp, timestamp))
+        else:
+            # Fallback: use current time
+            pass
+
+        return 200
 
     response.raise_for_status()
     return response.status_code
