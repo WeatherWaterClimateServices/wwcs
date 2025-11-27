@@ -8,17 +8,17 @@
 //....................................................................................................
 //....................................................................................................
 /* CONSTANTS AND CONFIGURATION - TO BE SET / OVERWRITTEN BY FLASHGORDON*/
-const char SITE_ID[] = "FlashSite";                 // dummy site ID
-const char GIT_VERSION[] = "FlashGIT";       // dummy git version
-const char GSM_PIN[] = "";                       // dummy GSM PIN
-const int SLEEP_MINUTES = 10;                    // time between measurements
-const char DEFAULT_APN[] = "FlashProvider";                 // dummy APN
-const char GPRS_USER[] = "";                     // GPRS credential
-const char GPRS_PASS[] = "";                     // GPRS credential
-const int NETWORK_MODE = 1234;                     // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only
-const bool JSON_PY_API = true;                  // select whether transmission uses the json/python api or the previous php api
-const char SERVER[] = "wwcs.tj"; // domain name: example.com, maker.ifttt.com, etc
-const char RESOURCE[] = "/post/insert";           // resource path, for example: /post-data.php
+const char SITE_ID[] = "FlashSite";           // dummy site ID
+const char GIT_VERSION[] = "FlashGIT";        // dummy git version
+const char GSM_PIN[] = "";                    // dummy GSM PIN
+const int SLEEP_MINUTES = 10;                 // time between measurements
+const char DEFAULT_APN[] = "FlashProvider";   // dummy APN
+const char GPRS_USER[] = "";                  // GPRS credential
+const char GPRS_PASS[] = "";                  // GPRS credential
+const int NETWORK_MODE = 1234;                // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only
+const bool JSON_PY_API = true;                // select whether transmission uses the json/python api or the previous php api
+const char SERVER[] = "wwcs.tj";              // domain name: example.com, maker.ifttt.com, etc
+const char RESOURCE[] = "/post/insert";       // resource path, for example: /post-data.php
 const int  PORT = 443;
 const int MAX_LOOPS = 500;
 const int MAX_RECORDS = 300;
