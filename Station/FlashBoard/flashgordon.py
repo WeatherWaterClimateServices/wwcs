@@ -55,10 +55,6 @@ try:
 except ImportError:
     pass
 
-# Load the required libraries from the JSON file
-with open(basedir / 'required_libraries.json', 'r') as file:
-    required_libraries = json.load(file)
-
 def download(url, path, content_type=None):
     # Download URL to the given path. If the content_type argument is given, check whether
     # the response content type is as expected.
