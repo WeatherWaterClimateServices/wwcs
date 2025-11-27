@@ -296,7 +296,13 @@ void setup() {
 
   /* sensor climavue50 measurements*/
   if (CLIMAVUE50){
-    climavue50_measurement(&climavue50Solar, &climavue50Precip, &climavue50StrikeCount, &climavue50StrikeDist, &climavue50Wind, &climavue50WDir, &climavue50Gust, &climavue50Temp, &climavue50VPres, &climavue50APres, &climavue50Humi, &climavue50SensorTemp, &climavue50XOrient, &climavue50YOrient, &climavue50Compass, &climavue50NWS, &climavue50EWS);
+    climavue50_measurement(
+        &climavue50Solar, &climavue50Precip, &climavue50StrikeCount,
+        &climavue50StrikeDist, &climavue50Wind, &climavue50WDir, &climavue50Gust,
+        &climavue50Temp, &climavue50VPres, &climavue50APres, &climavue50Humi,
+        &climavue50SensorTemp, &climavue50XOrient, &climavue50YOrient, &climavue50Compass,
+        &climavue50NWS, &climavue50EWS
+    );
   }
 //....................................................................................................
 /* Prepare data to be publish */
@@ -888,7 +894,12 @@ void getAtmosValues(String &response, int nb_values, float values[]){
 }
 
 
-void climavue50_measurement(float* Solar, float* Precip, float* StrikeCount, float* StrikeDist, float* Wind, float* WDir, float* Gust, float* Temp, float* VPres, float* APres, float* Humi, float* SensorTemp, float* XOrienTilt, float* YOrienTilt, float* Compass, float* NWS, float* EWS) {
+void climavue50_measurement(
+    float* Solar, float* Precip, float* StrikeCount, float* StrikeDist, float* Wind,
+    float* WDir, float* Gust, float* Temp, float* VPres, float* APres, float* Humi,
+    float* SensorTemp, float* XOrienTilt, float* YOrienTilt, float* Compass, float* NWS,
+    float* EWS)
+{
   //from https://github.com/EnviroDIY/Arduino-SDI-12
   SDI12 mySDI12(SDI_pin);
 
