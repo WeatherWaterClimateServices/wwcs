@@ -8,8 +8,8 @@ A deployment of the irrigation bot is configured with a number of environemnet v
     LANGUAGE    -- Language to use (defaults to "en")
     TIMEZONE    -- Timezone (defaults to the local timezone)
 
-The environment variables should be defined in a file with the name ".env", located in the
-directory where the bot runs. See [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for timezones. For example:
+The environment variables should be defined in a file with the name ".env", located in /home/wwcs/wwcs. 
+See [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for timezones. For example:
 
     ./WWCS/irrigation/telegramBot/.env
 
@@ -26,7 +26,7 @@ Notes:
 Since this file contains sensitive information, set restrictive permissions, only the user
 should be able to read/write it:
 
-    chmod 600 ./WWCS/irrigation/telegramBot/.env
+    chmod 600 /home/wwcs/wwcs/.env
 
 To register your bot and receive its authentication token start a converation with
 @BotFather, then create a new bot, choose a bot name, and a username:
