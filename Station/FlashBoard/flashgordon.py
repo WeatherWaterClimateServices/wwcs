@@ -168,7 +168,7 @@ class Widget(QWidget):
         label.setGeometry(QRect(10, top, 230, 30))
         top += space
         label.setAlignment(Qt.AlignCenter)
-        input = self.ServerURL = QTextEdit(self)
+        input = self.APN = QTextEdit(self)
         input.setObjectName("APN")
         input.setGeometry(QRect(10, top, 230, 32))
         top += space
@@ -394,7 +394,7 @@ class Widget(QWidget):
                 s = s.replace(old_string, new_string)
                 f.write(s)
 
-        inplace_change(filename, "FlashProvider", self.APN.currentText())
+        inplace_change(filename, "FlashProvider", self.APN.toPlainText())
         inplace_change(filename, "FlashGIT", self.gitversion)
         inplace_change(filename, "FlashSite", self.StationID.toPlainText())
 
