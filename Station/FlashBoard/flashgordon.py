@@ -416,24 +416,26 @@ class Widget(QWidget):
 
 
     def detectport(self): # Detect Board Port
-        boardlist = self.arduino.board.list()
         self.Port = None
 
+        boardlist = self.arduino.board.list()
+        boards = boardlist['result']
+
         if sys.platform == 'linux':
-            for i in range(len(boardlist['result'])):
-                p = boardlist['result'][i]['port']['address']
+            for board in boards:
+                p = board['port']['address']
                 if p.find("tty") != -1:
                     self.Port = p
 
-        if sys.platform == 'win32':
-            for i in range(len(boardlist['result'])):
-                p = boardlist['result'][i]['port']['address']
+        elif sys.platform == 'win32':
+            for board in boards:
+                p = board['port']['address']
                 if p.find("COM") != -1:
                     self.Port = p
 
-        if sys.platform == 'darwin':
-            for i in range(len(boardlist['result'])):
-                p = boardlist['result'][i]['port']['address']
+        elif sys.platform == 'darwin':
+            for board in boards:
+                p = board['port']['address']
                 if p.find("usbserial") != -1:
                     self.Port = p
 
