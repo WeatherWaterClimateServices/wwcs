@@ -19,7 +19,7 @@ from common import USERNAME, PASSWORD
 
 # Configuration
 BOT_TOKEN = os.environ['BOT_TOKEN']
-LANGUAGE = os.environ.get('LANGUAGE', 'en')
+BOT_LANGUAGE = os.environ.get('BOT_LANGUAGE', 'en')
 TIMEZONE = os.environ.get('TIMEZONE')  # Defaults to local timezone
 
 # Database
@@ -31,7 +31,7 @@ root = pathlib.Path(__file__).parent
 translation = gettext.translation(
     'messages',  # The domain, messages is the default
     localedir=root / 'locale',  # Where the translation files are stored
-    languages=[LANGUAGE],  # We only support one language at a time
+    languages=[BOT_LANGUAGE],  # We only support one language at a time
     fallback=True,  # Return the source id if not translation file is found
 )
 _ = translation.gettext
