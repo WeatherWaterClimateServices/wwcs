@@ -23,8 +23,8 @@ from pathlib import Path
 # Requirements
 import dateutil.parser
 import httpx
-from pyduinocli import Arduino
 import qrcode
+from pyduinocli import Arduino
 
 # Requirements: PySide6
 from PySide6 import QtSerialPort
@@ -374,8 +374,10 @@ class Widget(QWidget):
             version = version['result']['VersionString']
             self.message(f'Found arduino-cli version {version}')
 
-    def config(self): # Define board sketch variables upon GUI selection
-
+    def config(self):
+        """
+        Define board sketch variables upon GUI selection
+        """
         boardtype = self.Boardtype.currentText()
         self.Sketch = self.fwfiles[boardtype]
         self.PathSketchConfig = "./" + self.Sketch
@@ -394,23 +396,24 @@ class Widget(QWidget):
                 s = s.replace(old_string, new_string)
                 f.write(s)
 
+        inplace_change(filename, "FlashServer", self.ServerURL.toPlainText())
         inplace_change(filename, "FlashProvider", self.APN.toPlainText())
         inplace_change(filename, "FlashGIT", self.gitversion)
         inplace_change(filename, "FlashSite", self.StationID.toPlainText())
 
-        if self.Network.currentText() == "GSM":
-            inplace_change(filename,"1234", "13")
-        elif self.Network.currentText() == "LTE":
-            inplace_change(filename,"1234", "38")
-        elif self.Network.currentText() == "GSM/LTE":
-            inplace_change(filename,"1234", "51")
+        network = self.Network.currentText()
+        if network == "GSM":
+            inplace_change(filename, "1234", "13")
+        elif network == "LTE":
+            inplace_change(filename, "1234", "38")
+        elif network == "GSM/LTE":
+            inplace_change(filename, "1234", "51")
 
         self.configout = True
 
         if self.Sensortype.currentText() == "Climavue":
             if self.Boardtype.currentText() == "Lilygo":
                 self.configout = False
-                return
             else:
                 inplace_change(filename,"CLIMAVUE50 = false", "CLIMAVUE50 = true")
 
