@@ -6,7 +6,7 @@ The sketches in this folder can be compiled and uploaded to the boards in differ
 - arduino command line, same as with the IDE.
 
 ## Arduino command line
-Install the arduino command line as described [here](https://arduino.github.io/arduino-cli/0.23/installation/)
+Install the arduino command line as described [here](https://docs.arduino.cc/arduino-cli/installation/)
 
 If on a slow internet connection you may need to increase the timeout by
 ```

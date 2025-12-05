@@ -422,7 +422,7 @@ class Widget(QWidget):
         self.Port = None
 
         boardlist = self.arduino.board.list()
-        boards = boardlist['result']
+        boards = boardlist['result']['detected_ports']
 
         if sys.platform == 'linux':
             for board in boards:
