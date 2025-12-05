@@ -382,7 +382,7 @@ class Widget(QWidget):
         self.Sketch = self.fwfiles[boardtype]
         self.PathSketchConfig = "./" + self.Sketch
         PathSketch = "./Firmware/Firmware" + boardtype
-        shutil.copytree(PathSketch, self.PathSketchConfig)
+        shutil.copytree(PathSketch, self.PathSketchConfig, dirs_exist_ok=True)
         filename = self.PathSketchConfig + "/" + self.Sketch + ".ino"
 
         def inplace_change(filename, old_string, new_string):
