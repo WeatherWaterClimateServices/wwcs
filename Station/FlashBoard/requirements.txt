@@ -3,7 +3,7 @@ pyduinocli
 pyserial
 PySide6
 python-dateutil
-qrcode
+qrcode[pil]
 
 # This is needed only to build the installer
 pyinstaller
