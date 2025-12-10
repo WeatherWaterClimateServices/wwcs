@@ -16,8 +16,16 @@ from models.Machines import MachineAtSite, MachineObs, t_MachineObsRejected, Met
 
 
 # Database connection settings
+# With one worker we may use 20+30 concurrent connections
 DATABASE_URL = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/Machines'
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(
+    DATABASE_URL,
+    pool_size=20,           # Default is 5
+    max_overflow=30,        # Default is 10
+    pool_timeout=30,        # Default is 30
+    pool_recycle=7200,      # Default is -1
+    pool_pre_ping=True,     # Default is False
+)
 
 
 ENV = os.environ.get('ENV')
@@ -35,82 +43,83 @@ async def route_test():
 async def addData(request: Request):
     domain = get_domain(request)
 
-    #json parsing
+    # json parsing
     data = await request.json()
     myjson = json.dumps(data)
-    try:
-        data = data.copy()
+    data = data.copy()
 
-        # Check required fields
-        loggerID = data.get('loggerID')
-        timestamp = data.get('timestamp')
-        sign = data.pop('sign', None)
-        if not (loggerID and timestamp and sign):
-            return await submitRejectedJSON("Incorrect JSON body", myjson, domain)
+    async with AsyncSession(engine) as session:
+        try:
+            # Check required fields
+            loggerID = data.get('loggerID')
+            timestamp = data.get('timestamp')
+            sign = data.pop('sign', None)
+            if not (loggerID and timestamp and sign):
+                return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain)
 
-        # Check timestamp
-        now = datetime.datetime.now() + datetime.timedelta(minutes=1000)
-        if not ('2010-01-01 00:00:01' < timestamp < str(now)):
-            return await submitRejectedJSON("Invalid timestamp", myjson, domain)
+            # Check timestamp
+            now = datetime.datetime.now() + datetime.timedelta(minutes=1000)
+            if not ('2010-01-01 00:00:01' < timestamp < str(now)):
+                return await submitRejectedJSON(session, "Invalid timestamp", myjson, domain)
 
-        # Get siteID
-        async with AsyncSession(engine) as session:
+            # Get siteID
             result = await session.execute(
                 sa.select(MachineAtSite)
                     .filter_by(loggerID=loggerID)
                     .order_by(MachineAtSite.startDate.desc())
+                    .limit(1)
             )
-            rows = result.scalars().all()
-            if len(rows) == 0:
-                return await submitRejectedJSON("Station ID not registered", myjson, domain)
 
-        row = rows[0]
-        siteID = row.siteID
+            row = result.scalar()
+            if row is None:
+                return await submitRejectedJSON(session, "Station ID not registered", myjson, domain)
 
-        # Check signature
-        key = f"{siteID}; {loggerID}; {timestamp}"
-        hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
-        if hash != sign:
-            return await submitRejectedJSON("Incorrect hash", myjson, domain)
+            siteID = row.siteID
 
-    #catch error while parsing json
-    except Exception:
-        traceback.print_exc()
-        return await submitRejectedJSON("Incorrect JSON body", myjson, domain)
+            # Check signature
+            key = f"{siteID}; {loggerID}; {timestamp}"
+            hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
+            if hash != sign:
+                return await submitRejectedJSON(session, "Incorrect hash", myjson, domain)
 
-    data.pop('git_version', None) # No column in the table for this one
-    try:
-        async with AsyncSession(engine) as session:
+        #catch error while parsing json
+        except Exception:
+            traceback.print_exc()
+            return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain)
+
+        data.pop('git_version', None) # No column in the table for this one
+        try:
             await insert(session, MachineObs, received=sa.func.now(), **data)
 
-        # TODO Change to 201 once the stations are updated
-        return "New record inserted"
-    except sa.exc.IntegrityError as exc:
-        errcode = exc.orig.args[0]
-        if errcode == 1062:
-            return "Duplicate data NOT inserted"
-        else:
-            raise
-    except Exception:
-        #catch error with mysql insert
-        traceback.print_exc()
-        return await submitRejectedJSON("Hashcheck ok, but insertion failed.", myjson, domain)
+            # TODO Change to 201 once the stations are updated
+            return "New record inserted"
+        except sa.exc.IntegrityError as exc:
+            errcode = exc.orig.args[0]
+            if errcode == 1062:
+                return "Duplicate data NOT inserted"
+            else:
+                raise
+        except Exception:
+            traceback.print_exc()
+            return await submitRejectedJSON(session, "Hashcheck ok, but insertion failed.", myjson, domain)
 
 #insert rejected functions
-async def submitRejectedJSON(text, json, domain):
+async def submitRejectedJSON(session, text, json, domain):
     # XXX Should be 202 Accepted
-    async with AsyncSession(engine) as session:
-        await insert_t(session, t_MachineObsRejected,
-           domain=domain,
-           comment=text,
-           received=sa.func.now(6),
-           data=json,
-        )
+    await insert_t(session, t_MachineObsRejected,
+       domain=domain,
+       comment=text,
+       received=sa.func.now(6),
+       data=json,
+    )
 
     return text
 
 def get_domain(request):
     """Client domain extraction."""
+
+    # socket.gethostbyaddr is I/O bound, ideally this should be async
+
     host = request.client.host  # Client's hostname or IP address
     try:
         hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(host)
@@ -142,9 +151,7 @@ async def insert(session: AsyncSession, model, **kwargs):
     # Add to session and commit
     session.add(new_instance)
     await session.commit()
-    await session.refresh(new_instance)  # To get any server-generated values
 
-    return new_instance
 
 async def insert_t(session: AsyncSession, table, **kwargs):
     """Insert a new record into a Core-style Table.
