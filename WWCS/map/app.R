@@ -431,7 +431,7 @@ server <- function(input, output, session) {
     
     print(station_data$data)
     showModal(modalDialog(style = "text-align:center;", tabsetPanel(
-      if (any(!is.na(station_data$data$Charge_Battery1))) {
+      if (any(!is.na(station_data$data$Charge_Battery))) {
         tabPanel(
           "Graph",
           checkboxGroupInput(
@@ -447,8 +447,8 @@ server <- function(input, output, session) {
               "Battery" = "U_Battery",
               "Box Temperature" = "logger_ta",
               "Box Relative Humidity" = "logger_rh",
-              "Charge Battery 1" = "Charge_Battery1",
-              "Temperature Battery 1" = "Temp_Battery1",
+              "Charge Battery 1" = "Charge_Battery",
+              "Temperature Battery 1" = "Temp_Battery",
               "Voltage Battery 1" = "U_Battery1",
               "Compass" = "compass",
               "Lightning Count" = "lightning_count",

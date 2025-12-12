@@ -228,7 +228,11 @@ def test_insert(logger):
 
         exclude = {'sign', 'git_version'}
         exclude = 'sign git_version U_Battery2 Temp_Battery2 Charge_Battery2'.split()
-        expected = {k: v for k, v in json.items() if k not in exclude}
+        expected = {
+            k.replace('Charge_Battery1', 'Charge_Battery').replace('Temp_Battery1', 'Temp_Battery'): v
+            for k, v in json.items()
+            if k not in exclude
+        }
         cols = ', '.join(expected.keys())
         sql = f'SELECT {cols}, received FROM Machines.MachineObs WHERE loggerID = %s;'
         execute(cursor, sql, [loggerID])

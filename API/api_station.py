@@ -87,7 +87,22 @@ async def addData(request: Request):
             traceback.print_exc()
             return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain)
 
-        data.pop('git_version', None) # No column in the table for this one
+        # Fix data to be inserted
+        translation_map = [
+            ('git_version', None),
+            ('Charge_Battery1', 'Charge_Battery'),  # Renamed
+            ('Temp_Battery1', 'Temp_Battery'),      # Renamed
+            ('Charge_Battery2', None),              # Removed
+            ('Temp_Battery2', None),                # Removed
+            ('U_Battery2', None),                   # Removed
+        ]
+        for src, dst in translation_map:
+            if src in data:
+                value = data.pop(src)
+                if dst is not None:
+                    assert dst not in data
+                    data[dst] = value
+
         try:
             await insert(session, MachineObs, received=sa.func.now(), **data)
 
