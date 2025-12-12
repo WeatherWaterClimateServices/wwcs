@@ -319,8 +319,8 @@ void setup() {
   singleRecordJSON["ts10cm"] = shtSoilTemp;
   singleRecordJSON["logger_ta"] = bmpTemp;
   singleRecordJSON["U_Battery1"] = batV;
-  singleRecordJSON["Temp_Battery1"] = batTemp;
-  singleRecordJSON["Charge_Battery1"] = batCharge;
+  singleRecordJSON["Temp_Battery"] = batTemp;
+  singleRecordJSON["Charge_Battery"] = batCharge;
   singleRecordJSON["U_Solar"] = solarV;
   singleRecordJSON["loggerID"] = loggerID;
   singleRecordJSON["git_version"] = String(GIT_VERSION);
