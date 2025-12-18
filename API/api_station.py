@@ -43,24 +43,31 @@ async def route_test():
 async def addData(request: Request):
     domain = get_domain(request)
 
-    # json parsing
-    data = await request.json()
-    myjson = json.dumps(data)
-    data = data.copy()
-
     async with AsyncSession(engine) as session:
+        # json parsing
+        body = await request.body()
+        try:
+            text = body.decode('utf-8')
+        except UnicodeDecodeError:
+            return await submitRejectedJSON(session, "Invalid UTF-8 encoding", "", domain)
+
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            return await submitRejectedJSON(session, "Incorrect JSON body", text, domain)
+
         try:
             # Check required fields
             loggerID = data.get('loggerID')
             timestamp = data.get('timestamp')
             sign = data.pop('sign', None)
             if not (loggerID and timestamp and sign):
-                return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain)
+                return await submitRejectedJSON(session, "Missing loggerID, timestamp or sign", text, domain)
 
             # Check timestamp
             now = datetime.datetime.now() + datetime.timedelta(minutes=1000)
             if not ('2010-01-01 00:00:01' < timestamp < str(now)):
-                return await submitRejectedJSON(session, "Invalid timestamp", myjson, domain)
+                return await submitRejectedJSON(session, "Invalid timestamp", text, domain)
 
             # Get siteID
             result = await session.execute(
@@ -72,7 +79,7 @@ async def addData(request: Request):
 
             row = result.scalar()
             if row is None:
-                return await submitRejectedJSON(session, "Station ID not registered", myjson, domain)
+                return await submitRejectedJSON(session, "Station ID not registered", text, domain)
 
             siteID = row.siteID
 
@@ -80,12 +87,11 @@ async def addData(request: Request):
             key = f"{siteID}; {loggerID}; {timestamp}"
             hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
             if hash != sign:
-                return await submitRejectedJSON(session, "Incorrect hash", myjson, domain)
+                return await submitRejectedJSON(session, "Incorrect hash", text, domain)
 
-        #catch error while parsing json
         except Exception:
             traceback.print_exc()
-            return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain)
+            return await submitRejectedJSON(session, "Unexpected error", text, domain)
 
         data.pop('git_version', None) # No column in the table for this one
         try:
@@ -101,7 +107,7 @@ async def addData(request: Request):
                 raise
         except Exception:
             traceback.print_exc()
-            return await submitRejectedJSON(session, "Hashcheck ok, but insertion failed.", myjson, domain)
+            return await submitRejectedJSON(session, "Hashcheck ok, but insertion failed.", text, domain)
 
 #insert rejected functions
 async def submitRejectedJSON(session, text, json, domain):

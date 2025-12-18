@@ -287,7 +287,21 @@ def test_insert_dup(logger):
         assert count(cursor, 'Machines.MachineObsRejected') == m
 
 
-def test_insert_fail(logger):
+def test_insert_fail_not_json(logger):
+    with get_cursor() as cursor:
+        n = count(cursor, 'Machines.MachineObs')
+        m = count(cursor, 'Machines.MachineObsRejected')
+
+    response = httpx.post(f'{URL}/insert', data={})
+    assert response.status_code == 200
+    with get_cursor() as cursor:
+        assert count(cursor, 'Machines.MachineObs') == n
+        assert count(cursor, 'Machines.MachineObsRejected') == m + 1
+
+        domain, received, data, comment = get_last_reject(cursor)
+        assert comment == 'Incorrect JSON body'
+
+def test_insert_fail_missing(logger):
     with get_cursor() as cursor:
         n = count(cursor, 'Machines.MachineObs')
         m = count(cursor, 'Machines.MachineObsRejected')
@@ -299,7 +313,7 @@ def test_insert_fail(logger):
         assert count(cursor, 'Machines.MachineObsRejected') == m + 1
 
         domain, received, data, comment = get_last_reject(cursor)
-        assert comment == 'Incorrect JSON body'
+        assert comment == 'Missing loggerID, timestamp or sign'
 
 @pytest.mark.parametrize("timestamp", [
     '1960-01-01 00:00:00',
