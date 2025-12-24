@@ -302,7 +302,8 @@ class Widget(QWidget):
         if isConnect():
             server_url = self.__get_server_url()
             data = {'siteID': siteID, 'loggerID': loggerID, 'git_version': self.gitversion}
-            response = httpx.post(f'{server_url}/register', json=data)
+            verify = not DEV
+            response = httpx.post(f'{server_url}/register', json=data, verify=verify)
             if response.status_code not in [200, 201]:
                 self.message('Error registering station')
             else:
