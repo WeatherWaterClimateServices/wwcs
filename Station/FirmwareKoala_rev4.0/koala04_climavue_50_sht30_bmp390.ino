@@ -17,7 +17,7 @@ const int NETWORK_MODE = 1234;                // 2 Automatic; 13 GSM only; 38 LT
 
 const char GSM_PIN[] = "";                    // dummy GSM PIN
 const int SENSOR_READ_EVERY_MINS = 10;        // time between measurements
-const int TRANSMIT_EVERY_MINS = 30;
+const int TRANSMIT_EVERY_MINS = 10;           // time between transmissions
 
 const char GPRS_USER[] = "";                  // GPRS credential
 const char GPRS_PASS[] = "";                  // GPRS credential
@@ -318,7 +318,7 @@ void setup() {
   singleRecordJSON["p"] = bmpPres;
   singleRecordJSON["ts10cm"] = shtSoilTemp;
   singleRecordJSON["logger_ta"] = bmpTemp;
-  singleRecordJSON["U_Battery1"] = batV;
+  singleRecordJSON["U_Battery"] = batV;
   singleRecordJSON["Temp_Battery"] = batTemp;
   singleRecordJSON["Charge_Battery"] = batCharge;
   singleRecordJSON["U_Solar"] = solarV;
