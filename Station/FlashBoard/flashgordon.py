@@ -347,21 +347,12 @@ class Widget(QWidget):
 
         # Find out the list of firmwares available
         prefix = 'Firmware'
-        n = len(prefix)
-        fwlist = []
-        self.fwfiles = {}
-        for child in Path('Firmware').iterdir():
-            dirname = child.name
-            if dirname.startswith(prefix) and child.is_dir():
-                for ino in child.iterdir():
-                    if ino.name.endswith('.ino') and ino.is_file():
-                        name = dirname[n:]
-                        fwlist.append(name)
-                        self.fwfiles[name] = ino.name[:-4]
-
-        # Fill interface
-        for i, name in enumerate(sorted(fwlist)):
-            self.Boardtype.addItem(name)
+        for p in sorted(Path('Firmware').glob(f'{prefix}*/*.ino')):
+            dirname = p.parent.name
+            basename = p.stem
+            if basename == dirname:
+                name = basename.removeprefix(prefix)
+                self.Boardtype.addItem(name)
 
     def find_arduino(self):
         # Arduino cli
@@ -379,7 +370,7 @@ class Widget(QWidget):
         Define board sketch variables upon GUI selection
         """
         boardtype = self.Boardtype.currentText()
-        self.Sketch = self.fwfiles[boardtype]
+        self.Sketch = f'Firmware{boardtype}'
         self.PathSketchConfig = "./" + self.Sketch
         PathSketch = "./Firmware/Firmware" + boardtype
         shutil.copytree(PathSketch, self.PathSketchConfig, dirs_exist_ok=True)
