@@ -136,10 +136,10 @@ irrigation <- dbReadTable(pool_service, "Irrigation") %>%
                 Iapp = irrigationApp,
                 Precipitation = precipitation)
 
-## extract only entries for the current calendar year
+## extract only entries for the current and previous calendar years
 if (nrow(irrigation) > 0) {
   irrigation <- irrigation %>% 
-    dplyr::filter(lubridate::year(date) == lubridate::year(Sys.Date())) 
+    dplyr::filter(lubridate::year(date) >= lubridate::year(Sys.Date()) - 1) 
 } 
 
 
@@ -152,10 +152,10 @@ for (i in 1:nrow(irrigation_sites)) {
   start_year <- lubridate::year(as.Date(irrigation_sites$StartDate[i]))
   current_year <- lubridate::year(Sys.Date())
   
-  if (start_year != current_year) {
+  if (!(start_year %in% c(current_year, current_year - 1))) {
     message <- paste("Station", irrigation_sites$siteID[i], 
                      "has StartDate in", start_year, 
-                     "which is not the current year. Skipping.")
+                     "which is not the current nor previous year. Skipping.")
     print(message)
     next
   }
