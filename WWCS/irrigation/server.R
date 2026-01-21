@@ -36,18 +36,22 @@ server <- function(input, output, session) {
         siteName,
         altitude,
         irrigation,
+        Station,
         FC,
         WP,
         IE,
         WA,
+        MAD,
         PHIc,
         StartDate,
         Crop,
         area,
         type,
+        measurement_device,
         humanID
       ))
   })
+  
   
   irrigation_data <- reactive({
     input$submit_data
@@ -192,7 +196,7 @@ server <- function(input, output, session) {
   entry_form <- function(button_id) {
     showModal(modalDialog(div(
       id = ("entry_form"),
-      tags$head(tags$style(".modal-dialog{ width:400px}")),
+      tags$head(tags$style(".modal-dialog{ width:600px}")),
       tags$head(tags$style(HTML(".shiny-split-layout > div {overflow: visible}"))),
       fluidPage(
         fluidRow(
@@ -204,13 +208,18 @@ server <- function(input, output, session) {
           br(),
           br(),
           splitLayout(
-            cellWidths = c("175px", "175px"),
+            cellWidths = c("175px", "175px", "175px"),
             textInput("ie", "Irrigation Efficiency", placeholder = ""),
-            textInput("wa", "Wetted Area", placeholder = "")
+            textInput("wa", "Wetted Area", placeholder = ""),
+            textInput("MAD", "Management Allowed Deficit", placeholder = "")
           ),
           br(),
           br(),
-          textInput("phic", "Initial Soil Moisture (PHIc)", placeholder = ""),
+          splitLayout(
+            cellWidths = c("175px", "175px"),
+            textInput("phic", "Initial Soil Moisture (PHIc)", placeholder = ""),
+            textInput("Station", "Weather Station", placeholder = "")
+          ),
           br(),
           br(),
           splitLayout(
@@ -221,9 +230,10 @@ server <- function(input, output, session) {
           br(),
           br(),
           splitLayout(
-            cellWidths = c("175px", "175px"),
+            cellWidths = c("175px", "175px", "175px"),
             textInput("area", "Plot Area", placeholder = ""),
-            selectInput("type", "Irrigation Type", choices = c("channel", "traditional", "pump", "counter"))
+            selectInput("type", "Plot Type", choices = c("treatment", "control")),
+            selectInput("measurement_device", "Measurement Device", choices = c("total_meter", "incremental_meter", "thomson_profile"))
           ),
           br(),
           br(),
@@ -366,15 +376,18 @@ server <- function(input, output, session) {
         siteName,
         altitude,
         irrigation,
+        Station,
         FC,
         WP,
         IE,
         WA,
+        MAD,
         PHIc,
         StartDate,
         Crop,
         area,
         type,
+        measurement_device,
         humanID
       ))
     
@@ -390,16 +403,18 @@ server <- function(input, output, session) {
     
     if (length(input$table_rows_selected) == 1) {
       entry_form("submit_edit")
-      
+      updateTextInput(session, "Station", value = unlist(SQL_df[input$table_rows_selected, "Station"], use.names = FALSE))
       updateTextInput(session, "wp", value = unlist(SQL_df[input$table_rows_selected, "WP"], use.names = FALSE))
       updateTextInput(session, "fc", value = unlist(SQL_df[input$table_rows_selected, "FC"], use.names = FALSE))
       updateTextInput(session, "ie", value = unlist(SQL_df[input$table_rows_selected, "IE"], use.names = FALSE))
       updateTextInput(session, "wa", value = unlist(SQL_df[input$table_rows_selected, "WA"], use.names = FALSE))
+      updateTextInput(session, "MAD", value = unlist(SQL_df[input$table_rows_selected, "MAD"], use.names = FALSE))
       updateTextInput(session, "phic", value = unlist(SQL_df[input$table_rows_selected, "PHIc"], use.names = FALSE))
       updateTextInput(session, "sd", value = unlist(SQL_df[input$table_rows_selected, "StartDate"], use.names = FALSE))
       updateSelectInput(session, "cr", selected = unlist(SQL_df[input$table_rows_selected, "Crop"], use.names = FALSE))
       updateTextInput(session, "area", value = unlist(SQL_df[input$table_rows_selected, "area"], use.names = FALSE))
       updateSelectInput(session, "type", selected = unlist(SQL_df[input$table_rows_selected, "type"], use.names = FALSE))
+      updateSelectInput(session, "measurement_device", selected = unlist(SQL_df[input$table_rows_selected, "measurement_device"], use.names = FALSE))
       updateTextInput(session, "humanID", value = unlist(SQL_df[input$table_rows_selected, "humanID"], use.names = FALSE))
       updateCheckboxInput(session, "irrigation", value = as.logical(unlist(SQL_df[input$table_rows_selected, "irrigation"], use.names = FALSE)))
     }
@@ -424,12 +439,18 @@ server <- function(input, output, session) {
         siteName,
         altitude,
         irrigation,
+        Station,
         FC,
         WP,
+        IE,
+        WA,
+        MAD,
+        PHIc,
         StartDate,
         Crop,
         area,
         type,
+        measurement_device,
         humanID
       ))
     
@@ -440,29 +461,35 @@ server <- function(input, output, session) {
       pool,
       sprintf(
         'UPDATE Sites SET fieldproperties = JSON_SET(fieldproperties,
+          "$.Station", ?,
           "$.StartDate", ?,
           "$.WP", ?,
           "$.FC", ?,
           "$.IE", ?,
           "$.WA", ?,
+          "$.MAD", ?,
           "$.PHIc", ?,
           "$.Crop", ?,
           "$.area", ?,
           "$.type", ?,
+          "$.measurement_device", ?,
           "$.humanID", ?
         ) WHERE siteID = ("%s")',
         station_selection
       ),
       params = list(
+        as.character(input$Station),
         as.Date(input$sd),
         as.numeric(input$wp),
         as.numeric(input$fc),
         as.numeric(input$ie),
         as.numeric(input$wa),
+        as.numeric(input$MAD),
         as.numeric(input$phic),
         as.character(input$cr),
         as.numeric(input$area),
         as.character(input$type),
+        as.character(input$measurement_device),
         as.numeric(input$humanID)
       )
     )
