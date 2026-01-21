@@ -39,6 +39,7 @@ pool_stations <-
   )
 
 sites <- dbReadTable(pool, "Sites")  %>%
+  dplyr::filter(irrigation == 1) %>%
   dplyr::as_tibble() %>%
   dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
 
