@@ -42,13 +42,72 @@ sites <- dbReadTable(pool, "Sites")  %>%
   dplyr::as_tibble() %>%
   dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
 
+##
+## read site parameters for irrigation and check their completeness and plausibility
+##
+irrig_site_parameters <- dbReadTable(pool, "Sites")   %>%
+  dplyr::filter(irrigation == 1) %>%
+  dplyr::select(fieldproperties) %>%
+  unlist() %>%
+  spread_all %>%
+  as_tibble %>%
+  select(!c(document.id))
+
+required_irrig_parameters <- c(
+  "StartDate",
+  "Station", ## siteID of where the relevant weather station sits
+  "FC", ## field capacity
+  "WP", ## wilting point
+  "MAD", ## to come from the Sites table! (was .4 in crop_parameters.R)
+  "PHIc", ## to come from the Sites table for first timestep; suggest a default value, e.g. avg(FC, WP)! (was 30.5 hardcoded in here at first timestep); c=content -> this varies
+  "IE",
+  "WA",
+  "Crop", 
+  "area",
+  "type",
+  "measurement_device",
+  "humanID")
+
+## do we have exactly these parameters in all fieldproperty jsons?
+if (!all(required_irrig_parameters %in% names(irrig_site_parameters)) ||
+    !all(names(irrig_site_parameters) %in% required_irrig_parameters)){
+  stop("I don't have all required parameters in the fieldproperties column. Check the wiki and your Sites table.")
+}
+
+## check %age columns
+for (p in c("FC", "WP", "PHIc")){
+  my_p <- irrig_site_parameters[[p]]
+  if (!all(is.numeric(my_p) && min(my_p) > 5 && max(my_p) <= 100)){
+    stop("FC, WP or PHIc of wrong type or range.")
+  }
+}
+
+## check 0..1 columns
+for (p in c("MAD", "IE", "WA")){
+  my_p <- irrig_site_parameters[[p]]
+  if (!all(is.numeric(my_p) && min(my_p) >= 0 && max(my_p) <= 1)){
+    stop("MAD, IE or WA of wrong type or range.")
+  }
+}  
+
+## check char columns  
+for (p in c("StartDate", "Station", "Crop", "type", "measurement_device")){
+  my_p <- irrig_site_parameters[[p]]
+  if (!is.character(my_p)){
+    stop("StartDate, Station, Crop, type, measurement_device of wrong type or range.")
+  }
+}  
+
+##
+## if this went well so far, let's go
+##
 irrigation_sites <- dbReadTable(pool, "Sites")   %>%
+  dplyr::filter(irrigation == 1) %>%
   dplyr::select(fieldproperties) %>%
   unlist() %>%
   spread_all %>%
   dplyr::bind_cols(sites) %>%
   dplyr::as_tibble() %>%
-  dplyr::filter(irrigation == 1) %>%
   dplyr::select(c(
     siteID,
     siteName,
@@ -63,7 +122,6 @@ irrigation_sites <- dbReadTable(pool, "Sites")   %>%
     Crop, 
     StartDate,
     area,
-    type,
     humanID
   )) %>% dplyr::mutate( ##compute constants
     TAW = FC - WP,
