@@ -8,7 +8,7 @@ import numpy as np
 import openmeteo_requests
 
 from openmeteo_sdk.Variable import Variable
-from openmeteo_sdk.Aggregation import Aggregation
+#from openmeteo_sdk.Aggregation import Aggregation
 
 from common import USERNAME, PASSWORD
 

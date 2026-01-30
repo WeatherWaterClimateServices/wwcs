@@ -1,0 +1,9 @@
+ipython
+netCDF4
+numpy
+openmeteo-requests
+pandas
+requests-cache
+retry-requests
+
+#tables  # PyTables backend for HDF5
