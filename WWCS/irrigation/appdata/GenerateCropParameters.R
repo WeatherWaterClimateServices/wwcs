@@ -128,6 +128,25 @@ WinterWheatUzbekistan <-
                                    rep(last(RDs), nrow(crop.parameters)-length(RDs))))
 crop.parameters <- full_join(crop.parameters, WinterWheatUzbekistan, by = "Index")
 
+## winter wheat; RD from ICARDA, Kc based on Kenjabaev, S. (2020).
+## Determination of Actual Crop Evapotranspiration (Etc) and Dual Crop
+## Coefficients (KC) for Cotton, Wheat and Maize in Fergana Valley:
+## Integration of the FAO-56 Approach and Budget
+Ls <- c(ini=30, dev=140, mid=40, late=30)
+total_days <- sum(Ls)
+dt <- (1:total_days) / total_days
+Kcs <- -8.22 * (dt^3) + 11.59 * (dt^2) - 3.22 * dt + 0.41
+RDs <- RD[, 1]
+
+WinterWheatUzbKenjabaev <-
+  data.frame(Index=1:nrow(crop.parameters),
+             WinterWheatUzbKenjabaev_Kc=c(Kcs,
+                                   rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             WinterWheatUzbKenjabaev_RD=c(RDs,
+                                   rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, WinterWheatUzbKenjabaev, by = "Index")
+
+
 ## cotton from ICARDA
 kc_path <- "Cotton/Cotton_Kc_Only.xlsx"
 rd_path <- "Cotton/Estimated_Rooting_Depths.csv"
