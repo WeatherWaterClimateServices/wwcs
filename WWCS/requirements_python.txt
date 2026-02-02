@@ -11,3 +11,5 @@ mysql-connector-python
 pyyaml
 python-dotenv
 ecmwf-opendata
+openmeteo_requests
+openmeteo_sdk
