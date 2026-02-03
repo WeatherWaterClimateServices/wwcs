@@ -2,110 +2,102 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
+import mysql.connector
 import netCDF4
 import numpy as np
-import openmeteo_requests
 from openmeteo_sdk.Variable import Variable
 
-import requests_cache
-import retry_requests
+from client import Client
+from common import USERNAME, PASSWORD
 
 
-class Client:
+client = Client()
 
-    def __init__(self):
-        cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
-        retry_session = retry_requests.retry(cache_session, retries=5, backoff_factor=0.2)
-        self.client = openmeteo_requests.Client(session=retry_session)
+def get_sites():
+    with mysql.connector.connect(
+        user=USERNAME,
+        password=PASSWORD,
+        host='127.0.0.1',
+        database='SitesHumans',
+    ) as cnx:
+        with cnx.cursor() as cursor:
+            cursor.execute("SELECT siteID, latitude, longitude FROM Sites WHERE siteID NOT LIKE '%-S%'")
+            return cursor.fetchall()
 
-    def ensemble(self, params: dict):
-        url = "https://ensemble-api.open-meteo.com/v1/ensemble"
-        responses = self.client.weather_api(url, params=params)
-        assert len(responses) == 1
-        response = responses[0]
-        return response
+def ensemble_df(params: dict) -> pd.DataFrame:
+    """Get ensemble data and return DataFrame with mean and std."""
+    response = client.ensemble(params)
+    return _ensemble_response_to_dataframe(response)
 
-    def forecast(self, params: dict):
-        url = "https://api.open-meteo.com/v1/forecast"
-        responses = self.client.weather_api(url, params=params)
-        assert len(responses) == 1
-        response = responses[0]
-        return response
+def forecast_df(params: dict) -> pd.DataFrame:
+    response = client.forecast(params)
+    return _response_to_dataframe(response)
 
-    def ensemble_df(self, params: dict) -> pd.DataFrame:
-        """Get ensemble data and return DataFrame with mean and std."""
-        response = self.ensemble(params)
-        return self._ensemble_response_to_dataframe(response)
+def _ensemble_response_to_dataframe(response) -> pd.DataFrame:
+    """Convert ensemble response to DataFrame with mean and std."""
+    hourly = response.Hourly()
 
-    def forecast_df(self, params: dict) -> pd.DataFrame:
-        response = self.forecast(params)
-        return self._response_to_dataframe(response)
+    # Get time values
+    time_values = pd.date_range(
+        start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
+        end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
+        freq=pd.Timedelta(seconds=hourly.Interval()),
+        inclusive="left"
+    )
 
-    def _ensemble_response_to_dataframe(self, response) -> pd.DataFrame:
-        """Convert ensemble response to DataFrame with mean and std."""
-        hourly = response.Hourly()
+    # Extract all temperature members
+    hourly_variables = [hourly.Variables(i) for i in range(hourly.VariablesLength())]
+    temp_vars = [v for v in hourly_variables
+                 if v.Variable() == Variable.temperature and v.Altitude() == 2]
 
-        # Get time values
-        time_values = pd.date_range(
-            start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-            end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-            freq=pd.Timedelta(seconds=hourly.Interval()),
-            inclusive="left"
-        )
+    # Stack all member values
+    member_values = []
+    for var in temp_vars:
+        #member = var.EnsembleMember()
+        values = var.ValuesAsNumpy()
+        member_values.append(values)
 
-        # Extract all temperature members
-        hourly_variables = [hourly.Variables(i) for i in range(hourly.VariablesLength())]
-        temp_vars = [v for v in hourly_variables
-                     if v.Variable() == Variable.temperature and v.Altitude() == 2]
+    # Calculate mean and std across ensemble members
+    ensemble_array = np.stack(member_values)  # Shape: (members, time)
+    mean_values = np.mean(ensemble_array, axis=0)
+    std_values = np.std(ensemble_array, axis=0)
 
-        # Stack all member values
-        member_values = []
-        for var in temp_vars:
-            #member = var.EnsembleMember()
-            values = var.ValuesAsNumpy()
-            member_values.append(values)
+    # Build DataFrame
+    df = pd.DataFrame({
+        'time': time_values,
+        'latitude': response.Latitude(),
+        'longitude': response.Longitude(),
+        'temperature_2m_mean': mean_values,
+        'temperature_2m_std': std_values,
+    })
 
-        # Calculate mean and std across ensemble members
-        ensemble_array = np.stack(member_values)  # Shape: (members, time)
-        mean_values = np.mean(ensemble_array, axis=0)
-        std_values = np.std(ensemble_array, axis=0)
+    return df
 
-        # Build DataFrame
-        df = pd.DataFrame({
-            'time': time_values,
-            'latitude': response.Latitude(),
-            'longitude': response.Longitude(),
-            'temperature_2m_mean': mean_values,
-            'temperature_2m_std': std_values,
-        })
+def _response_to_dataframe(response) -> pd.DataFrame:
+    """Convert openmeteo-requests response to pandas DataFrame."""
+    hourly = response.Hourly()
 
-        return df
+    time_values = pd.date_range(
+        start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
+        end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
+        freq=pd.Timedelta(seconds=hourly.Interval()),
+        inclusive="left"
+    )
 
-    def _response_to_dataframe(self, response) -> pd.DataFrame:
-        """Convert openmeteo-requests response to pandas DataFrame."""
-        hourly = response.Hourly()
+    data = {
+        'time': time_values,
+        'latitude': response.Latitude(),
+        'longitude': response.Longitude(),
+    }
 
-        time_values = pd.date_range(
-            start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-            end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-            freq=pd.Timedelta(seconds=hourly.Interval()),
-            inclusive="left"
-        )
+    for i in range(hourly.VariablesLength()):
+        var = hourly.Variables(i)
+        var_name = f"variable_{i}"
+        if i == 0:
+            var_name = 'temperature_2m'
+        data[var_name] = var.ValuesAsNumpy()
 
-        data = {
-            'time': time_values,
-            'latitude': response.Latitude(),
-            'longitude': response.Longitude(),
-        }
-
-        for i in range(hourly.VariablesLength()):
-            var = hourly.Variables(i)
-            var_name = f"variable_{i}"
-            if i == 0:
-                var_name = 'temperature_2m'
-            data[var_name] = var.ValuesAsNumpy()
-
-        return pd.DataFrame(data)
+    return pd.DataFrame(data)
 
 
 def dataframe_to_netcdf(df: pd.DataFrame, filename: str, date_str: str):
@@ -171,8 +163,6 @@ def dataframe_to_netcdf(df: pd.DataFrame, filename: str, date_str: str):
 
 
 if __name__ == '__main__':
-    client = Client()
-
     train_period = 30
     forecast_days = 10
     total_days = train_period + forecast_days
@@ -180,16 +170,19 @@ if __name__ == '__main__':
     today = datetime.today().date()
     dates = [d.strftime("%Y-%m-%d") for d in pd.date_range(today - timedelta(days=total_days), today)]
 
-    coordinates = [
-        ('ZAF001', 40.179901123046875, 68.85289764404297),
-    ]
+    sites = get_sites()
 
     outdir = Path('ifsdata')
     outdir.mkdir(exist_ok=True)
 
     forecast_delta = timedelta(days=forecast_days)
     for date_str in dates:
-        for site_id, lat, lon in coordinates:
+        for site_id, lat, lon in sites:
+
+            # TODO Remove this test
+            if site_id != 'ZAF001':
+                continue
+
             filename = outdir / f"ifs_{site_id}_{date_str}.nc"
 
             if filename.exists():
@@ -197,7 +190,7 @@ if __name__ == '__main__':
                 continue
 
             # Use ensemble API instead of forecast
-            df = client.ensemble_df({
+            df = ensemble_df({
                 'latitude': lat,
                 'longitude': lon,
                 'start_date': date_str,

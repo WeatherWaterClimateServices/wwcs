@@ -1,9 +1,11 @@
 ipython
+mysql-connector-python
 netCDF4
 numpy
 openmeteo-requests
 pandas
+python-dotenv
+pyyaml
 requests-cache
 retry-requests
-
-#tables  # PyTables backend for HDF5
+xarray

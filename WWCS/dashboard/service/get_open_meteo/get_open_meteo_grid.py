@@ -1,18 +1,23 @@
-from datetime import datetime, timedelta
-import os
 import re
-import yaml
-import mysql.connector
-import pandas as pd
+from datetime import datetime, timedelta
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 import xarray as xr
-import openmeteo_requests
-
-
+import yaml
 from openmeteo_sdk.Variable import Variable
-from openmeteo_sdk.Aggregation import Aggregation
 
-from common import USERNAME, PASSWORD
+from client import Client
+
+
+#ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
+ROOT_PATH = Path("/home/boris/Documents/PV_Taj/wwcs/WWCS_repo/wwcs/WWCS")
+#ROOT_PATH = Path("/home/jdavid/sandboxes/Caritas/wwcs/WWCS")
+CONFIG_PATH = ROOT_PATH / "config.yaml"
+DATA_PATH = ROOT_PATH / "dashboard" / "ifsdata"
+
+client = Client()
 
 # ================
 # helper functions
@@ -49,25 +54,15 @@ def download_point(lat, lon, date_string):
     """
 
     # Create a fresh session every time (no caching)
-    openmeteo = openmeteo_requests.Client()
-
-    url = "https://ensemble-api.open-meteo.com/v1/ensemble"
-    params = {
+    response = client.ensemble({
         "latitude":  lat,
         "longitude": lon,
         "hourly": "temperature_2m",
         "models": "ecmwf_ifs025"
         #"start_date": date_string,
         #"end_date": date_string,
-    }
+    })
 
-    responses = openmeteo.weather_api(url, params=params)
-
-    if len(responses) == 0:
-        print(f"No data returned for {station_id} on {date_string}")
-        return
-
-    response = responses[0]
     hourly = response.Hourly()
 
     # Extract hours
@@ -107,9 +102,7 @@ def download_point(lat, lon, date_string):
 # Load configuration
 # ============================================================
 
-#with open('/home/wwcs/wwcs/WWCS/config.yaml', 'r') as file:
-#    config = yaml.safe_load(file)
-with open('/home/boris/Documents/PV_Taj/wwcs/WWCS_repo/wwcs/WWCS/config.yaml', 'r') as file:
+with CONFIG_PATH.open('r') as file:
     config = yaml.safe_load(file)
 
 train_period   = config["train_period"]
@@ -127,20 +120,20 @@ total_days = train_period + forecast_days
 # Remove old files (like original script)
 # ============================================================
 
-# directory_path = "/srv/shiny-server/dashboard/ifsdata"
-directory_path = "/home/boris/Documents/PV_Taj/wwcs/WWCS_repo/wwcs/WWCS/dashboard/ifsdata"
 date_pattern = r'(\d{4})-(\d{2})-(\d{2})'
 
 two_months_ago = datetime.now() - timedelta(days=60)
 
-for filename in os.listdir(directory_path):
+for filepath in DATA_PATH.iterdir():
+    filename = filepath.name
     match = re.search(date_pattern, filename)
     if match:
         year, month, day = map(int, match.groups())
         try:
             file_date = datetime(year, month, day)
             if file_date < two_months_ago:
-                os.remove(os.path.join(directory_path, filename))
+                filepath.unlink()
+                print(f"Deleted: {filename}")
         except ValueError:
             pass
 
@@ -155,9 +148,6 @@ dat = [
     for d in pd.date_range(datetime.today() - timedelta(days=total_days), datetime.today())
 ]
 date_string = dat[0] ## here - this is still weird.
-
-outdir = "/home/boris/Documents/PV_Taj/wwcs/WWCS_repo/wwcs/WWCS/dashboard/ifsdata"
-os.chdir(outdir)
 
 
 # ============================================================
@@ -176,8 +166,14 @@ t_raw0, tmean0, tstd0 = download_point(lats[0], lons[0], date_string)
 fill = np.nan
 ds = xr.Dataset(
     data_vars={
-        "IFS_T_mea": (("time", "lat", "lon"), np.full((len(t_raw0), len(lats), len(lons)), fill, dtype="float32")),
-        "IFS_T_std": (("time", "lat", "lon"), np.full((len(t_raw0), len(lats), len(lons)), fill, dtype="float32")),
+        "IFS_T_mea": (
+            ("time", "lat", "lon"),
+            np.full((len(t_raw0), len(lats), len(lons)), fill, dtype="float32"),
+        ),
+        "IFS_T_std": (
+            ("time", "lat", "lon"),
+            np.full((len(t_raw0), len(lats), len(lons)), fill, dtype="float32"),
+        ),
     },
     coords={"time": t_raw0, "lat": lats, "lon": lons},
 )
@@ -199,18 +195,28 @@ ds.attrs = {
     "institution": "European Centre for Medium-Range Weather Forecasts",
     "history": f"Open-Meteo retrieval for area on {date_string}",
 }
-ds["lat"].attrs.update({"standard_name":"latitude", "long_name":"latitude", "units":"degrees_north", "axis":"Y"})
-ds["lon"].attrs.update({"standard_name":"longitude", "long_name":"longitude","units":"degrees_east","axis":"X"})
+ds["lat"].attrs.update({
+    "standard_name": "latitude",
+    "long_name": "latitude",
+    "units": "degrees_north",
+    "axis": "Y",
+})
+ds["lon"].attrs.update({
+    "standard_name": "longitude",
+    "long_name": "longitude",
+    "units": "degrees_east",
+    "axis": "X",
+})
 
 ds["IFS_T_mea"].attrs.update({"long_name":"2 metre temperature", "units":"K", "code":167, "table":128})
 ds["IFS_T_std"].attrs.update({"long_name":"2 metre temperature", "units":"K", "code":167, "table":128})
 
 
-ds["time"].attrs.update({"axis": "T", "standard_name": "time"});
+ds["time"].attrs.update({"axis": "T", "standard_name": "time"})
 
 # Write to file    
 # Output filename
-fout = f"tj_area_{date_string}.nc"
+fout = DATA_PATH / f"tj_area_{date_string}.nc"
 ds.to_netcdf(fout, engine="netcdf4", unlimited_dims=["time"])
 print(f"Created NetCDF: {fout}")
 
@@ -219,5 +225,4 @@ print(f"Created NetCDF: {fout}")
 # 7. Final cleanup
 # ============================================================
 
-os.chdir("/srv/shiny-server/dashboard")
 print("Open-Meteo IFS retrieval complete.")
