@@ -96,15 +96,16 @@ async def get_obs(response: Response, stationID: str):
                             detail="Internal Server Error")
 
 
-@app.get("/areas/{area}")
-async def get_obs_by_area(response: Response, area: str):
+@app.get("/areas/{area}/{date}")
+async def get_obs_by_area(response: Response, area: str, date: str):
     query = """
         SELECT
+            s.siteId,
             :area as area_name,
             CASE
                 WHEN :area = s.region THEN 'region'
-                WHEN :area = s.city THEN 'city'
                 WHEN :area = s.district THEN 'district'
+                WHEN :area = s.jamoat THEN 'jamoat'
                 WHEN :area = s.village THEN 'village'
                 ELSE 'unknown'
             END as area_type,
@@ -115,11 +116,11 @@ async def get_obs_by_area(response: Response, area: str):
             wf.timeofday,
             wf.day,
             COUNT(DISTINCT s.siteID) as stations_count,
-            ANY_VALUE(wf.icon) as icon
+            MIN(wf.icon) as icon
         FROM WWCServices.Forecasts wf
-        JOIN WWCServices.Sites s ON s.siteID = wf.siteID
-        WHERE (:area = s.region OR :area = s.city OR :area = s.district OR :area = s.village)
-          AND wf.date = :date_param
+        JOIN SitesHumans.Sites s ON s.siteID = wf.siteID
+        WHERE (:area = s.region OR :area = s.district OR :area = s.jamoat OR :area = s.village)
+          AND wf.date = :date
           AND wf.timeofday != -1
           AND wf.timeofday IN (2, 3)
         GROUP BY
@@ -128,9 +129,9 @@ async def get_obs_by_area(response: Response, area: str):
             wf.timeofday,
             wf.day
         ORDER BY wf.day, wf.timeofday
-   """
+    """
 
-    rows = await database_machines.fetch_all(query=query, values={"area": area})
+    rows = await database_machines.fetch_all(query=query, values={"area": area, "date": date})
     if len(rows) == 0:
         raise HTTPException(status_code=404, detail="no site found for the given area")
 
