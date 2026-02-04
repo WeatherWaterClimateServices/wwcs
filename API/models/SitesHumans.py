@@ -43,6 +43,7 @@ class Sites(Base):
     slope: Mapped[Optional[float]] = mapped_column(Float)
     azimuth: Mapped[Optional[float]] = mapped_column(Float)
     district: Mapped[Optional[str]] = mapped_column(String(50))
+    region: Mapped[Optional[str]] = mapped_column(String(50))
     jamoat: Mapped[Optional[str]] = mapped_column(String(50))
     village: Mapped[Optional[str]] = mapped_column(String(50))
     irrigation: Mapped[Optional[int]] = mapped_column(TINYINT(1), server_default=text('0'))
