@@ -12,7 +12,8 @@ calc_et0 <- function(station_data) {
   Term1 <- 0.082 * Term2
   Rs <- ((24 * 60) / 3.14) * Term1
   et0 <- 0.0023 * ((station$Tmax + station$Tmin) / 2) * ((station$Tmax -
-                                                            station$Tmin) ^ 0.5) * Rs
+                                                          station$Tmin) ^ 0.5) * Rs
+  et0[et0 < 0]  <- 0 ## set negative values to 0
   out <- station_data %>%
     bind_cols(data.frame("ET0new" = et0))
   return(out)
