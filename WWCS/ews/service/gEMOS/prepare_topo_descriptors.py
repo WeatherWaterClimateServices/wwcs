@@ -29,20 +29,20 @@ outdir = '/srv/shiny-server/dashboard/appdata/topotiles/'
 if not os.path.exists(outdir):
    os.makedirs(outdir)
 
+# Download raw DEM files
 for x in range(ntiles):
     for y in range(ntiles): 
         file = outdir + 'DEM-30m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
         file2 = outdir + 'DEM-90m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
-        fileout5 = outdir + 'TPI-5-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
-        fileout100 = outdir + 'TPI-100-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
         
-        # Only download DEM files if corresponding TPI files do not exist
-        if not os.path.isfile(fileout5) and not os.path.isfile(file):
+        # Only download DEM files if does not exist yet
+        if not os.path.isfile(file):
             print("Preparing file " + file)
             ele.clip(bounds=[rlon[x]-margin, rlat[y]-margin, rlon[x+1]+margin, rlat[y+1]+margin], output=file)
-        if not os.path.isfile(fileout100) and not os.path.isfile(file2):
+        if not os.path.isfile(file2):
             ele.clip(bounds=[rlon[x]-margin2, rlat[y]-margin2, rlon[x+1]+margin2, rlat[y+1]+margin2], product="SRTM3", output=file2)
 
+# Generate topographic indices from DEM
 for x in range(ntiles):
     for y in range(ntiles): 
         filein = outdir + 'DEM-30m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
@@ -88,9 +88,9 @@ for x in range(ntiles):
             tpi100_created = os.path.isfile(fileout100)
 
         # Remove DEM files only if TPI files were created successfully
-        if tpi5_created and os.path.isfile(filein):
-            os.remove(filein)
-            print("Deleted file " + filein)
-        if tpi100_created and os.path.isfile(filein2):
-            os.remove(filein2)
-            print("Deleted file " + filein2)
+        # if tpi5_created and os.path.isfile(filein):
+        #     os.remove(filein)
+        #     print("Deleted file " + filein)
+        # if tpi100_created and os.path.isfile(filein2):
+        #     os.remove(filein2)
+        #     print("Deleted file " + filein2)
