@@ -14,13 +14,13 @@ class Client:
         url = "https://ensemble-api.open-meteo.com/v1/ensemble"
         responses = self.client.weather_api(url, params=params)
         assert len(responses) == 1
-        response = responses[0]
+        response = responses[0] # ! this is correct since we use only one model/ensemble !
         return response
 
     def forecast(self, params: dict):
         url = "https://api.open-meteo.com/v1/forecast"
         responses = self.client.weather_api(url, params=params)
         assert len(responses) == 1
-        response = responses[0]
+        response = responses[0] # ! this is correct since we use only one model/ensemble !
         return response
 

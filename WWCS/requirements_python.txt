@@ -12,4 +12,6 @@ pyyaml
 python-dotenv
 ecmwf-opendata
 openmeteo_requests
-openmeteo_sdk
+openmeteo_sdk 
+requests-cache 
+retry-requests
