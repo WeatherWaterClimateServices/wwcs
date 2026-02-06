@@ -37,7 +37,8 @@ emos_formula: "Temperature_mean ~ IFS_T_mea + IFS_T_DTR  | IFS_T_std"
 # Parameters for global EMOS
 
 resolution_gEMOS: 0.005
-gemos_formula: "Observations ~ IFS_T_mea + division(ELEV,100) + division(HSURF,100) + TPI5 + division(TPI100,100) | IFS_T_std + division(ELEV,100)"
+# gemos_formula: "Observations ~ IFS_T_mea + division(ELEV,100) + division(HSURF,100) + TPI5 + division(TPI100,100) | IFS_T_std + division(ELEV,100)"
+gemos_formula: "Observations ~ IFS_T_mea + division(ELEV,100) + TPI5 + division(TPI100,100) | IFS_T_std + division(ELEV,100)"
 
 # Warning parameters
 

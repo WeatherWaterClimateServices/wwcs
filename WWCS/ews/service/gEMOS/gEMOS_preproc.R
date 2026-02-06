@@ -39,7 +39,7 @@ polygony <-
   sf::st_sf() # not really required, but makes the grid nicer to work with later
 
 grid_points <- polygony %>%
-  sf::st_coordinates %>%
+  sf::st_coordinates() %>%
   tibble::as_tibble() %>%
   dplyr::rename(lon = X, lat = Y) %>%
   dplyr::select(lon, lat) %>%
@@ -53,13 +53,13 @@ grid <- polygony[boundary, ]
 # --------------------------------
 
 bounds = sf::st_bbox(boundary)
-ntiles = as.int(ceiling(max((maxlat - minlat), (maxlon - minlon))))
+ntiles = ceiling(max((maxlat - minlat), (maxlon - minlon)))
 steps = ntiles + 1
 rlon = seq(bounds$xmin, bounds$xmax, length.out = steps)
 rlat = seq(bounds$ymin, bounds$ymax, length.out = steps)
 dir_tiles = "/srv/shiny-server/dashboard/appdata/topotiles/"
 
-hsurf <- raster::brick(paste0(dir_tiles, "hsurf_ecmwf.nc"))
+#BORIS# hsurf <- raster::brick(paste0(dir_tiles, "hsurf_ecmwf.nc"))
 preproc_grid <- data.frame()
 preproc_train <- data.frame()
 
@@ -90,8 +90,8 @@ for (x in 1:ntiles) {
       tpi5_poi <- raster::extract(tpi5, poi) %>% as.vector()
       tpi20_poi <- raster::extract(tpi20, poi) %>% as.vector()
       tpi100_poi <- raster::extract(tpi100, poi) %>% as.vector()
-      hsurf_poi <-
-        raster::extract(hsurf, poi) %>% as.vector() - ele_poi
+#BORIS#       hsurf_poi <-
+#BORIS#         raster::extract(hsurf, poi) %>% as.vector() - ele_poi
       
       preproc_grid <- grid_points %>%
         dplyr::filter(lon >= rlon[x] &
@@ -100,7 +100,7 @@ for (x in 1:ntiles) {
         dplyr::mutate(TPI5 = tpi5_poi) %>%
         dplyr::mutate(TPI20 = tpi20_poi) %>%
         dplyr::mutate(TPI100 = tpi100_poi) %>%
-        dplyr::mutate(HSURF = hsurf_poi) %>%
+#BORIS#         dplyr::mutate(HSURF = hsurf_poi) %>%
         dplyr::bind_rows(preproc_grid)
     }
     
@@ -109,8 +109,8 @@ for (x in 1:ntiles) {
       tpi5_train <- raster::extract(tpi5, train) %>% as.vector()
       tpi20_train <- raster::extract(tpi20, train) %>% as.vector()
       tpi100_train <- raster::extract(tpi100, train) %>% as.vector()
-      hsurf_train <-
-        raster::extract(hsurf, train) %>% as.vector() - ele_train
+#BORIS#       hsurf_train <-
+#BORIS#         raster::extract(hsurf, train) %>% as.vector() - ele_train
       
       preproc_train <- train_points %>%
         dplyr::filter(lon >= rlon[x] &
@@ -119,7 +119,7 @@ for (x in 1:ntiles) {
         dplyr::mutate(TPI5 = tpi5_train) %>%
         dplyr::mutate(TPI20 = tpi20_train) %>%
         dplyr::mutate(TPI100 = tpi100_train) %>%
-        dplyr::mutate(HSURF = hsurf_train) %>%
+#BORIS#         dplyr::mutate(HSURF = hsurf_train) %>%
         dplyr::bind_rows(preproc_train)
     }
   }
@@ -152,7 +152,7 @@ cat(paste0("yinc = ", grid_spacing))
 sink()
 
 preproc_grid <- preproc_grid %>% 
-                dplyr::distinctdistinct(poi, .keep_all = TRUE)
+                dplyr::distinct(poi, .keep_all = TRUE)
 
 gemos_folder <- "/srv/shiny-server/dashboard/appdata/topotiles/"
 
