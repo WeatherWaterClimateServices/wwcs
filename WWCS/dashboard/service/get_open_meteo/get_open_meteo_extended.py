@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     sites = client.get_sites()
 
-    outdir = Path('ifsdata')
+    outdir = Path('/home/wwcs/wwcs/WWCS/dashboard/ifsdata')
     outdir.mkdir(exist_ok=True)
 
     forecast_delta = timedelta(days=forecast_days)

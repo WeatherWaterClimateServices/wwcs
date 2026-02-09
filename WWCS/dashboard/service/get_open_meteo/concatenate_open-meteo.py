@@ -16,7 +16,8 @@ from common import USERNAME, PASSWORD
 # Define global variables
 # --------------------------------
 
-outdir = "/home/boris/wwcs/WWCS_repo/wwcs/WWCS/dashboard/service/get_open_meteo/ifsdata/" #BORIS
+#BORIS outdir = "/home/boris/wwcs/WWCS_repo/wwcs/WWCS/dashboard/service/get_open_meteo/ifsdata/" 
+outdir = "/home/wwcs/wwcs/WWCS/dashboard/ifsdata/"
 
 train_period = 30
 forecast_days = 10
