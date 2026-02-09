@@ -1,65 +1,15 @@
-from datetime import datetime, timedelta
 from pathlib import Path
+import netCDF4
 
+from datetime import datetime, timedelta
 import pandas as pd
 import mysql.connector
-import netCDF4
 import numpy as np
 from openmeteo_sdk.Variable import Variable
 
-from client import Client
-from common import USERNAME, PASSWORD
+import client
 
-
-client = Client()
-
-def get_sites():
-    with mysql.connector.connect(
-        user=USERNAME,
-        password=PASSWORD,
-        host='127.0.0.1',
-        database='SitesHumans',
-    ) as cnx:
-        with cnx.cursor() as cursor:
-            cursor.execute("SELECT siteID, latitude, longitude FROM Sites WHERE siteID NOT LIKE '%-S%'")
-            return cursor.fetchall()
-
-def forecast_df(params: dict) -> pd.DataFrame:
-    response = client.forecast(params)
-    return _response_to_dataframe(response)
-
-def enum_code_to_name(enum_cls, code: int):
-    # enum members are stored as class attributes; reverse-lookup by value
-    for name, value in enum_cls.__dict__.items():
-        if value == code:
-            return name
-    return None
-
-def _response_to_dataframe(response) -> pd.DataFrame:
-    """Convert openmeteo-requests response to pandas DataFrame."""
-    hourly = response.Hourly()
-
-    time_values = pd.date_range(
-        start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-        end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-        freq=pd.Timedelta(seconds=hourly.Interval()),
-        inclusive="left"
-    )
-
-    data = {
-        'time': time_values,
-        'latitude': response.Latitude(),
-        'longitude': response.Longitude(),
-    }
-
-    for i in range(hourly.VariablesLength()):
-        var = hourly.Variables(i)
-        var_name = enum_code_to_name(Variable, var.Variable())
-        print(var_name)       
-        data[var_name] = var.ValuesAsNumpy()
-
-    return pd.DataFrame(data)
-
+om_client = client.Client()
 
 def dataframe_to_netcdf(df: pd.DataFrame, filename: str, date_str: str):
     """
@@ -167,7 +117,7 @@ if __name__ == '__main__':
     today = datetime.today().date()
     dates = [d.strftime("%Y-%m-%d") for d in pd.date_range(today - timedelta(days=total_days), today)]
 
-    sites = get_sites()
+    sites = client.get_sites()
 
     outdir = Path('ifsdata')
     outdir.mkdir(exist_ok=True)
@@ -187,7 +137,7 @@ if __name__ == '__main__':
                 continue
 
             # Use forecast API
-            df = forecast_df({
+            df = om_client.forecast_df({
                 'latitude': lat,
                 'longitude': lon,
                 'start_date': date_str,

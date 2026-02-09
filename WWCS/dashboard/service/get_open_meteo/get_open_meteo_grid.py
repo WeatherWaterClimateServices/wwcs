@@ -8,16 +8,16 @@ import xarray as xr
 import yaml
 from openmeteo_sdk.Variable import Variable
 
-from client import Client
+import client
 
 
 #ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
-ROOT_PATH = Path("/home/boris/Documents/PV_Taj/wwcs/WWCS_repo/wwcs/WWCS")
+ROOT_PATH = Path("/home/boris/wwcs/WWCS_repo/wwcs/WWCS")
 #ROOT_PATH = Path("/home/jdavid/sandboxes/Caritas/wwcs/WWCS")
 CONFIG_PATH = ROOT_PATH / "config.yaml"
 DATA_PATH = ROOT_PATH / "dashboard" / "ifsdata"
 
-client = Client()
+om_client = client.Client()
 
 # ================
 # helper functions
@@ -54,7 +54,7 @@ def download_point(lat, lon, date_string):
     """
 
     # Create a fresh session every time (no caching)
-    response = client.ensemble({
+    response = om_client.ensemble({
         "latitude":  lat,
         "longitude": lon,
         "hourly": "temperature_2m",
