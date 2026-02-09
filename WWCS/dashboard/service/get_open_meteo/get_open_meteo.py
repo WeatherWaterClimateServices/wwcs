@@ -9,8 +9,6 @@ from openmeteo_sdk.Variable import Variable
 
 import client
 
-
-
 om_client = client.Client()
 
 def dataframe_to_netcdf(df: pd.DataFrame, filename: str, date_str: str):
@@ -81,7 +79,8 @@ if __name__ == '__main__':
     total_days = train_period + forecast_days
 
     today = datetime.today().date()
-    dates = [d.strftime("%Y-%m-%d") for d in pd.date_range(today - timedelta(days=total_days), today)]
+    # from 3 days before to today - this is what open-meteo provides for ensemble downloads
+    dates = [d.strftime("%Y-%m-%d") for d in pd.date_range(today - timedelta(days=3), today)]
 
     sites = client.get_sites()
 
@@ -93,8 +92,8 @@ if __name__ == '__main__':
         for site_id, lat, lon in sites:
 
             # TODO Remove this test
-            if site_id != 'ZAF001':
-                continue
+            # if site_id != 'ZAF001':
+            #    continue
 
             filename = outdir / f"ifs_{site_id}_{date_str}.nc"
 

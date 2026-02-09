@@ -35,7 +35,7 @@ class Client:
         retry_session = retry_requests.retry(cache_session, retries=5, backoff_factor=0.2)
         self.client = openmeteo_requests.Client(session=retry_session)
 
-    def _ensemble_response_to_dataframe(response):
+    def _ensemble_response_to_dataframe(self, response):
         """Convert ensemble response to DataFrame with mean and std."""
         hourly = response.Hourly()
 
@@ -74,9 +74,9 @@ class Client:
         })
 
         # extract/return every 3rd hour        
-        return df[df["time"].dt.hour % 3 == 0]        
-
-    def _response_to_dataframe(response):
+        return df[df["time"].dt.hour % 3 == 0]
+        
+    def _response_to_dataframe(self, response):
         """Convert openmeteo-requests response to pandas DataFrame."""
         hourly = response.Hourly()
 
@@ -119,8 +119,8 @@ class Client:
 
     def ensemble_df(self, params: dict):
         response = self.ensemble(params)
-        return _ensemble_response_to_dataframe(response)
+        return self._ensemble_response_to_dataframe(response)
 
     def forecast_df(self, params: dict):
         response = self.forecast(params)
-        return _response_to_dataframe(response)
+        return self._response_to_dataframe(response)
