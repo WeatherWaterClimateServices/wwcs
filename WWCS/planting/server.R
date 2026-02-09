@@ -88,9 +88,9 @@ server <- function(input, output, session) {
    
     
     last_temp <- soildata %>%
-      dplyr::filter(siteID == selected$id) %>%
+      dplyr::filter(siteID == selected$id  & day >= Sys.Date() - lubridate::days(1)) %>%
       dplyr::select(Temperature) %>%
-      tail(., 2)
+        tail(., 2)
     
     if (is.na(last_temp$Temperature[1])) {
       status <- "Unknown"
