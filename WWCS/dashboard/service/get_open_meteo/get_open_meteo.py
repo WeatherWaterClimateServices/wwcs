@@ -3,9 +3,7 @@ import netCDF4
 
 from datetime import datetime, timedelta
 import pandas as pd
-import mysql.connector
 import numpy as np
-from openmeteo_sdk.Variable import Variable
 
 import client
 
@@ -106,7 +104,7 @@ if __name__ == '__main__':
                 'latitude': lat,
                 'longitude': lon,
                 'start_date': date_str,
-                'end_date': (datetime.strptime(date_str, '%Y-%m-%d') + forecast_delta).strftime('%Y-%m-%d'),
+                'end_date': (datetime.strptime(date_str, '%Y-%m-%d') + forecast_delta - 1).strftime('%Y-%m-%d'),
                 'hourly': 'temperature_2m',
                 'models': 'ecmwf_ifs025',  # ECMWF IFS 0.25° ensemble
             })
