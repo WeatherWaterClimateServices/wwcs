@@ -72,8 +72,7 @@ class Client:
             'temperature_2m_std': std_values,
         })
 
-        # extract/return every 3rd hour        
-        return df[df["time"].dt.hour % 3 == 0]
+        return df
         
     def _response_to_dataframe(self, response):
         """Convert openmeteo-requests response to pandas DataFrame."""
@@ -98,9 +97,8 @@ class Client:
             print(var_name)       
             data[var_name] = var.ValuesAsNumpy()
 
-        # convert to panda and extract/return every 3rd hour
-        df = pd.DataFrame(data)
-        return df[df["time"].dt.hour % 3 == 0]
+        return pd.DataFrame(data)
+        
 
     def ensemble(self, params: dict):
         url = "https://ensemble-api.open-meteo.com/v1/ensemble"
