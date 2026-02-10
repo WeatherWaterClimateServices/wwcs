@@ -35,18 +35,6 @@ dates <- as.character(seq(ymd(read_start_date), ymd(curr_date), by = 'days'))
 
 ifs_dir <- "/srv/shiny-server/dashboard/ifsdata/"
 
-# Define two times with different time zones
-time1 <- ymd_hms("2023-10-18 12:00:00", tz = "UTC")
-time2 <- ymd_hms("2023-10-18 12:00:00", tz = timezone_country)
-
-# Calculate the time difference in hours
-time_difference <- as.numeric(difftime(time1, time2, units = "hours"))
-
-ifs_time <- c(0, 3, 6, 9, 12, 15, 18, 21) + time_difference
-
-# For any ifs_time larger than 24, subtract 24
-ifs_time <- ifelse(ifs_time > 24, ifs_time - 24, ifs_time) %>% sort()
-
 # READ STATION DATA FROM get_wwcs.R
 # ------------------------------------------------
 
@@ -63,136 +51,102 @@ dmo <- data.frame()
 print(paste0("---READING IFS DATA---"))
 
 for (i in station_id) {
-  # Round Minutes, Select only IFS hours
+  ## Round Minutes, select only hourly values
   station <- obs %>%
     dplyr::select(c(siteID, time, Temperature, Temperature_mean, type)) %>%
     dplyr::filter(
-      time >= as.POSIXct(read_start_date, tz = timezone_country) &
-        siteID == i & lubridate::minute(time) == 0 &
-        lubridate::hour(time) %in% ifs_time
-    ) %>%
+             time >= as.POSIXct(read_start_date, tz = timezone_country) &
+             siteID == i & lubridate::minute(time) == 0
+           ) %>%
     tidyr::drop_na() %>%
     tibble::as_tibble()
   
-  # Check if record length is enough for EMOS
-  if (nrow(station) < ((length(dates) - 1) * length(ifs_time) * miss_val)) {
+  ## Check if record length is enough for EMOS
+  if (nrow(station) < ((length(dates) - 1) * 24 * miss_val)) {
     rm(station)
     print(paste0("Ignoring station ", i, ", data incomplete"))
+    next
+  } 
+  
+  ## Read IFS data
+  ## ----------------------------------------------
+  print(paste0("Reading IFS data for station ", i))
+  ifs <- data.frame()
+  
+  file <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_merged.nc"), " ","")
+  file_ext <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_extended_merged.nc"), " ","")
+  
+  if (file.exists(file)) {
+    nc <- RNetCDF::open.nc(file)
     
-  } else {
+    ## Extract reftime unit string
+    reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units")
+    RNetCDF::close.nc(nc)
     
-    # Read IFS data
-    # ----------------------------------------------
+    ## Extract the reference date from the unit string
+    ## Format is typically "days since YYYY-MM-DD HH:MM:SS"
+    ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since "
+    reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct
     
-    print(paste0("Reading IFS data for station ", i))
-    ifs <- data.frame()
+    ## Get metadata information
+    nc <- tidync::tidync(file)
+    ifs <- nc %>%
+      tidync::hyper_tibble() %>%
+      dplyr::mutate(time = as.numeric(time)) %>%
+      dplyr::rename(lead = time) %>%
+      dplyr::mutate(
+               reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
+               time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = "hours"),
+                                 tz = timezone_country),
+               siteID = i,
+               IFS_T_mea = IFS_T_mea - 273.15
+             )
     
-    file <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_merged.nc"), " ","")
-    file_ext <- file_ext <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_extended_merged.nc"), " ","")
+    ## Calculate Daily Temperature Range (DTR)
+    ## ----------------------------------------------    
+    dtr <- ifs %>%
+      dplyr::mutate(day = day(time)) %>%
+      dplyr::group_by(reftime, day) %>%
+      dplyr::summarize(
+               IFS_T_max = max(IFS_T_mea),
+               IFS_T_min = min(IFS_T_mea),
+               IFS_T_DTR = IFS_T_max - IFS_T_min,
+               .groups = "keep"
+             )
     
-    if (file.exists(file)) {
+    ifs <- ifs %>%
+      dplyr::mutate(day = day(time)) %>%
+      dplyr::left_join(dtr, by = c("reftime", "day")) %>%
+      dplyr::select(-c(day))
+    
+    ## Add precipitation from extended parameter file
+    ## ----------------------------------------------    
+    if (file.exists(file_ext)) {
+      nc <- tidync(file_ext)
+      ifs_pr <- nc %>% 
+        tidync::hyper_tibble() %>%
+        dplyr::mutate(time = as.numeric(time)) %>%
+        dplyr::rename(lead = time) %>%
+        dplyr::mutate(
+                 reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
+                 time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'),
+                                   tz = timezone_country),
+                 siteID = i,
+                 IFS_PR_mea = tp * 1000
+               )
       
-      nc <- RNetCDF::open.nc(file)
-      
-      # Extract reftime unit string
-      reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units")
-      RNetCDF::close.nc(nc)
-      
-      # Extract the reference date from the unit string
-      # Format is typically "days since YYYY-MM-DD HH:MM:SS"
-      ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since "
-      reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct
-      
-      # Get metadata information
-      nc <- tidync::tidync(file)
-      cdo_version_raw <- system("cdo --version", intern = TRUE)
-      cdo_version <- gsub(".*([0-9]+\\.[0-9]+\\.[0-9]+).*", "\\1", cdo_version_raw)
-      
-      if (cdo_version[1] == "2.0.4") {
-        
-        ifs <- nc %>%
-          tidync::hyper_tibble() %>%
-          dplyr::mutate(time = as.numeric(time)) %>%
-          dplyr::rename(lead = time) %>%
-          dplyr::mutate(
-            reftime = lubridate::with_tz(as.POSIXct(reference_time + days(reftime), tz = "UTC"), tz = timezone_country),
-            time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = "hours"),
-                              tz = timezone_country),
-            siteID = i,
-            IFS_T_mea = IFS_T_mea - 273.15
-          )
-        
-      } else if (cdo_version[1] == "2.1.1") {
-        
-        ifs <- nc %>%
-          tidync::hyper_tibble() %>%
-          dplyr::mutate(time = as.numeric(time)) %>%
-          dplyr::rename(lead = time) %>%
-          dplyr::mutate(
-            reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
-            time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = "hours"),
-                              tz = timezone_country),
-            siteID = i,
-            IFS_T_mea = IFS_T_mea - 273.15
-          )      
-      }
-      
-      # Calculate Daily Temperature Range (DTR)
-      # ----------------------------------------------
-      
-      dtr <- ifs %>%
-        dplyr::mutate(day = day(time)) %>%
-        dplyr::group_by(reftime, day) %>%
-        dplyr::summarize(
-          IFS_T_max = max(IFS_T_mea),
-          IFS_T_min = min(IFS_T_mea),
-          IFS_T_DTR = IFS_T_max - IFS_T_min,
-          .groups = "keep"
-        )
       
       ifs <- ifs %>%
-        dplyr::mutate(day = day(time)) %>%
-        dplyr::left_join(dtr, by = c("reftime", "day")) %>%
-        dplyr::select(-c(day))
-      
-      # Add precipitation from extended parameter file
-      # ----------------------------------------------
-      
-      if (file.exists(file_ext)) {
-        nc <- tidync(file_ext)
-        ifs_pr <- nc %>% 
-          tidync::hyper_tibble() %>%
-          dplyr::mutate(time = as.numeric(time)) %>%
-          dplyr::rename(lead = time) %>%
-          dplyr::mutate(
-            reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
-            time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
-            siteID = i
-          ) %>%
-          dplyr::group_by(reftime, siteID, number) %>%
-          dplyr::mutate(tp = c(tp[1], diff(tp)) * 1000) %>%
-          dplyr::ungroup() %>%
-          dplyr::group_by(time, reftime, lead, siteID) %>%
-          dplyr::summarize(IFS_PR_mea = mean(tp), IFS_PR_std = sd(tp), .groups = "keep") %>%
-          dplyr::ungroup()
-        
-        
-        ifs <- ifs %>%
-          dplyr::left_join(ifs_pr, by = c("time", "siteID", "reftime", "lead"))
-      }
+        dplyr::left_join(ifs_pr, by = c("time", "siteID", "reftime", "lead"))
     }
-    
-    # MERGE STATION AND IFS
-    dmo <- ifs %>%
-      dplyr::left_join(station, by = c("time", "siteID")) %>%
-      dplyr::bind_rows(dmo) %>%
-      dplyr::arrange(reftime, lead, time)
   }
+  
+  ## MERGE STATION AND IFS
+  dmo <- ifs %>%
+    dplyr::left_join(station, by = c("time", "siteID")) %>%
+    dplyr::bind_rows(dmo) %>%
+    dplyr::arrange(reftime, lead, time)
 }
-
-# Set last DTR value to the day before if full-day is missing
-
-dmo$IFS_T_DTR[dmo$lead == 240] = dmo$IFS_T_DTR[dmo$lead == 234]
 
 # FIT EMOS AND STORE DATAFRAME
 # ------------------------------------------------
@@ -201,24 +155,12 @@ print(paste0("---COMPUTE POSTPROCESSED FORECASTS---"))
 
 emos <- list()
 ltimes <- seq(0, maxlead)
-ifs_lead <- unlist(distinct(dmo, lead))
 station_id <- unique(dmo$siteID)
-
-source('/srv/shiny-server/dashboard/R/interpolate_leadtime.R')
 
 for (s in station_id) {
   print(paste0("Training IFS data for station ", s))
   emos_par <- foreach::foreach(l = ltimes) %dopar% {
-    if (l %in% ifs_lead) {
-      train <- dmo %>% dplyr::filter(siteID == s & lead == l)
-      
-    } else {
-      # Interpolate between IFS hours
-      train_i <- dmo %>% dplyr::filter(siteID == s)
-      obs_i <- obs %>% dplyr::filter(siteID == s)
-      train <- interpolate_leadtime(l, ifs_lead, train_i, obs_i)
-      
-    }
+    train <- dmo %>% dplyr::filter(siteID == s & lead == l)
     
     # Check if record length is enough for EMOS
     if (sum(!is.na(train$Temperature_mean)) / nrow(train) > 0.5) {
