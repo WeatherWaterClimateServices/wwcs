@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 import pandas as pd
 import mysql.connector
 import numpy as np

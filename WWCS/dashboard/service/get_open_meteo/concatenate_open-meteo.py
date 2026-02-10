@@ -18,9 +18,11 @@ from common import USERNAME, PASSWORD
 
 #BORIS outdir = "/home/boris/wwcs/WWCS_repo/wwcs/WWCS/dashboard/service/get_open_meteo/ifsdata/" 
 outdir = "/home/wwcs/wwcs/WWCS/dashboard/ifsdata/"
+with open("/home/wwcs/wwcs/WWCS/config.yaml", 'r') as file:
+    config = yaml.safe_load(file)
 
-train_period = 30
-forecast_days = 10
+train_period = config['train_period']
+forecast_days = config['forecast_days']
 total_days = train_period + forecast_days
 
 # Get today's date
@@ -66,8 +68,8 @@ for coord in coordinates:
     site_id = coord[0].replace(" ", "")
     print(site_id)
     # TODO Remove this test
-    if site_id != 'ZAF001':
-        continue
+    # if site_id != 'ZAF001':
+    #     continue
 
     # Define file names
     file_names = ["ifs_" + site_id + "_" + date + ".nc" for date in dates]
