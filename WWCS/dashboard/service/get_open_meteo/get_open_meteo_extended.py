@@ -121,7 +121,7 @@ if __name__ == '__main__':
     outdir = Path('/home/wwcs/wwcs/WWCS/dashboard/ifsdata')
     outdir.mkdir(exist_ok=True)
 
-    forecast_delta = timedelta(days=forecast_days)
+    forecast_delta = timedelta(days=forecast_days - 1)
     for date_str in dates:
         for site_id, lat, lon in sites:
 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
                 'latitude': lat,
                 'longitude': lon,
                 'start_date': date_str,
-                'end_date': (datetime.strptime(date_str, '%Y-%m-%d') + forecast_delta - 1).strftime('%Y-%m-%d'),
+                'end_date': (datetime.strptime(date_str, '%Y-%m-%d') + forecast_delta).strftime('%Y-%m-%d'),
                 'hourly': ["precipitation", "geopotential_height_1000hPa", "cloud_cover_low", "cloud_cover_mid", 
                     "cloud_cover_high", "cloud_cover", "visibility"],
                 'models': 'ecmwf_ifs',  # 

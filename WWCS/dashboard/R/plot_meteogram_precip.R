@@ -66,7 +66,7 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
       group_by(bins, center_time) %>%
       summarize(
         PR = sum(IFS_PR_mea, na.rm = TRUE),
-        PR_std = mean(IFS_PR_std, na.rm = TRUE)
+        ## PR_std = mean(IFS_PR_std, na.rm = TRUE) ## BORIS here
       ) %>%
       dplyr::mutate(PR = ifelse(PR < 0, 0, PR))    
     
@@ -103,17 +103,17 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
       xlimits <- c(min(forecast_data$time), max(forecast_data$time))
       
       xlimits_shadow <- c(min(forecast_data$time), max(observations_data$time))
-      
+
       pictos_list <- list()
-      xpos <- seq(0.02, 0.92, length.out = 10)
+      xpos <- seq(0.02, 0.92, length.out = 10) ## BORIS here needs work - ok only if 10 days forecast complete
       
       image_path <-
-        "/srv/shiny-server/dashboard/appdata/weather_icons/png/"
+        "/srv/shiny-server/dashboard/www/weather_icons/png/"
       
       
       if (nrow(pictos_data) > 0) {
         for (i in 1:nrow(pictos_data)) {
-          image_file <- paste0(image_path, pictos_data$day[i], "_big.png")
+          image_file <- paste0(image_path, pictos_data$day[i], ".png")
           txt <-
             RCurl::base64Encode(readBin(image_file, "raw", file.info(image_file)[1, "size"]), "txt")
           
@@ -279,8 +279,7 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
             showlegend = FALSE
           ) 
       }
-      
-      
+
       p <- plotly::layout(
         p,
         shapes = list(

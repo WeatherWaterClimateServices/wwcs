@@ -89,7 +89,7 @@ pos2_hour <- function(cloud_total_opacity, opacity_threshold) {
 prob_lightning = 0.28
 
 pos3_hour <-
-  function(LT,
+  function(## LT, ## BORIS here
            PR,
            HSURF,
            CLCH,
@@ -98,13 +98,13 @@ pos3_hour <-
            prob_lightning,
            elevation,
            WWCS) {
-    if (LT > prob_lightning) {
-      if (WWCS < 2) {
-        code = "TN"
-      } else {
-        code = "TS"
-      }
-    } else {
+    ## if (LT > prob_lightning) { ## BORIS here
+    ##  if (WWCS < 2) {
+    ##    code = "TN"
+    ##  } else {
+    ##    code = "TS"
+    ##  }
+    ## } else {
       if (PR > 0) {
         if (WWCS > 2) {
           code = "RA"
@@ -121,7 +121,7 @@ pos3_hour <-
           code = "NW"
         }
       }
-    }
+    ## } ## BORIS here
     
     return(code)
   }
@@ -251,75 +251,27 @@ for (i in station_id) {
       
       # Get metadata information
       nc <- tidync::tidync(file)
-      cdo_version_raw <- system("cdo --version", intern = TRUE)
-      cdo_version <- gsub(".*([0-9]+\\.[0-9]+\\.[0-9]+).*", "\\1", cdo_version_raw)
-      
-      nc <- tidync::tidync(file)
-      if (cdo_version[1] == "2.0.4") {
-        
-        ifs <- nc %>%
-          tidync::hyper_tibble() %>%
-          dplyr::mutate(time = as.numeric(time)) %>%
-          dplyr::rename(lead = time) %>%
-          dplyr::mutate(
-            reftime = lubridate::with_tz(as.POSIXct(reference_time + days(reftime), tz = "UTC"), tz = timezone_country),
-            time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
-            z = as.numeric(z) / 9.807,
-            tp = tp * 1000,
-            # from m to mm
-            siteID = i
-          ) %>%
-          dplyr::group_by(reftime, siteID, number) %>%
-          dplyr::mutate(tp = c(tp[1], diff(tp))) %>%
-          dplyr::mutate(tp = ifelse(tp < 0, 0, tp)) %>%
-          dplyr::ungroup() %>%
-          dplyr::group_by(time, reftime, lead, siteID) %>%
-          dplyr::summarize(
-            CLCT = mean(tcc),
-            CLCL = mean(lcc),
-            CLCM = mean(mcc),
-            CLCH = mean(hcc),
-            PR = mean(tp),
-            VIS =  sum(p3020 < vis_threshold) /  nc$dimension$count[4],
-            LT = sum((litoti / 24) > lightning_threshold) /  nc$dimension$count[4],
-            HSURF = z[1],
-            elevation = altitude_station,
-            .groups = "keep"
-          ) %>%
-          dplyr::arrange(siteID, reftime)
-        
-      } else if (cdo_version[1] == "2.1.1") {
-        ifs <- nc %>%
-          tidync::hyper_tibble() %>%
-          dplyr::mutate(time = as.numeric(time)) %>%
-          dplyr::rename(lead = time) %>%
-          dplyr::mutate(
-            reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
-            time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
-            z = as.numeric(z) / 9.807,
-            tp = tp * 1000,
-            # from m to mm
-            siteID = i
-          ) %>%
-          dplyr::group_by(reftime, siteID, number) %>%
-          dplyr::mutate(tp = c(tp[1], diff(tp))) %>%
-          dplyr::mutate(tp = ifelse(tp < 0, 0, tp)) %>%
-          dplyr::ungroup() %>%
-          dplyr::group_by(time, reftime, lead, siteID) %>%
-          dplyr::summarize(
-            CLCT = mean(tcc),
-            CLCL = mean(lcc),
-            CLCM = mean(mcc),
-            CLCH = mean(hcc),
-            PR = mean(tp),
-            VIS =  sum(p3020 < vis_threshold) /  nc$dimension$count[4],
-            LT = sum((litoti / 24) > lightning_threshold) /  nc$dimension$count[4],
-            HSURF = z[1],
-            elevation = altitude_station,
-            .groups = "keep"
-          ) %>%
-          dplyr::arrange(siteID, reftime)  
-      }
+      ifs <- nc %>%
+        tidync::hyper_tibble() %>%
+        dplyr::mutate(time = as.numeric(time)) %>%
+        dplyr::rename(lead = time) %>%
+        dplyr::mutate(
+          reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
+          time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
+          z = as.numeric(z) / 9.807,            
+          siteID = i,          
+          CLCT = tcc,
+          CLCL = lcc,
+          CLCM = mcc,
+          CLCH = hcc,
+          PR = tp * 1000,            # from m to mm
+          VIS =  ifelse(p3020 < vis_threshold, 0, 1), ## BORIS - this needs work
+          LT = NA, ## BORIS - this parameter is not available in OM
+          HSURF = z[1], ## BORIS - possibly remove this parameter
+          elevation = altitude_station,
+          .groups = "keep"
+        ) %>%
+        dplyr::arrange(siteID, reftime)        
       
       reftimes <- unique(ifs$reftime)
       ifs_hourly <- data.frame()
@@ -352,13 +304,13 @@ for (i in station_id) {
       ifs_hourly <- ifs_hourly %>%
         dplyr::left_join(ifs, by = c("reftime", "time", "lead", "siteID")) %>%
         dplyr::mutate(
-          LT = zoo::na.approx(LT) * 24 * 100,
+          ## LT = zoo::na.approx(LT) * 24 * 100, ## BORIS here
           # number of flashes per 100 km2 and hour
           CLCT = zoo::na.approx(CLCT),
           CLCM = zoo::na.approx(CLCM),
           CLCH = zoo::na.approx(CLCH),
           CLCL = zoo::na.approx(CLCL),
-          HSURF = zoo::na.approx(HSURF),
+          ## HSURF = zoo::na.approx(HSURF), ## BORIS here
           elevation = zoo::na.approx(elevation),
           pCLCL = aL * CLCL,
           pCLCM = aM * CLCM,
@@ -371,12 +323,6 @@ for (i in station_id) {
         dplyr::right_join(emos_site, by = c("reftime", "time", "lead", "siteID")) %>%
         dplyr::select(-c(pCLCL, pCLCM, pCLCH))
       
-      # Convert PR from cumulative to incremental precipitation
-      
-      # ifs_hourly <- ifs_hourly %>%
-      #   dplyr::group_by(siteID, reftime) %>%
-      #   dplyr::mutate(PR = c(PR[1], diff(PR))) %>%
-      #   dplyr::ungroup()
       
       ifs_extended <- ifs_hourly %>%
         dplyr::bind_rows(ifs_extended)
@@ -385,12 +331,12 @@ for (i in station_id) {
       # ------------------------------------------------
       
       pictocodes_hourly <- ifs_hourly %>%
-        na.omit() %>%
-        dplyr::rowwise()  %>%
+        ## na.omit() %>% ## BORIS here - unclear whether this is necessary
+        dplyr::rowwise()  %>% 
         dplyr::mutate(POS1 = pos1_hour(VIS, fog_threshold)) %>%
         dplyr::mutate(POS2 = pos2_hour(cloud_total_opacity, opacity_threshold)) %>%
         dplyr::mutate(POS3 = pos3_hour(
-          LT,
+          ## LT, ## BORIS here
           PR,
           HSURF,
           CLCH,
