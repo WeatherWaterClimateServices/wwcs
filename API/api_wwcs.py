@@ -100,7 +100,6 @@ async def get_obs(response: Response, stationID: str):
 async def get_obs_by_area(response: Response, area: str, date: str):
     query = """
         SELECT
-            s.siteId,
             :area as area_name,
             CASE
                 WHEN :area = s.region THEN 'region'
