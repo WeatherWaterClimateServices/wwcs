@@ -135,12 +135,8 @@ async def get_obs_by_area(response: Response, area: str, date: str):
         raise HTTPException(status_code=404, detail="no site found for the given area")
 
     response.headers['Access-Control-Allow-Origin'] = '*'
-    for row in rows:
-        rows = await get_observation(row.siteId)
-        if rows:
-            return rows
 
-    return []
+    return rows
 
 
 async def get_stations_metadata():
