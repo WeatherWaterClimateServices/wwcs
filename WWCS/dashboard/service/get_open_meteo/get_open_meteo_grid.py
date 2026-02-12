@@ -1,6 +1,5 @@
 import re
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -9,13 +8,6 @@ import yaml
 from openmeteo_sdk.Variable import Variable
 
 import client
-
-
-#ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
-ROOT_PATH = Path("/home/boris/wwcs/WWCS_repo/wwcs/WWCS")
-#ROOT_PATH = Path("/home/jdavid/sandboxes/Caritas/wwcs/WWCS")
-CONFIG_PATH = ROOT_PATH / "config.yaml"
-DATA_PATH = ROOT_PATH / "dashboard" / "ifsdata"
 
 om_client = client.Client()
 
@@ -102,7 +94,7 @@ def download_point(lat, lon, date_string):
 # Load configuration
 # ============================================================
 
-with CONFIG_PATH.open('r') as file:
+with client.CONFIG_PATH.open('r') as file:
     config = yaml.safe_load(file)
 
 train_period   = config["train_period"]
@@ -124,7 +116,7 @@ date_pattern = r'(\d{4})-(\d{2})-(\d{2})'
 
 two_months_ago = datetime.now() - timedelta(days=60)
 
-for filepath in DATA_PATH.iterdir():
+for filepath in client.DATA_PATH.iterdir():
     filename = filepath.name
     match = re.search(date_pattern, filename)
     if match:
@@ -216,7 +208,7 @@ ds["time"].attrs.update({"axis": "T", "standard_name": "time"})
 
 # Write to file    
 # Output filename
-fout = DATA_PATH / f"tj_area_{date_string}.nc"
+fout = client.DATA_PATH / f"tj_area_{date_string}.nc"
 ds.to_netcdf(fout, engine="netcdf4", unlimited_dims=["time"])
 print(f"Created NetCDF: {fout}")
 
