@@ -40,7 +40,7 @@ ifs_time <- c(0, 3, 6, 9, 12, 15, 18, 21)
 
 picto_lookup <-
   readr::read_delim(
-    "/srv/shiny-server/dashboard/appdata/weather_icons/look_up_tabel.csv",
+    "/srv/shiny-server/dashboard/appdata/weather_icons/look_up_table.csv",
     show_col_types = FALSE
   )
 
