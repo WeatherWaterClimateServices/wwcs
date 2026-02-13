@@ -10,6 +10,8 @@ from openmeteo_sdk.Variable import Variable
 
 import client
 
+<<<<<<< HEAD
+=======
 
 ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
 #ROOT_PATH = Path("/home/boris/wwcs/WWCS_repo/wwcs/WWCS")
@@ -102,7 +104,7 @@ def download_point(lat, lon, date_string):
 # Load configuration
 # ============================================================
 
-with CONFIG_PATH.open('r') as file:
+with client.CONFIG_PATH.open('r') as file:
     config = yaml.safe_load(file)
 
 train_period   = config["train_period"]
@@ -120,10 +122,12 @@ forecast_delta = timedelta(days=forecast_days - 1)
 # ============================================================
 # Remove old files (like original script)
 # ============================================================
+
 date_pattern = r'(\d{4})-(\d{2})-(\d{2})'
+
 two_months_ago = datetime.now() - timedelta(days=60)
 
-for filepath in DATA_PATH.iterdir():
+for filepath in client.DATA_PATH.iterdir():
     filename = filepath.name
     match = re.search(date_pattern, filename)
     if match:

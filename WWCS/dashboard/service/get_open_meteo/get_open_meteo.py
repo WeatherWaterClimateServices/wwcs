@@ -1,9 +1,8 @@
-from pathlib import Path
-import netCDF4
-
 from datetime import datetime, timedelta
-import pandas as pd
+
+import netCDF4
 import numpy as np
+import pandas as pd
 
 import client
 
@@ -82,7 +81,7 @@ if __name__ == '__main__':
 
     sites = client.get_sites()
 
-    outdir = Path('/home/wwcs/wwcs/WWCS/dashboard/ifsdata')
+    outdir = client.DATA_PATH
     outdir.mkdir(exist_ok=True)
 
     forecast_delta = timedelta(days=forecast_days -1)

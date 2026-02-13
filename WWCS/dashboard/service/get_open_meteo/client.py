@@ -1,6 +1,8 @@
-import pandas as pd
+from pathlib import Path
+
 import mysql.connector
 import numpy as np
+import pandas as pd
 from openmeteo_sdk.Variable import Variable
 
 import openmeteo_requests
@@ -8,6 +10,15 @@ import requests_cache
 import retry_requests
 
 from common import USERNAME, PASSWORD
+
+
+#ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
+ROOT_PATH = Path("/home/boris/wwcs/WWCS_repo/wwcs/WWCS")
+#ROOT_PATH = Path("/home/jdavid/sandboxes/Caritas/wwcs/WWCS")
+
+CONFIG_PATH = ROOT_PATH / "config.yaml"
+DATA_PATH = ROOT_PATH / "dashboard" / "ifsdata"
+
 
 def get_sites():
     with mysql.connector.connect(
@@ -73,7 +84,7 @@ class Client:
         })
 
         return df
-        
+
     def _response_to_dataframe(self, response):
         """Convert openmeteo-requests response to pandas DataFrame."""
         hourly = response.Hourly()
@@ -94,11 +105,10 @@ class Client:
         for i in range(hourly.VariablesLength()):
             var = hourly.Variables(i)
             var_name = enum_code_to_name(Variable, var.Variable())
-            print(var_name)       
+            print(var_name)
             data[var_name] = var.ValuesAsNumpy()
 
         return pd.DataFrame(data)
-        
 
     def ensemble(self, params: dict):
         url = "https://ensemble-api.open-meteo.com/v1/ensemble"
