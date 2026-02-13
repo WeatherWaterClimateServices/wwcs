@@ -10,9 +10,6 @@ from openmeteo_sdk.Variable import Variable
 
 import client
 
-<<<<<<< HEAD
-=======
-
 ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
 #ROOT_PATH = Path("/home/boris/wwcs/WWCS_repo/wwcs/WWCS")
 #ROOT_PATH = Path("/home/jdavid/sandboxes/Caritas/wwcs/WWCS")
