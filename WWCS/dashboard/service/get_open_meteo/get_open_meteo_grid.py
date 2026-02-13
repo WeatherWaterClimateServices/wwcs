@@ -9,6 +9,16 @@ from openmeteo_sdk.Variable import Variable
 
 import client
 
+<<<<<<< HEAD
+=======
+
+ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
+#ROOT_PATH = Path("/home/boris/wwcs/WWCS_repo/wwcs/WWCS")
+#ROOT_PATH = Path("/home/jdavid/sandboxes/Caritas/wwcs/WWCS")
+CONFIG_PATH = ROOT_PATH / "config.yaml"
+DATA_PATH = ROOT_PATH / "dashboard" / "ifsdata"
+
+>>>>>>> d4869d0 (open-meteo-grid ready for testing, proper lat/lon grid cells and a few corrections.)
 om_client = client.Client()
 
 # ================
@@ -49,10 +59,10 @@ def download_point(lat, lon, date_string):
     response = om_client.ensemble({
         "latitude":  lat,
         "longitude": lon,
-        "hourly": "temperature_2m",
-        "models": "ecmwf_ifs025"
-        #"start_date": date_string,
-        #"end_date": date_string,
+        "hourly": ["temperature_2m", "precipitation"],
+        "models": "ecmwf_ifs025",
+        "start_date": date_string,
+        "end_date": (datetime.strptime(date_string, '%Y-%m-%d') + forecast_delta).strftime('%Y-%m-%d'),
     })
 
     hourly = response.Hourly()
@@ -100,20 +110,19 @@ with client.CONFIG_PATH.open('r') as file:
 train_period   = config["train_period"]
 forecast_days  = config["forecast_days"]
 
-minlat = 47 #config["minlat"]
-maxlat = 48 # config["maxlat"]
-minlon = 9 # config["minlon"]
-maxlon = 10 # config["maxlon"]
+minlat = config["minlat"]
+maxlat = config["maxlat"]
+minlon = config["minlon"]
+maxlon = config["maxlon"]
 
 total_days = train_period + forecast_days
+forecast_delta = timedelta(days=forecast_days - 1)
 
 
 # ============================================================
 # Remove old files (like original script)
 # ============================================================
-
 date_pattern = r'(\d{4})-(\d{2})-(\d{2})'
-
 two_months_ago = datetime.now() - timedelta(days=60)
 
 for filepath in client.DATA_PATH.iterdir():
@@ -134,25 +143,21 @@ for filepath in client.DATA_PATH.iterdir():
 # Define date list
 # ============================================================
 
-# Boris: the date range does not really make sense for me. Check
-dat = [
-    d.strftime("%Y-%m-%d")
-    for d in pd.date_range(datetime.today() - timedelta(days=total_days), datetime.today())
-]
-date_string = dat[0] ## here - this is still weird.
-
+today = datetime.today().date()
+# from 3 days before to today - this is what open-meteo provides for ensemble downloads
+dates = [d.strftime("%Y-%m-%d") for d in pd.date_range(today - timedelta(days=3), today)]
 
 # ============================================================
-# 4. lon/lat
+# lon/lat
 # ============================================================
-lats = np.arange(minlat, maxlat, .25)
-lons = np.arange(minlon, maxlon, .25)
+lats = np.arange(np.floor(minlat * 4) / 4, np.ceil(maxlat * 4) / 4, .25)
+lons = np.arange(np.floor(minlon * 4) / 4, np.floor(maxlon * 4) / 4, .25)
 # Fast lookup (avoid np.where in the loop)
 lat_to_i = {float(v): i for i, v in enumerate(lats)}
 lon_to_j = {float(v): j for j, v in enumerate(lons)}
 
 ## time dimension
-t_raw0, tmean0, tstd0 = download_point(lats[0], lons[0], date_string)
+t_raw0, tmean0, tstd0 = download_point(lats[0], lons[0], dates[0])
 
 ## preallocate dataset
 fill = np.nan
@@ -172,34 +177,45 @@ ds = xr.Dataset(
 
 
 # ------------------------
-# full loop over all points
+# full loop over all dates - one file per each date
 # ------------------------
-# fill ds
-for lat_i in lats:
-    for lon_j in lons:
-        print(lat_i, lon_j)
-        t_raw, v1, v2 = download_point(float(lat_i), float(lon_j), date_string)        
-        _insert_point(ds, lat_i, lon_j, t_raw, v1, v2)
+for date_string in dates:
+    fout = DATA_PATH / f"tj_area_{date_string}.nc"
+    # skip if file exists already
+    if fout.exists():
+        print(f"Skipping {fout}, already exists")
+        continue
+    
+    # now loop over all points and fill ds
+    for lat_i in lats:
+        for lon_j in lons:
+            print(lat_i, lon_j)
+            t_raw, v1, v2 = download_point(float(lat_i), float(lon_j), date_string)        
+            _insert_point(ds, lat_i, lon_j, t_raw, v1, v2)
 
-# CF attributes of ds
-ds.attrs = {
-    "Conventions": "CF-1.6",
-    "institution": "European Centre for Medium-Range Weather Forecasts",
-    "history": f"Open-Meteo retrieval for area on {date_string}",
-}
-ds["lat"].attrs.update({
-    "standard_name": "latitude",
-    "long_name": "latitude",
-    "units": "degrees_north",
-    "axis": "Y",
-})
-ds["lon"].attrs.update({
-    "standard_name": "longitude",
-    "long_name": "longitude",
-    "units": "degrees_east",
-    "axis": "X",
-})
+    # CF attributes of ds
+    ds.attrs = {
+        "Conventions": "CF-1.6",
+        "institution": "European Centre for Medium-Range Weather Forecasts",
+        "history": f"Open-Meteo retrieval for area on {date_string}",
+    }
+    ds["lat"].attrs.update({
+        "standard_name": "latitude",
+        "long_name": "latitude",
+        "units": "degrees_north",
+        "axis": "Y",
+    })
+    ds["lon"].attrs.update({
+        "standard_name": "longitude",
+        "long_name": "longitude",
+        "units": "degrees_east",
+        "axis": "X",
+    })
+    ds["IFS_T_mea"].attrs.update({"long_name":"2 metre temperature", "units":"K", "code":167, "table":128})
+    ds["IFS_T_std"].attrs.update({"long_name":"2 metre temperature", "units":"K", "code":167, "table":128})
+    ds["time"].attrs.update({"axis": "T", "standard_name": "time"})
 
+<<<<<<< HEAD
 ds["IFS_T_mea"].attrs.update({"long_name":"2 metre temperature", "units":"K", "code":167, "table":128})
 ds["IFS_T_std"].attrs.update({"long_name":"2 metre temperature", "units":"K", "code":167, "table":128})
 
@@ -218,3 +234,10 @@ print(f"Created NetCDF: {fout}")
 # ============================================================
 
 print("Open-Meteo IFS retrieval complete.")
+=======
+    # Write to file, print filename    
+    ds.to_netcdf(fout, engine="netcdf4", unlimited_dims=["time"])
+    print(f"Created NetCDF: {fout}")
+## end loop over dates
+print("Open-Meteo IFS for the temperature grid - retrieval complete.")
+>>>>>>> d4869d0 (open-meteo-grid ready for testing, proper lat/lon grid cells and a few corrections.)
