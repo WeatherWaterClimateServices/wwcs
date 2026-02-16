@@ -1,5 +1,6 @@
+import datetime
 import re
-from datetime import datetime, timedelta
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,203 +11,179 @@ import client
 
 om_client = client.Client()
 
-# ================
-# helper functions
-# ================
-def _normalize_time(t):
+MAX_POINTS = 200
+
+def chunk_points(lats: np.ndarray, lons: np.ndarray) -> List[Tuple[List[float], List[float]]]:
     """
-    Make time NetCDF-friendly: timezone-naive datetime64[ns].
-    Accepts strings, datetime64, pandas datetime, tz-aware, etc.
+    Split grid into chunks that stay under Open-Meteo's data limit.
+    50 points × 240 hours = 12,000 data points (close to limit)
+    Adjust max_points based on your forecast_days.
     """
-    t = pd.to_datetime(t)
-    if getattr(t, "tz", None) is not None:
-        t = t.tz_convert("UTC").tz_localize(None)
-    return t.to_numpy(dtype="datetime64[ns]")
+    all_points = [(float(lat), float(lon)) for lat in lats for lon in lons]
+
+    chunks = []
+    for i in range(0, len(all_points), MAX_POINTS):
+        chunk = all_points[i:i + MAX_POINTS]
+        chunk_lats = [p[0] for p in chunk]
+        chunk_lons = [p[1] for p in chunk]
+        chunks.append((chunk_lats, chunk_lons))
+
+    return chunks
 
 
-def _insert_point(ds, lat_i, lon_j, t_raw, v1, v2):
-    i = lat_to_i[float(lat_i)]
-    j = lon_to_j[float(lon_j)]
-
-    t = _normalize_time(t_raw)
-
-    # Align to ds.time in case of minor mismatches/missing stamps
-    v1a = xr.DataArray(v1, coords={"time": t}, dims=("time",)).reindex(time=ds.time)
-    v2a = xr.DataArray(v2, coords={"time": t}, dims=("time",)).reindex(time=ds.time)
-
-    ds["IFS_T_mea"][:, i, j] = v1a.values
-    ds["IFS_T_std"][:, i, j] = v2a.values
-
-
-# the big download function
-def download_point(lat, lon, date_string):
+def download_chunk(latitudes: List[float], longitudes: List[float],
+                   start_date: datetime.date, forecast_days: int) -> pd.DataFrame:
     """
-    Request ensemble forecast for one location and write NetCDF file.
+    Download ensemble data for multiple points in one API call.
+    Returns DataFrame with columns: time, latitude, longitude, temperature_2m_mean, temperature_2m_std
     """
+    forecast_delta = datetime.timedelta(days=forecast_days - 1)
+    end_date = start_date + forecast_delta
 
-    # Create a fresh session every time (no caching)
-    response = om_client.ensemble({
-        "latitude":  lat,
-        "longitude": lon,
-        "hourly": ["temperature_2m", "precipitation"],
+    params = {
+        "latitude": latitudes,
+        "longitude": longitudes,
+        "hourly": ["temperature_2m"],
         "models": "ecmwf_ifs025",
-        "start_date": date_string,
-        "end_date": (datetime.strptime(date_string, '%Y-%m-%d') + forecast_delta).strftime('%Y-%m-%d'),
-    })
-
-    hourly = response.Hourly()
-
-    # Extract hours
-    times = pd.date_range(
-        start = pd.to_datetime(hourly.Time(), unit="s", utc=True),
-        end   = pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-        freq  = pd.Timedelta(seconds=hourly.Interval()),
-        inclusive="left",
-    ).tz_convert("UTC").tz_localize(None)
-
-    # Retrieve all ensemble members
-    variables = [
-        hourly.Variables(i)
-        for i in range(hourly.VariablesLength())
-    ]
-    temp_members = [
-        v for v in variables if v.Variable() == Variable.temperature and v.Altitude() == 2
-    ]
-
-    if len(temp_members) == 0:
-        print("No ensemble members found!")
-        return
-
-    # Build temperature matrix: time × members
-    temp_matrix = np.column_stack([v.ValuesAsNumpy() for v in temp_members])
-
-    # Compute ensemble statistics
-    temp_mean = np.mean(temp_matrix, axis=1).astype("float32")
-    temp_std  = np.std(temp_matrix, axis=1).astype("float32")
-
-    # Convert °C → Kelvin (ECMWF standard)
-    temp_mean += 273.15
-    return times, temp_mean, temp_std
-
-
-# ============================================================
-# Load configuration
-# ============================================================
-
-config = client.get_config()
-train_period   = config["train_period"]
-forecast_days  = config["forecast_days"]
-
-minlat = config["minlat"]
-maxlat = config["maxlat"]
-minlon = config["minlon"]
-maxlon = config["maxlon"]
-
-total_days = train_period + forecast_days
-forecast_delta = timedelta(days=forecast_days - 1)
-
-
-# ============================================================
-# Remove old files (like original script)
-# ============================================================
-
-date_pattern = r'(\d{4})-(\d{2})-(\d{2})'
-
-two_months_ago = datetime.now() - timedelta(days=60)
-
-for filepath in client.DATA_PATH.iterdir():
-    filename = filepath.name
-    match = re.search(date_pattern, filename)
-    if match:
-        year, month, day = map(int, match.groups())
-        try:
-            file_date = datetime(year, month, day)
-            if file_date < two_months_ago:
-                filepath.unlink()
-                print(f"Deleted: {filename}")
-        except ValueError:
-            pass
-
-
-# ============================================================
-# Define date list
-# ============================================================
-
-today = datetime.today().date()
-# from 3 days before to today - this is what open-meteo provides for ensemble downloads
-dates = [d.strftime("%Y-%m-%d") for d in pd.date_range(today - timedelta(days=3), today)]
-
-# ============================================================
-# lon/lat
-# ============================================================
-lats = np.arange(np.floor(minlat * 4) / 4, np.ceil(maxlat * 4) / 4, .25)
-lons = np.arange(np.floor(minlon * 4) / 4, np.floor(maxlon * 4) / 4, .25)
-# Fast lookup (avoid np.where in the loop)
-lat_to_i = {float(v): i for i, v in enumerate(lats)}
-lon_to_j = {float(v): j for j, v in enumerate(lons)}
-
-## time dimension
-t_raw0, tmean0, tstd0 = download_point(lats[0], lons[0], dates[0])
-
-## preallocate dataset
-fill = np.nan
-ds = xr.Dataset(
-    data_vars={
-        "IFS_T_mea": (
-            ("time", "lat", "lon"),
-            np.full((len(t_raw0), len(lats), len(lons)), fill, dtype="float32"),
-        ),
-        "IFS_T_std": (
-            ("time", "lat", "lon"),
-            np.full((len(t_raw0), len(lats), len(lons)), fill, dtype="float32"),
-        ),
-    },
-    coords={"time": t_raw0, "lat": lats, "lon": lons},
-)
-
-
-# ------------------------
-# full loop over all dates - one file per each date
-# ------------------------
-for date_string in dates:
-    fout = client.DATA_PATH / f"tj_area_{date_string}.nc"
-    # skip if file exists already
-    if fout.exists():
-        print(f"Skipping {fout}, already exists")
-        continue
-    
-    # now loop over all points and fill ds
-    for lat_i in lats:
-        for lon_j in lons:
-            print(lat_i, lon_j)
-            t_raw, v1, v2 = download_point(float(lat_i), float(lon_j), date_string)        
-            _insert_point(ds, lat_i, lon_j, t_raw, v1, v2)
-
-    # CF attributes of ds
-    ds.attrs = {
-        "Conventions": "CF-1.6",
-        "institution": "European Centre for Medium-Range Weather Forecasts",
-        "history": f"Open-Meteo retrieval for area on {date_string}",
+        "start_date": start_date.strftime('%Y-%m-%d'),
+        "end_date": end_date.strftime('%Y-%m-%d'),
     }
-    ds["lat"].attrs.update({
-        "standard_name": "latitude",
-        "long_name": "latitude",
-        "units": "degrees_north",
-        "axis": "Y",
-    })
-    ds["lon"].attrs.update({
-        "standard_name": "longitude",
-        "long_name": "longitude",
-        "units": "degrees_east",
-        "axis": "X",
-    })
-    ds["IFS_T_mea"].attrs.update({"long_name":"2 metre temperature", "units":"K", "code":167, "table":128})
-    ds["IFS_T_std"].attrs.update({"long_name":"2 metre temperature", "units":"K", "code":167, "table":128})
-    ds["time"].attrs.update({"axis": "T", "standard_name": "time"})
 
-    # Write to file, print filename    
-    ds.to_netcdf(fout, engine="netcdf4", unlimited_dims=["time"])
-    print(f"Created NetCDF: {fout}")
+    aggrs = {
+        'temperature_2m': {
+            'variable': Variable.temperature,
+            'filter': lambda v: v.Altitude() == 2,
+            'aggregations': [
+                ('mean', lambda x: np.mean(x, axis=0).astype("float32") + 273.15),
+                ('std', lambda x: np.std(x, axis=0).astype("float32")),
+            ]
+        }
+    }
+
+    # ensemble_df handles single response with multiple locations
+    return om_client.ensemble_df(params, aggrs)
 
 
-print("Open-Meteo IFS for the temperature grid - retrieval complete.")
+def main():
+
+    today = datetime.date.today()
+
+    # Configuration
+    config = client.get_config()
+    forecast_days = config["forecast_days"]
+    minlat = config["minlat"]
+    maxlat = config["maxlat"]
+    minlon = config["minlon"]
+    maxlon = config["maxlon"]
+
+    # Cleanup old files
+    date_pattern = r'(\d{4})-(\d{2})-(\d{2})'
+    two_months_ago = today - datetime.timedelta(days=60)
+
+    for filepath in client.DATA_PATH.iterdir():
+        filename = filepath.name
+        match = re.search(date_pattern, filename)
+        if match:
+            year, month, day = map(int, match.groups())
+            try:
+                file_date = datetime.date(year, month, day)
+                if file_date < two_months_ago:
+                    filepath.unlink()
+                    print(f"Deleted: {filename}")
+            except ValueError:
+                pass
+
+    # Define grid and dates
+    dates = list(pd.date_range(today - datetime.timedelta(days=3), today))
+    lats = np.arange(np.floor(minlat * 4) / 4, np.ceil(maxlat * 4) / 4, .25)
+    lons = np.arange(np.floor(minlon * 4) / 4, np.floor(maxlon * 4) / 4, .25)
+
+    # Preallocate dataset using first call
+    first_chunk = ([float(lats[0])], [float(lons[0])])
+    df0 = download_chunk(*first_chunk, dates[0], forecast_days)
+    times = df0['time'].unique()
+
+    ds = xr.Dataset(
+        data_vars={
+            "IFS_T_mea": (
+                ("time", "lat", "lon"),
+                np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
+            ),
+            "IFS_T_std": (
+                ("time", "lat", "lon"),
+                np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
+            ),
+        },
+        coords={"time": times, "lat": lats, "lon": lons},
+    )
+
+    # Create lookup for fast indexing
+    lat_to_i = {float(lat): i for i, lat in enumerate(lats)}
+    lon_to_j = {float(lon): j for j, lon in enumerate(lons)}
+
+    # Main loop
+    for date in dates:
+        date_string = date.strftime("%Y-%m-%d")
+        fout = client.DATA_PATH / f"tj_area_{date_string}.nc"
+        if fout.exists():
+            print(f"Skipping {fout}, already exists")
+            continue
+
+        # Reset dataset
+        ds["IFS_T_mea"][:] = np.nan
+        ds["IFS_T_std"][:] = np.nan
+
+        # Process in chunks
+        chunks = chunk_points(lats, lons)
+
+        for chunk_lats, chunk_lons in chunks:
+            print(f"Downloading chunk: {len(chunk_lats)} points")
+            df_chunk = download_chunk(chunk_lats, chunk_lons, date, forecast_days)
+
+            # Assign results to grid
+            for (lat, lon), group in df_chunk.groupby(['latitude', 'longitude']):
+                i = lat_to_i[float(lat)]
+                j = lon_to_j[float(lon)]
+                ds["IFS_T_mea"][:, i, j] = group['temperature_2m_mean'].values
+                ds["IFS_T_std"][:, i, j] = group['temperature_2m_std'].values
+
+        # CF attributes
+        ds.attrs = {
+            "Conventions": "CF-1.6",
+            "institution": "European Centre for Medium-Range Weather Forecasts",
+            "history": f"Open-Meteo retrieval for area on {date}",
+        }
+        ds["lat"].attrs.update({
+            "standard_name": "latitude",
+            "long_name": "latitude",
+            "units": "degrees_north",
+            "axis": "Y",
+        })
+        ds["lon"].attrs.update({
+            "standard_name": "longitude",
+            "long_name": "longitude",
+            "units": "degrees_east",
+            "axis": "X",
+        })
+        ds["IFS_T_mea"].attrs.update({
+            "long_name": "2 metre temperature",
+            "units": "K",
+            "code": 167,
+            "table": 128,
+        })
+        ds["IFS_T_std"].attrs.update({
+            "long_name": "2 metre temperature",
+            "units": "K",
+            "code": 167,
+            "table": 128,
+        })
+        ds["time"].attrs.update({"axis": "T", "standard_name": "time"})
+
+        ds.to_netcdf(fout, engine="netcdf4", unlimited_dims=["time"])
+        print(f"Created NetCDF: {fout}")
+
+    print("Open-Meteo IFS for the temperature grid - retrieval complete.")
+
+
+if __name__ == '__main__':
+    main()

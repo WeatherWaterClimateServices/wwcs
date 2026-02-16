@@ -60,13 +60,13 @@ class Client:
         """
         hourly = response.Hourly()
 
-        # Time extraction
+        # Time extraction - make timezone-naive for NetCDF compatibility
         time_values = pd.date_range(
             start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
             end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
             freq=pd.Timedelta(seconds=hourly.Interval()),
             inclusive="left"
-        )
+        ).tz_convert(None)  # <-- Remove timezone
 
         # Group variables by output key
         data_arrays = {key: [] for key in output_config}
@@ -114,13 +114,13 @@ class Client:
     def ensemble(self, params: dict):
         url = "https://ensemble-api.open-meteo.com/v1/ensemble"
         responses = self.client.weather_api(url, params=params)
-        assert len(responses) == 1
-        response = responses[0] # ! this is correct since we use only one model/ensemble !
-        return response
+        return responses
 
     def ensemble_df(self, params: dict, aggrs: dict):
-        response = self.ensemble(params)
-        return self._ensemble_response_to_dataframe(response, aggrs)
+        responses = self.ensemble(params)
+        dfs = [self._ensemble_response_to_dataframe(r, aggrs) for r in responses]
+        return pd.concat(dfs, ignore_index=True)
+
 
 #    def _response_to_dataframe(self, response):
 #        """Convert openmeteo-requests response to pandas DataFrame."""
