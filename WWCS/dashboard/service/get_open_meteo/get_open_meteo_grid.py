@@ -1,20 +1,12 @@
 import re
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-import yaml
 from openmeteo_sdk.Variable import Variable
 
 import client
-
-ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
-#ROOT_PATH = Path("/home/boris/wwcs/WWCS_repo/wwcs/WWCS")
-#ROOT_PATH = Path("/home/jdavid/sandboxes/Caritas/wwcs/WWCS")
-CONFIG_PATH = ROOT_PATH / "config.yaml"
-DATA_PATH = ROOT_PATH / "dashboard" / "ifsdata"
 
 om_client = client.Client()
 
@@ -101,9 +93,7 @@ def download_point(lat, lon, date_string):
 # Load configuration
 # ============================================================
 
-with client.CONFIG_PATH.open('r') as file:
-    config = yaml.safe_load(file)
-
+config = client.get_config()
 train_period   = config["train_period"]
 forecast_days  = config["forecast_days"]
 
@@ -179,7 +169,7 @@ ds = xr.Dataset(
 # full loop over all dates - one file per each date
 # ------------------------
 for date_string in dates:
-    fout = DATA_PATH / f"tj_area_{date_string}.nc"
+    fout = client.DATA_PATH / f"tj_area_{date_string}.nc"
     # skip if file exists already
     if fout.exists():
         print(f"Skipping {fout}, already exists")
@@ -217,5 +207,6 @@ for date_string in dates:
     # Write to file, print filename    
     ds.to_netcdf(fout, engine="netcdf4", unlimited_dims=["time"])
     print(f"Created NetCDF: {fout}")
-## end loop over dates
+
+
 print("Open-Meteo IFS for the temperature grid - retrieval complete.")
