@@ -28,7 +28,8 @@ Listens port 5050.
 
 In development run the program with:
 
-    flask --app api_wwcs run --debug
+    source venv/bin/activate
+    uvicorn api_wwcs:app
 
 In production the program is started by a Systemd service file.
 

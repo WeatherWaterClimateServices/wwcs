@@ -96,24 +96,47 @@ async def get_obs(response: Response, stationID: str):
                             detail="Internal Server Error")
 
 
-@app.get("/areas/{area}")
-async def get_obs_by_area(response: Response, area: str):
+@app.get("/areas/{area}/{date}")
+async def get_obs_by_area(response: Response, area: str, date: str):
     query = """
-        SELECT siteId FROM SitesHumans.Sites
-        WHERE district = :area OR jamoat = :area OR village = :area
+        SELECT
+            :area as area_name,
+            CASE
+                WHEN :area = s.region THEN 'region'
+                WHEN :area = s.district THEN 'district'
+                WHEN :area = s.jamoat THEN 'jamoat'
+                WHEN :area = s.village THEN 'village'
+                ELSE 'unknown'
+            END as area_type,
+            AVG(wf.Tmax) AS avg_Tmax,
+            AVG(wf.Tmin) AS avg_Tmin,
+            AVG(wf.Tmean) AS avg_Tmean,
+            wf.date,
+            wf.timeofday,
+            wf.day,
+            COUNT(DISTINCT s.siteID) as stations_count,
+            MIN(wf.icon) as icon
+        FROM WWCServices.Forecasts wf
+        JOIN SitesHumans.Sites s ON s.siteID = wf.siteID
+        WHERE (:area = s.region OR :area = s.district OR :area = s.jamoat OR :area = s.village)
+          AND wf.date = :date
+          AND wf.timeofday != -1
+          AND wf.timeofday IN (2, 3)
+        GROUP BY
+            area_type,
+            wf.date,
+            wf.timeofday,
+            wf.day
+        ORDER BY wf.day, wf.timeofday
     """
 
-    rows = await database_machines.fetch_all(query=query, values={"area": area})
+    rows = await database_machines.fetch_all(query=query, values={"area": area, "date": date})
     if len(rows) == 0:
         raise HTTPException(status_code=404, detail="no site found for the given area")
 
     response.headers['Access-Control-Allow-Origin'] = '*'
-    for row in rows:
-        rows = await get_observation(row.siteId)
-        if rows:
-            return rows
 
-    return []
+    return rows
 
 
 async def get_stations_metadata():
