@@ -232,7 +232,7 @@ system(paste0(
 system(paste0("cdo -O -daymean ", filesub, " ", filemean))
 system(paste0("cdo -O -daymin ", filesub, " ", filemin))
 if (!file.exists(filelev)){  ## BORIS here
-  system(paste0("cdo -O -seltimestep,1 -selname,ELEV ", filesub, " ", fileelev))
+  system(paste0("cdo -O -selname,ELEV -seltimestep,1 ", filesub, " ", fileelev))
 }
 
 
