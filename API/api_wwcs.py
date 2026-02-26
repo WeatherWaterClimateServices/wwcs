@@ -121,7 +121,6 @@ async def get_obs_by_area(response: Response, area: str, date: str):
         WHERE (:area = s.region OR :area = s.district OR :area = s.jamoat OR :area = s.village)
           AND wf.date = :date
           AND wf.timeofday != -1
-          AND wf.timeofday IN (2, 3)
         GROUP BY
             area_type,
             wf.date,
