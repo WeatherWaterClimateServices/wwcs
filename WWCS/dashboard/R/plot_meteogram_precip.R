@@ -105,7 +105,7 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
       xlimits_shadow <- c(min(forecast_data$time), max(observations_data$time))
 
       pictos_list <- list()
-      xpos <- seq(0.02, 0.92, length.out = 10) ## BORIS here needs work - ok only if 10 days forecast complete
+      ## xpos <- seq(0.02, 0.92, length.out = 10) ## BORIS here - replaced by date + 12h
       
       image_path <-
         "/srv/shiny-server/dashboard/www/weather_icons/png/"
@@ -120,12 +120,12 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
           a <-
             list(
               source =  paste('data:image/png;base64', txt, sep = ','),
-              x = xpos[i],
+              x = pictos_data$date[i] + hours(12), ## xpos[i], ## BORIS here
               y = 0.95,
-              xref = "paper",
+              xref = "x", ## "paper", ## BORIS here
               yref = "paper",
-              sizex = 0.08,
-              sizey = 0.08
+              sizex = 24 * 3600 * 1000, ## im ms, 1 day
+              sizey = 0.1
             )
           
           pictos_list[[i]] <- a
