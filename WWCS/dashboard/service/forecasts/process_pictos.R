@@ -21,7 +21,11 @@ setwd("/srv/shiny-server/dashboard/service")
 
 source('/home/wwcs/wwcs/WWCS/.Rprofile')
 maxlead <- forecast_days * 24
+myworries <- "all"
 
+divide_maxlead <- function(x) {
+  x / 10
+}
 
 curr_date <- Sys.Date() 
 read_start_date <- curr_date - lubridate::days(forecast_days + train_period)
@@ -34,13 +38,13 @@ dates <-
   ))
 
 ifs_dir <- "/srv/shiny-server/dashboard/ifsdata/"
-ifs_time <- c(0, 3, 6, 9, 12, 15, 18, 21)
+# ifs_time <- c(0, 3, 6, 9, 12, 15, 18, 21) BORIS here
 
 # Conversion pictocodes to filename
 
 picto_lookup <-
   readr::read_delim(
-    "/srv/shiny-server/dashboard/appdata/weather_icons/look_up_table.csv",
+    "/srv/shiny-server/dashboard/www/weather_icons/look_up_table.csv",
     show_col_types = FALSE
   )
 
@@ -207,7 +211,7 @@ station_id <- emos %>%
 # READ STATION DATA
 # ------------------------------------------------
 
-# Allocate Date for Direct Model Output (DMO)
+# Allocate Date for Direct Model Output (DMO) ## BORIS here - remove comment line
 
 pictocodes_daily <- data.frame()
 pictocodes_6hourly <- data.frame()
@@ -222,7 +226,7 @@ for (i in station_id) {
   print(paste0("Reading IFS data for station ", i))
   pictocodes_hourly <- data.frame()
   
-  file <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_extended_merged.nc"),
+  file <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_merged.nc"),
                                    " ",
                                    "")
   
@@ -236,18 +240,28 @@ for (i in station_id) {
       altitude_station <- obs %>%
         dplyr::filter(siteID == i) %>%
         dplyr::summarize(altitude = altitude[1]) %>%
-        unlist()
+          unlist()
+
+      emos_site <- emos %>%
+          dplyr::filter(siteID == i)
       
-      nc <- RNetCDF::open.nc(file)
+      # Add lead 0 and set the same values as lead 1 in emos_site ## BORIS here - don't understand
+      ## emos_site_0 <- emos_site %>% 
+      ##   dplyr::filter(lead == 1) %>% 
+      ##   dplyr::mutate(time = time - hours(1)) %>%
+      ##   dplyr::mutate(lead = 0) 
+      
+      ## emos_site <- dplyr::bind_rows(emos_site, emos_site_0) %>% arrange(lead)
+      ## nc <- RNetCDF::open.nc(file) ## BORIS here - not needed
       
       # Extract reftime unit string
-      reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units")
-      RNetCDF::close.nc(nc)
+      ## reftime_units <- RNetCDF::att.get.nc(nc, "reftime", "units") ## BORIS here - not needed
+      ## RNetCDF::close.nc(nc) ## BORIS here - not needed
       
       # Extract the reference date from the unit string
       # Format is typically "days since YYYY-MM-DD HH:MM:SS"
-      ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since "
-      reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct
+      ## ref_date_str <- sub("days since ", "", reftime_units)  # Remove "days since " ## BORIS here - not needed
+      ## reference_time <- as.POSIXct(ref_date_str, tz = "UTC") # Convert to POSIXct ## BORIS here - not needed
       
       # Get metadata information
       nc <- tidync::tidync(file)
@@ -258,12 +272,17 @@ for (i in station_id) {
         dplyr::mutate(
           reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
           time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
-          z = as.numeric(z) / 9.807,            
+          z = as.numeric(z) / 9.807,
           siteID = i,          
           CLCT = tcc,
           CLCL = lcc,
           CLCM = mcc,
           CLCH = hcc,
+          pCLCL = aL * CLCL, ## BORIS here, moving from obsolete ifs_hourly
+          pCLCM = aM * CLCM, ## BORIS here, moving from obsolete ifs_hourly
+          pCLCH = aH * CLCH, ## BORIS here, moving from obsolete ifs_hourly
+          cloud_upper_opacity =  pCLCM + pCLCH - pCLCM * pCLCH, ## BORIS here and next line
+          cloud_total_opacity = pCLCL + cloud_upper_opacity - pCLCL * pCLCM - pCLCL * pCLCH + pCLCL * pCLCM * pCLCH,
           PR = tp * 1000,            # from m to mm
           VIS =  ifelse(p3020 < vis_threshold, 0, 1), ## BORIS - this needs work
           LT = NA, ## BORIS - this parameter is not available in OM
@@ -271,66 +290,61 @@ for (i in station_id) {
           elevation = altitude_station,
           .groups = "keep"
         ) %>%
-        dplyr::arrange(siteID, reftime)        
+          dplyr::arrange(siteID, reftime) %>% ## BORIS here, moving from obsolete ifs_hourly
+          dplyr::right_join(emos_site, by = c("reftime", "time", "lead", "siteID")) %>% ## BORIS here and next line
+          dplyr::select(-c(pCLCL, pCLCM, pCLCH))
       
-      reftimes <- unique(ifs$reftime)
-      ifs_hourly <- data.frame()
-      
-      for (j in 1:length(reftimes)) {
-        time = as.POSIXct(reftimes[j], tz = timezone_country) + as.difftime(seq(0, maxlead), units = 'hours')
-        ifs_hourly <- data.frame("time" = time) %>%
-          tibble::as_tibble() %>%
-          dplyr::mutate(
-            reftime = as.POSIXct(reftimes[j], tz = timezone_country),
-            lead = as.numeric(time - reftime, units = 'hours'),
-            siteID = i
-          ) %>%
-          dplyr::bind_rows(ifs_hourly)
-      }
-      
-      emos_site <- emos %>%
-        dplyr::filter(siteID == i)
-      
-      # Add lead 0 and set the same values as lead 1 in emos_site 
-      emos_site_0 <- emos_site %>% 
-        dplyr::filter(lead == 1) %>% 
-        dplyr::mutate(time = time - hours(1)) %>%
-        dplyr::mutate(lead = 0) 
-      
-      emos_site <- dplyr::bind_rows(emos_site, emos_site_0) %>% arrange(lead)
+      ## reftimes <- unique(ifs$reftime) ## BORIS here and below - obsolete thanks to OM
+      ## ifs_hourly <- data.frame()       
+      ## for (j in 1:length(reftimes)) {
+      ##     print(reftimes[j])
+      ##   time = as.POSIXct(reftimes[j], tz = timezone_country) +
+      ##         as.difftime(seq(0, length = maxlead, by = 1), units = 'hours') ## BORIS here
+      ##   ifs_hourly <- data.frame("time" = time) %>%
+      ##     tibble::as_tibble() %>%
+      ##     dplyr::mutate(
+      ##       reftime = as.POSIXct(reftimes[j], tz = timezone_country),
+      ##       lead = as.numeric(time - reftime, units = 'hours'),
+      ##       siteID = i
+      ##     ) %>%
+      ##     dplyr::bind_rows(ifs_hourly)
+      ## }
       
       
       
-      ifs_hourly <- ifs_hourly %>%
-        dplyr::left_join(ifs, by = c("reftime", "time", "lead", "siteID")) %>%
-        dplyr::mutate(
-          ## LT = zoo::na.approx(LT) * 24 * 100, ## BORIS here
-          # number of flashes per 100 km2 and hour
-          CLCT = zoo::na.approx(CLCT),
-          CLCM = zoo::na.approx(CLCM),
-          CLCH = zoo::na.approx(CLCH),
-          CLCL = zoo::na.approx(CLCL),
-          ## HSURF = zoo::na.approx(HSURF), ## BORIS here
-          elevation = zoo::na.approx(elevation),
-          pCLCL = aL * CLCL,
-          pCLCM = aM * CLCM,
-          pCLCH = aH * CLCH,
-          cloud_upper_opacity =  pCLCM + pCLCH - pCLCM * pCLCH,
-          cloud_total_opacity = pCLCL + cloud_upper_opacity - pCLCL * pCLCM - pCLCL * pCLCH + pCLCL * pCLCM * pCLCH,
-          VIS = na.approx(VIS),
-          PR = na.approx(PR),
-        ) %>%
-        dplyr::right_join(emos_site, by = c("reftime", "time", "lead", "siteID")) %>%
-        dplyr::select(-c(pCLCL, pCLCM, pCLCH))
+      
+      ## ifs_hourly <- ifs_hourly %>% ## BORIS here - obsolete thanks to OM
+      ##   dplyr::left_join(ifs, by = c("reftime", "time", "lead", "siteID")) %>%
+      ##   dplyr::mutate(
+      ##     ## LT = zoo::na.approx(LT) * 24 * 100, ## BORIS here
+      ##     # number of flashes per 100 km2 and hour
+      ##     CLCT = zoo::na.approx(CLCT),
+      ##     CLCM = zoo::na.approx(CLCM),
+      ##     CLCH = zoo::na.approx(CLCH),
+      ##     CLCL = zoo::na.approx(CLCL),
+      ##     ## HSURF = zoo::na.approx(HSURF), ## BORIS here
+      ##     elevation = zoo::na.approx(elevation),
+      ##     pCLCL = aL * CLCL,
+      ##     pCLCM = aM * CLCM,
+      ##     pCLCH = aH * CLCH,
+      ##     cloud_upper_opacity =  pCLCM + pCLCH - pCLCM * pCLCH,
+      ##     cloud_total_opacity = pCLCL + cloud_upper_opacity - pCLCL * pCLCM - pCLCL * pCLCH + pCLCL * pCLCM * pCLCH,
+      ##     VIS = na.approx(VIS),
+      ##     PR = na.approx(PR),
+      ##   ) %>%
+      ##   dplyr::right_join(emos_site, by = c("reftime", "time", "lead", "siteID")) %>%
+      ##   dplyr::select(-c(pCLCL, pCLCM, pCLCH))
       
       
-      ifs_extended <- ifs_hourly %>%
-        dplyr::bind_rows(ifs_extended)
+      ## ifs_extended <- ifs_hourly %>% ## BORIS here - no more ifs_hourly
+      ifs_extended <- ifs %>%
+         dplyr::bind_rows(ifs_extended)
       
       # COMPUTE HOURLY PICTOCODES
       # ------------------------------------------------
       
-      pictocodes_hourly <- ifs_hourly %>%
+      ## pictocodes_hourly <- ifs_hourly %>% ## BORIS here, no more ifs_hourly
+      pictocodes_hourly <- ifs %>%
         ## na.omit() %>% ## BORIS here - unclear whether this is necessary
         dplyr::rowwise()  %>% 
         dplyr::mutate(POS1 = pos1_hour(VIS, fog_threshold)) %>%

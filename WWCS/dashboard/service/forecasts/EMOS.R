@@ -74,7 +74,7 @@ for (i in station_id) {
   ifs <- data.frame()
   
   file <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_merged.nc"), " ","")
-  file_ext <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_extended_merged.nc"), " ","")
+  ## file_ext <- stringr::str_replace_all(paste0(ifs_dir, i, "_", curr_date, "_extended_merged.nc"), " ","") BORIS here
   
   if (file.exists(file)) {
     nc <- RNetCDF::open.nc(file)
@@ -99,7 +99,8 @@ for (i in station_id) {
                time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = "hours"),
                                  tz = timezone_country),
                siteID = i,
-               IFS_T_mea = IFS_T_mea - 273.15
+               IFS_T_mea = IFS_T_mea - 273.15,
+               IFS_PR_mea = tp * 1000 ## BORIS here
              )
     
     ## Calculate Daily Temperature Range (DTR)
@@ -119,26 +120,26 @@ for (i in station_id) {
       dplyr::left_join(dtr, by = c("reftime", "day")) %>%
       dplyr::select(-c(day))
     
-    ## Add precipitation from extended parameter file
+    ## Add precipitation from extended parameter file BORIS here - commenting this all out
     ## ----------------------------------------------    
-    if (file.exists(file_ext)) {
-      nc <- tidync(file_ext)
-      ifs_pr <- nc %>% 
-        tidync::hyper_tibble() %>%
-        dplyr::mutate(time = as.numeric(time)) %>%
-        dplyr::rename(lead = time) %>%
-        dplyr::mutate(
-                 reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
-                 time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'),
-                                   tz = timezone_country),
-                 siteID = i,
-                 IFS_PR_mea = tp * 1000
-               )
+    ## if (file.exists(file_ext)) {
+    ##   nc <- tidync(file_ext)
+    ##   ifs_pr <- nc %>% 
+    ##     tidync::hyper_tibble() %>%
+    ##     dplyr::mutate(time = as.numeric(time)) %>%
+    ##     dplyr::rename(lead = time) %>%
+    ##     dplyr::mutate(
+    ##              reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
+    ##              time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'),
+    ##                                tz = timezone_country),
+    ##              siteID = i,
+    ##              IFS_PR_mea = tp * 1000
+    ##            )
       
       
-      ifs <- ifs %>%
-        dplyr::left_join(ifs_pr, by = c("time", "siteID", "reftime", "lead"))
-    }
+    ##   ifs <- ifs %>%
+    ##     dplyr::left_join(ifs_pr, by = c("time", "siteID", "reftime", "lead"))
+    ## }
   }
   
   ## MERGE STATION AND IFS
@@ -154,7 +155,7 @@ for (i in station_id) {
 print(paste0("---COMPUTE POSTPROCESSED FORECASTS---"))
 
 emos <- list()
-ltimes <- seq(0, maxlead)
+ltimes <- seq(0, length=maxlead, by=1) ## BORIS here
 station_id <- unique(dmo$siteID)
 
 for (s in station_id) {
