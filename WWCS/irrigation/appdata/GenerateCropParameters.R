@@ -195,6 +195,81 @@ DryRice.end <- data.frame(
 
 crop.parameters <- full_join(crop.parameters, rbind(DryRice, DryRice.end), by = "Index")
 
+## Potato short growth duration (115 days) in (Semi)Arid Climate - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
+Ls <- c(ini = 25, dev = 30, mid = 30, late = 30) # FAO 56 paper (p105)
+Kc <- c(ini = 0.5, mid = 1.15, end = .75) # FAO 56 paper (p110) 
+RD <- c(min = 0.2, max = 0.6) # FAO 56 paper (p163, p279) 
+Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
+         seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
+         rep(Kc[["mid"]], Ls[["mid"]]),
+         seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
+RDs <- c(seq(RD[["min"]], RD[["max"]], length= sum (Ls[["ini"]], Ls[["dev"]], Ls[["mid"]], Ls[["late"]])),
+         rep(RD[["max"]], Ls[["late"]]))
+Potato115dFAO <-
+  data.frame(Index=1:nrow(crop.parameters),
+             Potato115dFAO_Kc=c(Kcs,
+                                rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             Potato115dFAO_RD=c(RDs,
+                                rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, Potato115dFAO, by = "Index")
+
+# Potato short duration growth (115 days), RD from ICARDA, KC based on Kadam, S. A., et al. (2021)
+# "Crop coefficient for potato crop evapotranspiration estimation by field water balance 
+# method in semi-arid region, Maharashtra, India." Potato Research 64.3 (2021): 421-433.
+Ls <- c(ini = 25, dev = 30, mid = 30, late = 30) # FAO 56 paper (p105)
+RD <- c(min = 0.1) # ICARDA for Tajikistan potato (2025)
+total_days <- sum(Ls)
+dt <- (1:total_days) / total_days
+Kcs <- -0.457 * (dt^5) + 1.9252 * (dt^4) - 5.642 * (dt^3) + 3.2692 * (dt^2) + 1.1969*(dt)^1 +0.3753 # Kadam, S. A., et al. (2021)
+RDs <- RD[["min"]]+(0.6-RD[["min"]]) * (1 - exp(-0.03* (1:total_days))) #fro the Excel files developed by ICARDA for Tajikistan potato (2025)
+# RDs <- 0.0043 * (1:total_days) + 0.1957 # from the Excel files developed by ICARDA for Tajikistan potato (2023)
+Potato115dKadam <-
+  data.frame(Index=1:nrow(crop.parameters),
+             Potato115dKadam_Kc=c(Kcs,
+                                  rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             Potato115dKadam_RD=c(RDs,
+                               rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, Potato115dKadam, by = "Index")
+
+## Cotton growth duration 180 days - default FAO values https://www.fao.org/4/x0490e/x0490e0b.htm
+Ls <- c(ini = 30, dev = 50, mid = 55, late = 45) 
+Kc <- c(ini = 0.35, mid = 1.15, end = .60)
+RD <- c(min = 0.1, max = 1.35)
+Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
+         seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
+         rep(Kc[["mid"]], Ls[["mid"]]),
+         seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
+RDs <- c(seq(RD[["min"]], RD[["max"]], length= sum (Ls[["ini"]], Ls[["dev"]], Ls[["mid"]], Ls[["late"]])),
+         rep(RD[["max"]], Ls[["late"]]))
+Cotton180dFAO <-
+  data.frame(Index=1:nrow(crop.parameters),
+             Cotton180dFAO_Kc=c(Kcs,
+                                rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             Cotton180dFAO_RD=c(RDs,
+                                rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, Cotton180dFAO, by = "Index")
+
+## Cotton with growth duration of 180 days; RD from ICARDA, Kc based on Kenjabaev, S. (2020).
+## Determination of Actual Crop Evapotranspiration (Etc) and Dual Crop
+## Coefficients (KC) for Cotton, Wheat and Maize in Fergana Valley:
+## Integration of the FAO-56 Approach and Budget
+
+Ls <- c(ini = 30, dev = 50, mid = 55, late = 45) 
+total_days <- sum(Ls)
+dt <- (1:total_days) / total_days
+Kcs <- -11.66 * (dt^3) + 15.35 * (dt^2) - 3.56 * dt + 0.32
+RD <- c(min = 0.1, max = 1.7)
+RDs <- c(seq(RD[["min"]], RD[["max"]], length= sum (Ls[["ini"]], Ls[["dev"]], Ls[["mid"]], Ls[["late"]])),
+         rep(RD[["max"]], Ls[["late"]]))
+Cotton180dKenjabaev <-
+  data.frame(Index=1:nrow(crop.parameters),
+             Cotton180dKenjabaev_Kc=c(Kcs,
+                                     rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             Cotton180dKenjabaev_RD=c(RDs,
+                            rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, Cotton180dKenjabaev, by = "Index")
+
+
 ## write out
 write.csv(crop.parameters, "CropParameters.csv", row.names = FALSE)
 Sys.chmod("CropParameters.csv", mode = "0666", use_umask = FALSE)
