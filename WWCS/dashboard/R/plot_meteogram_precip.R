@@ -63,11 +63,13 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
       ungroup()
     
     forecast_pr_data <- emos_data %>%
-      group_by(bins, center_time) %>%
+      group_by(bins, center_time) %>% 
       summarize(
-        PR = sum(IFS_PR_mea, na.rm = TRUE),
+        PR = sum(IFS_PR_mea, na.rm = TRUE)
         ## PR_std = mean(IFS_PR_std, na.rm = TRUE) ## BORIS here
       ) %>%
+      ungroup() %>%
+      arrange(center_time) %>%
       dplyr::mutate(PR = ifelse(PR < 0, 0, PR))    
     
     observations_data <- emos_data %>%
