@@ -66,6 +66,7 @@ bot = AsyncTeleBot(BOT_TOKEN)
 # Dictionaries for storing states
 user_states = {}
 user_irrigation_data = {}  # For storing irrigation data
+user_pending_recommendations = {} # To store recommendations data for stress-free users 2026-03-12
 
 # Water flow table (level in cm -> flow in m³/min)
 WATER_FLOW_RATES = {
@@ -278,6 +279,10 @@ async def check_irrigation(chat_id):
 
         m3_needed = (float(row['irrigationNeed']) * 10 * float(row['area']) * float(row['wa'])) / float(row['ie'])
 
+        # Определяем, нужно ли отправлять сообщение автоматически или сохранить для ручного запуска
+        should_auto_send = True  # По умолчанию отправляем автоматически
+        text = ""  # Инициализируем переменную text
+
         if row['type'] == "treatment":
             if row['device'] in ["thomson_profile", "incremental_meter"] and phic <= phit:
                 text = _(
@@ -286,6 +291,7 @@ async def check_irrigation(chat_id):
                     "💧 Your plot needs: {water:.2f} m³ of irrigation.\n"
                     "If you want to irrigate, press 'Start irrigation'. Otherwise simply come back tomorrow."
                 )
+                should_auto_send = True  # Есть стресс - отправляем автоматически
             elif row['device'] == "total_meter" and phic <= phit:
                 text = _(
                     "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
@@ -293,6 +299,7 @@ async def check_irrigation(chat_id):
                     "💧 Please irrigate: {water:.2f} m³.\n"
                     "When finished, press the 'Irrigation finished' button."
                 )
+                should_auto_send = True  # Есть стресс - отправляем автоматически
             else:
                 text = _(
                     "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
@@ -301,9 +308,10 @@ async def check_irrigation(chat_id):
                     "If you want to irrigate nevertheless, don't apply more than {water:.2f} m³ of irrigation.\n"
                     "Press 'Start irrigation' if you want to irrigate. Otherwise simply come back tomorrow."
                 )
-
+                should_auto_send = False  # Нет стресса - не отправляем автоматически
 
         elif row['type'] == "control":
+            # Для control полей ВСЕГДА не отправляем автоматически
             if row['device'] == "total_meter":
                 text = _(
                     "🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
@@ -317,15 +325,30 @@ async def check_irrigation(chat_id):
                     "I will guide you through the irrigation data entry.\n"
                     "If you want to irrigate today, press 'Start irrigation'. Otherwise simply come back tomorrow."
                 )
+            should_auto_send = False  # Control поля - не отправляем автоматически
         else:
             await send_message_safe(chat_id,
                                     _("⚠️ The plot type or metering device information in the database is wrong for your site. Please contact support."))
             return False
 
+        # Сохраняем данные для пользователей, которым не нужно отправлять автоматически
+        if not should_auto_send and chat_id:
+            print(f"[DEBUG] User {chat_id} ({row['type']}) should not receive auto message, storing recommendation")
+            user_pending_recommendations[chat_id] = {
+                'text': text,
+                'first_name': row['firstName'],
+                'water': round(m3_needed, 2),
+                'crop': crop,
+                'row': row,  # Сохраняем полные данные строки для последующего использования
+                'type': row['type']  # Сохраняем тип поля для отладки
+            }
+            return True
+
+        # Для всех остальных (только treatment со стрессом) отправляем сообщение сразу
         message = text.format(
             first_name=row['firstName'],
             water=round(m3_needed, 2),
-            crop=crop  # Use crop variable instead of row.get()
+            crop=crop
         )
         markup = create_reply_keyboard()
         await send_message_safe(chat_id, message, reply_markup=markup)
@@ -334,7 +357,9 @@ async def check_irrigation(chat_id):
     except Exception as e:
         print(f"[ERROR] in check_irrigation for {chat_id}: {str(e)}")
         traceback.print_exc()
-        await send_message_safe(chat_id, _("⚠️ I cannot read from the database. Try again later or contact support."))
+        if chat_id:  # Отправляем сообщение об ошибке только если есть chat_id
+            await send_message_safe(chat_id,
+                                    _("⚠️ I cannot read from the database. Try again later or contact support."))
         return False
 
 
@@ -355,9 +380,11 @@ async def check_all_users():
                 continue
 
             try:
+                # Передаем chat_id в check_irrigation, чтобы функция знала, для кого проверяем
                 success = await check_irrigation(chat_id)
                 if success:
                     notified_users.add(chat_id)
+                    print(f"[DEBUG] Successfully processed user {chat_id}")
             except Exception as e:
                 print(f"[ERROR] Notification error for {chat_id}: {str(e)}")
                 traceback.print_exc()
@@ -453,7 +480,28 @@ async def start(message):
 async def handle_recommendation(message):
     chat_id = message.chat.id
     try:
+        print(f"[DEBUG] User {chat_id} pressed Start Irrigation button")
 
+        # Проверяем, есть ли сохраненная рекомендация для этого пользователя
+        if chat_id in user_pending_recommendations:
+            print(f"[DEBUG] Found pending recommendation for user {chat_id}")
+            # Отправляем сохраненную рекомендацию
+            pending = user_pending_recommendations[chat_id]
+            message_text = pending['text'].format(
+                first_name=pending['first_name'],
+                water=pending['water'],
+                crop=pending['crop']
+            )
+            markup = create_reply_keyboard()
+            await send_message_safe(chat_id, message_text, reply_markup=markup)
+
+            # Удаляем сохраненную рекомендацию
+            del user_pending_recommendations[chat_id]
+            print(f"[DEBUG] Removed pending recommendation for user {chat_id}")
+            return
+
+        # Если нет сохраненной рекомендации, продолжаем обычную логику
+        print(f"[DEBUG] No pending recommendation for user {chat_id}, getting fresh data")
         row = await get_irrigation_data(chat_id)
         if row is None:
             print("[DEBUG] Row is False, returning")
@@ -482,7 +530,6 @@ async def handle_recommendation(message):
             await send_message_safe(chat_id,
                                     _("After irrigation, press 'Irrigation finished' and enter m³ used water in total"))
             return
-
 
     except Exception as e:
         print(f"[ERROR] in handle_recommendation: {str(e)}")
