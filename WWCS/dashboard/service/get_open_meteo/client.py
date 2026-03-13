@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import mysql.connector
@@ -49,6 +50,9 @@ class Client:
         cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
         retry_session = retry_requests.retry(cache_session, retries=5, backoff_factor=0.2)
         self.client = openmeteo_requests.Client(session=retry_session)
+
+        # Commercial API with key or free public API
+        self.api_key = os.getenv('OPENMETEO_API_KEY')
 
     def _ensemble_response_to_dataframe(
         self,
@@ -113,8 +117,9 @@ class Client:
 
     def ensemble(self, params: dict):
         url = "https://ensemble-api.open-meteo.com/v1/ensemble"
-        responses = self.client.weather_api(url, params=params)
-        return responses
+        if self.api_key:
+            params["apikey"] = self.api_key
+        return self.client.weather_api(url, params=params)
 
     def ensemble_df(self, params: dict, aggrs: dict):
         responses = self.ensemble(params)
