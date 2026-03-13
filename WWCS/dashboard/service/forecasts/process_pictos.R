@@ -54,21 +54,21 @@ aL = 1
 aM = 0.91
 aH = 0.4
 
-vis_threshold = 1500
-lightning_threshold = 1
+# vis_threshold = 1500 ## BORIS here - no visibility available
+# lightning_threshold = 1 ## BORIS here - no lightning available
 
 # POS1 Parameters
-fog_threshold = 0.4
+## fog_threshold = 0.4 ## BORIS here - no visibility available
 
-pos1_hour <- function(VIS, fog_threshold) {
-  if (VIS > fog_threshold) {
-    code <- "2"
-  } else {
-    code <- "0"
-  }
+# pos1_hour <- function(VIS, fog_threshold) { ## BORIS here - no visibility available
+#   if (VIS > fog_threshold) {
+#     code <- "2"
+#   } else {
+#     code <- "0"
+#   }
   
-  return(code)
-}
+#   return(code)
+# }
 
 # POS2 Parameters
 opacity_threshold = c(0.12, 0.4, 0.65, 0.9)
@@ -284,7 +284,7 @@ for (i in station_id) {
           cloud_upper_opacity =  pCLCM + pCLCH - pCLCM * pCLCH, ## BORIS here and next line
           cloud_total_opacity = pCLCL + cloud_upper_opacity - pCLCL * pCLCM - pCLCL * pCLCH + pCLCL * pCLCM * pCLCH,
           PR = tp * 1000,            # from m to mm
-          VIS =  ifelse(p3020 < vis_threshold, 0, 1), ## BORIS - this needs work
+          # VIS =  ifelse(p3020 < vis_threshold, 0, 1), ## BORIS here - no visibility available
           LT = NA, ## BORIS - this parameter is not available in OM
           HSURF = z[1], ## BORIS - possibly remove this parameter
           elevation = altitude_station,
@@ -346,8 +346,9 @@ for (i in station_id) {
       ## pictocodes_hourly <- ifs_hourly %>% ## BORIS here, no more ifs_hourly
       pictocodes_hourly <- ifs %>%
         ## na.omit() %>% ## BORIS here - unclear whether this is necessary
-        dplyr::rowwise()  %>% 
-        dplyr::mutate(POS1 = pos1_hour(VIS, fog_threshold)) %>%
+        dplyr::rowwise()  %>%         
+        # dplyr::mutate(POS1 = pos1_hour(VIS, fog_threshold)) %>% ## BORIS here - no visibility available
+        dplyr::mutate(POS1 = 0) %>% ## BORIS here - hard coded to 'no fog'
         dplyr::mutate(POS2 = pos2_hour(cloud_total_opacity, opacity_threshold)) %>%
         dplyr::mutate(POS3 = pos3_hour(
           ## LT, ## BORIS here
