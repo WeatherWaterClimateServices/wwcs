@@ -77,12 +77,12 @@ def dataframe_to_netcdf(df: pd.DataFrame, filename: str, ref_date: date, lat: fl
     total_precip_std_val = df['precipitation_std'].values / 1000  # convert mm to m
     total_precip_std[:, 0, 0] = total_precip_std_val
 
-    # Geopotential height (mean)
-    geop_height = nc.createVariable('z', 'f4', ('time', 'lat', 'lon'), fill_value=np.nan)
-    geop_height.long_name = 'Geopotential'
-    geop_height.standard_name = 'geopotential'
-    geop_height.units = 'm**2 s**-2'
-    geop_height[:, 0, 0] = df['geopotential_height_1000hPa_mean'].values
+    # # Geopotential height (mean)
+    # geop_height = nc.createVariable('z', 'f4', ('time', 'lat', 'lon'), fill_value=np.nan)
+    # geop_height.long_name = 'Geopotential'
+    # geop_height.standard_name = 'geopotential'
+    # geop_height.units = 'm**2 s**-2'
+    # geop_height[:, 0, 0] = df['geopotential_height_1000hPa_mean'].values
 
     # Low cloud cover (mean)
     low_cc = nc.createVariable('lcc', 'f4', ('time', 'lat', 'lon'), fill_value=np.nan)
@@ -112,16 +112,16 @@ def dataframe_to_netcdf(df: pd.DataFrame, filename: str, ref_date: date, lat: fl
     total_cc_val = df['cloud_cover_mean'].values / 100  # from % to 0-1
     total_cc[:, 0, 0] = total_cc_val
 
-    # Visibility - fog count (ensemble members < 1500m)
-    visibility = nc.createVariable('p3020', 'f4', ('time', 'lat', 'lon'), fill_value=np.nan)
-    visibility.long_name = 'Visibility fog count (members < 1500m)'
-    visibility.units = 'count'
-    visibility[:, 0, 0] = df['visibility_fog_count'].values
+    # # Visibility - fog count (ensemble members < 1500m)
+    # visibility = nc.createVariable('p3020', 'f4', ('time', 'lat', 'lon'), fill_value=np.nan)
+    # visibility.long_name = 'Visibility fog count (members < 1500m)'
+    # visibility.units = 'count'
+    # visibility[:, 0, 0] = df['visibility_fog_count'].values
 
-    # Lightning - we don't get this from open-meteo, so we leave it at nan
-    lightning = nc.createVariable('litoti', 'f4', ('time', 'lat', 'lon'), fill_value=np.nan)
-    lightning.long_name = 'Instantaneous total lightning flash density'
-    lightning.units = 'km**-2 day**-1'
+    # # Lightning - we don't get this from open-meteo, so we leave it at nan
+    # lightning = nc.createVariable('litoti', 'f4', ('time', 'lat', 'lon'), fill_value=np.nan)
+    # lightning.long_name = 'Instantaneous total lightning flash density'
+    # lightning.units = 'km**-2 day**-1'
 
     # Global attributes for lat/lon (redundant but useful for quick lookup)
     nc.latitude = lat
@@ -174,15 +174,15 @@ if __name__ == '__main__':
             'variable': Variable.precipitation,
             'aggregations': ['mean', 'std']
         },
-        'visibility': {
-            'variable': Variable.visibility,
-            'aggregations': [('fog_count', lambda m: np.sum(m < 1500, axis=0))],
-        },
-        'geopotential_height_1000hPa': {
-            'variable': Variable.geopotential_height,
-            'filter': lambda v: v.PressureLevel() == 1000,
-            'aggregations': ['mean']
-        }
+        # 'visibility': {
+        #     'variable': Variable.visibility,
+        #     'aggregations': [('fog_count', lambda m: np.sum(m < 1500, axis=0))],
+        # },
+        # 'geopotential_height_1000hPa': {
+        #     'variable': Variable.geopotential_height,
+        #     'filter': lambda v: v.PressureLevel() == 1000,
+        #     'aggregations': ['mean']
+        # }
     }
     hourly = sorted(output_config.keys())
 

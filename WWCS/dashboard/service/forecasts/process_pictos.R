@@ -95,7 +95,7 @@ prob_lightning = 0.28
 pos3_hour <-
   function(## LT, ## BORIS here
            PR,
-           HSURF,
+           ## HSURF, ## BORIS here
            CLCH,
            CLCM,
            CLCL,
@@ -272,7 +272,7 @@ for (i in station_id) {
         dplyr::mutate(
           reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
           time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'), tz = timezone_country),
-          z = as.numeric(z) / 9.807,
+          ## z = as.numeric(z) / 9.807,
           siteID = i,          
           CLCT = tcc,
           CLCL = lcc,
@@ -286,7 +286,7 @@ for (i in station_id) {
           PR = tp * 1000,            # from m to mm
           # VIS =  ifelse(p3020 < vis_threshold, 0, 1), ## BORIS here - no visibility available
           LT = NA, ## BORIS - this parameter is not available in OM
-          HSURF = z[1], ## BORIS - possibly remove this parameter
+          ## HSURF = z[1], ## BORIS - possibly remove this parameter
           elevation = altitude_station,
           .groups = "keep"
         ) %>%
@@ -353,7 +353,7 @@ for (i in station_id) {
         dplyr::mutate(POS3 = pos3_hour(
           ## LT, ## BORIS here
           PR,
-          HSURF,
+          ## HSURF,
           CLCH,
           CLCM,
           CLCL,
