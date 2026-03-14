@@ -119,6 +119,7 @@ class Client:
         url = "https://ensemble-api.open-meteo.com/v1/ensemble"
         if self.api_key:
             params["apikey"] = self.api_key
+            url = "https://customer-ensemble-api.open-meteo.com/v1/ensemble"
         return self.client.weather_api(url, params=params)
 
     def ensemble_df(self, params: dict, aggrs: dict):
