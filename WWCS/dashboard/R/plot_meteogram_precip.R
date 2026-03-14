@@ -4,14 +4,14 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
   offset = 0.10
   
   assign_bins <- function(datetime) {
-    hour <- as.numeric(format(datetime, "%H"))
-    if (hour >= 0 & hour < 6) {
+    hour <- as.numeric(format(datetime, "%H")) ## BORIS here - midnight belongs to prev. day
+    if (hour > 0 & hour <= 6) {
       bin <- "0-6am"
       center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(3), tz = timezone_country)
-    } else if (hour >= 6 & hour < 12) {
+    } else if (hour > 6 & hour <= 12) {
       bin <- "7am-12pm"
       center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(9), tz = timezone_country)
-    } else if (hour >= 12 & hour < 18) {
+    } else if (hour > 12 & hour <= 18) {
       bin <- "1pm-6pm"
       center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(15), tz = timezone_country)
     } else {
