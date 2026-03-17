@@ -331,6 +331,7 @@ async def check_irrigation(chat_id):
                                     _("⚠️ The plot type or metering device information in the database is wrong for your site. Please contact support."))
             return False
 
+        markup = create_reply_keyboard()
         # Сохраняем данные для пользователей, которым не нужно отправлять автоматически
         if not should_auto_send and chat_id:
             print(f"[DEBUG] User {chat_id} ({row['type']}) should not receive auto message, storing recommendation")
@@ -350,7 +351,7 @@ async def check_irrigation(chat_id):
             water=round(m3_needed, 2),
             crop=crop
         )
-        markup = create_reply_keyboard()
+        
         await send_message_safe(chat_id, message, reply_markup=markup)
         return True
 
@@ -469,7 +470,8 @@ async def start(message):
         if no_irrigation_key in user_states:
             del user_states[no_irrigation_key]
 
-        await send_message_safe(message.chat.id, _("The bot has started successfully"))
+        markup = create_reply_keyboard()
+        await send_message_safe(message.chat.id, _("The bot has started successfully"), reply_markup=markup)
         await check_irrigation(message.chat.id)
     except Exception as e:
         print(f"[ERROR] in start command: {str(e)}")
