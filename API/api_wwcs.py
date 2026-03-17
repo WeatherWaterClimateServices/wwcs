@@ -675,7 +675,7 @@ async def get_data_warning_planting(request: Request, response: Response):
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
-@app.get("kiosk/planting/areas/{area}/{date}")
+@app.get("/kiosk/planting/areas/{area}/{date}")
 async def get_planting_by_area(response: Response, area: str, date: str):
     # 1. Проверим, есть ли соединение с БД
     try:
