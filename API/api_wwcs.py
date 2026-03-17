@@ -675,59 +675,26 @@ async def get_data_warning_planting(request: Request, response: Response):
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
+
 @app.get("/kiosk/planting/areas/{area}/{date}")
 async def get_planting_by_area(response: Response, area: str, date: str):
-    # 1. Проверим, есть ли соединение с БД
-    try:
-        # 2. Посмотрим все джамоаты в базе
-        all_jamoats = await database_machines.fetch_all(
-            "SELECT DISTINCT jamoat FROM SitesHumans.Sites WHERE jamoat IS NOT NULL"
-        )
-        jamoats_list = [row['jamoat'] for row in all_jamoats]
-        
-        print(f"Все джамоаты в базе: {jamoats_list}")
-        print(f"Ищем джамоат: '{area}'")
-        
-        # 3. Проверим, есть ли такой джамоат
-        jamoat_check = await database_machines.fetch_one(
-            "SELECT jamoat FROM SitesHumans.Sites WHERE jamoat = :area LIMIT 1",
-            values={"area": area}
-        )
-        
-        print(f"Джамоат найден: {jamoat_check is not None}")
-        
-        # 4. Выполним основной запрос
-        query = """
-            SELECT  :area as area_name,
-                'jamoat' as area_type,
-                p.*, s.district, s.jamoat, s.region  
-            FROM WWCServices.Planting p
-            JOIN SitesHumans.Sites s ON s.siteID = p.siteID
-            WHERE s.jamoat = :area
-            AND p.date = :date
-        """
-        
-        rows = await database_machines.fetch_all(query=query, values={"area": area, "date": date})
-        print(f"Найдено записей: {len(rows)}")
-        
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        
-        if len(rows) == 0:
-            # Если нет данных, вернем информацию для отладки
-            return {
-                "status": "no_data",
-                "searched_area": area,
-                "date": date,
-                "jamoat_exists": jamoat_check is not None,
-                "all_jamoats": jamoats_list[:10],  # первые 10 для примера
-                "message": "Джамоат найден, но нет данных о посадке на эту дату"
-            }
-        
-        return rows
-        
-    except Exception as e:
-        print(f"Ошибка: {str(e)}")
-        return {"error": str(e), "searched_area": area, "date": date}
+    query = """
+        SELECT  :area as area_name,
+            'jamoat' as area_type,
+            p.*, s.district, s.jamoat, s.region  
+        FROM WWCServices.Planting p
+        JOIN SitesHumans.Sites s ON s.siteID = p.siteID
+        WHERE s.jamoat = :area
+        AND p.date = :date
+    """
+
+    rows = await database_machines.fetch_all(query=query, values={"area": area, "date": date})
+    if len(rows) == 0:
+        raise HTTPException(status_code=404, detail="no site found for the given area")
+
+    response.headers['Access-Control-Allow-Origin'] = '*'
+
+    return rows
 # ---------------------------------------
 # GET HARVEST DATA
 # ---------------------------------------
