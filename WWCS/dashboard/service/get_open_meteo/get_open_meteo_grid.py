@@ -100,22 +100,6 @@ def main():
 
     # Preallocate dataset using first call
     first_chunk = ([float(lats[0])], [float(lons[0])])
-    df0 = download_chunk(*first_chunk, dates[0], forecast_days)
-    times = df0['time'].unique()
-
-    ds = xr.Dataset(
-        data_vars={
-            "IFS_T_mea": (
-                ("time", "lat", "lon"),
-                np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
-            ),
-            "IFS_T_std": (
-                ("time", "lat", "lon"),
-                np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
-            ),
-        },
-        coords={"time": times, "lat": lats, "lon": lons},
-    )
 
     # Create lookup for fast indexing
     lat_to_i = {float(lat): i for i, lat in enumerate(lats)}
@@ -129,9 +113,21 @@ def main():
             print(f"Skipping {fout}, already exists")
             continue
 
-        # Reset dataset
-        ds["IFS_T_mea"][:] = np.nan
-        ds["IFS_T_std"][:] = np.nan
+        df0 = download_chunk(*first_chunk, date, forecast_days)
+        times = df0['time'].unique()
+        ds = xr.Dataset(
+            data_vars={
+                "IFS_T_mea": (
+                    ("time", "lat", "lon"),
+                    np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
+                ),
+                "IFS_T_std": (
+                    ("time", "lat", "lon"),
+                    np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
+                ),
+            },
+            coords={"time": times, "lat": lats, "lon": lons},
+        )
 
         # Process in chunks
         chunks = chunk_points(lats, lons)
