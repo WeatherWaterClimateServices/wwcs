@@ -11,7 +11,7 @@ import client
 
 om_client = client.Client()
 
-MAX_POINTS = 200
+MAX_POINTS = 100
 
 def chunk_points(lats: np.ndarray, lons: np.ndarray) -> List[Tuple[List[float], List[float]]]:
     """
@@ -47,6 +47,7 @@ def download_chunk(latitudes: List[float], longitudes: List[float],
         "models": "ecmwf_ifs025",
         "start_date": start_date.strftime('%Y-%m-%d'),
         "end_date": end_date.strftime('%Y-%m-%d'),
+        "elevation": ["nan"] * len(latitudes),
     }
 
     aggrs = {

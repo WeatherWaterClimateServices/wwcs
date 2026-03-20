@@ -126,7 +126,6 @@ class Client:
         responses = self.ensemble(params)
         dfs = [self._ensemble_response_to_dataframe(r, aggrs) for r in responses]
         result = pd.concat(dfs, ignore_index=True)
-        result = result.drop_duplicates(subset=['time', 'latitude', 'longitude'])
         return result
 
 
