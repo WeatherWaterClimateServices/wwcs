@@ -18,6 +18,9 @@ gadm0 = config$gadm0
 
 timezone_country = config$timezone_country
 
+wis2wmo_url = config$wis2wmo_url
+wis2wmo_collection = config$wis2wmo_collection
+
 dashboard_default_station = config$dashboard_default_station
 
 # Parameters for the EMOS model
