@@ -27,8 +27,8 @@ gadm0: "TCD"
 timezone_country: "Africa/Ndjamena"
 
 # URL and collection for WIS2box / WMO distributed stations
-wis2wmo_url <- "https://wis2.meteotchad.org/oapi"
-wis2wmo_collection <- "urn:wmo:md:td-anam:core.surface-based-observations.synop"
+wis2wmo_url: "https://wis2.meteotchad.org/oapi"
+wis2wmo_collection: "urn:wmo:md:td-anam:core.surface-based-observations.synop"
 
 
 # Parameters for EMOS
