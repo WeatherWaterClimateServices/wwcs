@@ -676,6 +676,25 @@ async def get_data_warning_planting(request: Request, response: Response):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 
+@app.get("/kiosk/planting/areas/{area}/{date}")
+async def get_planting_by_area(response: Response, area: str, date: str):
+    query = """
+        SELECT  :area as area_name,
+            'jamoat' as area_type,
+            p.*, s.district, s.jamoat, s.region  
+        FROM WWCServices.Planting p
+        JOIN SitesHumans.Sites s ON s.siteID = p.siteID
+        WHERE s.jamoat = :area
+        AND p.date = :date
+    """
+
+    rows = await database_machines.fetch_all(query=query, values={"area": area, "date": date})
+    if len(rows) == 0:
+        raise HTTPException(status_code=404, detail="no site found for the given area")
+
+    response.headers['Access-Control-Allow-Origin'] = '*'
+
+    return rows
 # ---------------------------------------
 # GET HARVEST DATA
 # ---------------------------------------
