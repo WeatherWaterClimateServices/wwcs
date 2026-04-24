@@ -52,6 +52,8 @@ class MachineObs(Base):
     wind_speed: Mapped[Optional[float]] = mapped_column(Float)
     wind_speed_E: Mapped[Optional[float]] = mapped_column(Float)
     wind_speed_N: Mapped[Optional[float]] = mapped_column(Float)
+    PM25: Mapped[Optional[float]] = mapped_column(Float)
+    PM10: Mapped[Optional[float]] = mapped_column(Float)
 
 
 t_MachineObsRejected = Table(
@@ -115,5 +117,7 @@ t_v_machineobs = Table(
     Column('wind_gust', Float),
     Column('wind_speed', Float),
     Column('wind_speed_E', Float),
-    Column('wind_speed_N', Float)
+    Column('wind_speed_N', Float),
+    Column('PM25', Float),
++   Column('PM10', Float)
 )

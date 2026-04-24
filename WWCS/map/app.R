@@ -442,6 +442,8 @@ server <- function(input, output, session) {
               "Temperature" = "ta",
               "Relative Humidity" = "rh",
               "Pressure" = "p",
+              "PM2.5" = "PM25",
+              "PM10" = "PM10",
               "Solar" = "U_Solar",
               "Signal" = "signalStrength",
               "Voltage Battery" = "U_Battery",
