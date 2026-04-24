@@ -73,23 +73,26 @@ for (s in 1:nrow(sites)) {
   fcst_tmp <- dmo %>% 
     dplyr::filter(siteID == id) %>%
     dplyr::mutate(date = as.Date(time)) %>%
-    dplyr::group_by(siteID, date) %>%
+    dplyr::group_by(siteID, date, reftime) %>%
     dplyr::summarize(
       PR = sum(IFS_PR_mea, na.rm = TRUE), .groups = "drop")
     
   
   if (nrow(fcst_tmp) > 0) {
-    for (d in 1:nrow(fcst_tmp)) {
+    reftimes <- unique(fcst_tmp$reftime)
+    for (d in seq_along(reftimes)){
+      reft <- reftimes[d]
+      reftdate <- as.Date(reft)
       
       PastRain <- obs_tmp %>%
-        dplyr::filter(date > fcst_tmp$date[d] - days(past_rain_days) &
-                        date <= fcst_tmp$date[d]) %>%
+        dplyr::filter(date > reftdate - days(past_rain_days) &
+                        date <= reftdate) %>%
         dplyr::summarise(PR = sum(PR, na.rm = TRUE)) %>% 
         unlist()
       
       FutureRain <- fcst_tmp %>%
-        dplyr::filter(date > fcst_tmp$date[d] &
-                        date <= fcst_tmp$date[d] + days(future_rain_days)) %>%
+        dplyr::filter(reftime == reft & date > reftdate &
+                        date <= reftdate + days(future_rain_days)) %>%
         dplyr::summarise(PR = sum(PR, na.rm = TRUE)) %>% 
         unlist()
       
@@ -105,8 +108,8 @@ for (s in 1:nrow(sites)) {
               
             ),
             params = list(
-              fcst_tmp$siteID[d],
-              fcst_tmp$date[d],
+              id,
+              reftdate,
               PastRain,
               FutureRain,
               HarvestPotato
@@ -116,10 +119,10 @@ for (s in 1:nrow(sites)) {
         error = function(err) {
           print(err)
         }
-      )
-    }
-  }
-}
+      ) ## tryCatch
+    } ## loop through reftime
+  } ## fcst_tmp not empty
+} ## loop through sites
 
 
 
