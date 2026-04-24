@@ -89,7 +89,7 @@ server <- function(input, output, session) {
     
     last_temp <- soildata %>%
       dplyr::filter(siteID == selected$id  & day >= Sys.Date() - lubridate::days(1)) %>%
-      dplyr::select(Temperature) %>%
+      dplyr::select(Temperature, day) %>%
         tail(., 2)
     
     if (is.na(last_temp$Temperature[1])) {
@@ -97,7 +97,9 @@ server <- function(input, output, session) {
       color <- "red"
     } else {
       if (last_temp$Temperature[1] >= thrs$Threshold_low &
-          last_temp$Temperature[1] <= thrs$Threshold_high) {
+          last_temp$Temperature[1] <= thrs$Threshold_high &
+          last_temp$day[1] >= as.Date(thrs$Window_low, format = "%d-%b") &
+          last_temp$day[1] <= as.Date(thrs$Window_low, format = "%d-%b")) {
         status <- "Ready"
         color <- "green"
       } else {
