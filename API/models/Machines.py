@@ -119,5 +119,5 @@ t_v_machineobs = Table(
     Column('wind_speed_E', Float),
     Column('wind_speed_N', Float),
     Column('PM25', Float),
-+   Column('PM10', Float)
+    Column('PM10', Float)
 )
