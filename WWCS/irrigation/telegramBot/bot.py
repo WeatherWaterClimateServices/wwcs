@@ -99,6 +99,17 @@ WATER_FLOW_RATES = {
 }
 
 
+def calculate_chipoletti_flow_rate(L_cm, H_cm):
+    """Calculate flow rate in m³/min for Cipoletti weir. L and H supplied in cm, converted to meters for the formula."""
+    if H_cm <= 0:
+        return 0.0
+    L = L_cm / 100
+    H = H_cm / 100
+    Q = 1.86 * L * (H ** 1.5)
+    return max(0.0, Q) * 60  # Q is m³/s; multiply by 60 → m³/min
+
+
+
 async def get_irrigation_data(chat_id=None):
     """
     When chat_id is None:
@@ -125,6 +136,7 @@ async def get_irrigation_data(chat_id=None):
         JSON_EXTRACT(s.fieldproperties, '$.area') AS area,
         JSON_EXTRACT(s.fieldproperties, '$.IE') AS ie,
         JSON_EXTRACT(s.fieldproperties, '$.WA') AS wa,
+        JSON_EXTRACT(s.fieldproperties, '$.chipoletti_width') AS chipoletti_width,
         i.PHIc as phic,
         i.PHIt as phit
     FROM SitesHumans.Sites s
@@ -284,7 +296,7 @@ async def check_irrigation(chat_id):
         text = ""  # Инициализируем переменную text
 
         if row['type'] == "treatment":
-            if row['device'] in ["thomson_profile", "incremental_meter"] and phic <= phit:
+            if row['device'] in ["thomson_profile", "incremental_meter", "chipoletti"] and phic <= phit:
                 text = _(
                     "🌤 Good morning, {first_name}, on your treatment plot, growing {crop}.\n"
                     "I will give you a recommendation for irrigation and will guide you through the data entry.\n"
@@ -319,7 +331,7 @@ async def check_irrigation(chat_id):
                     "If you want to irrigation today, please go ahead.\n"
                     "When you have finished irrigation, press button 'Irrigation finished'. Otherwise simply come back tomorrow."
                 )
-            elif row['device'] in ["incremental_meter", "thomson_profile"]:
+            elif row['device'] in ["incremental_meter", "thomson_profile", "chipoletti"]:
                 text = _(
                     "🌤 Good morning, {first_name}, on your control plot, growing {crop}.\n"
                     "I will guide you through the irrigation data entry.\n"
@@ -346,6 +358,11 @@ async def check_irrigation(chat_id):
             return True
 
         # Для всех остальных (только treatment со стрессом) отправляем сообщение сразу
+        # Clear any stale pending recommendation from a previous day
+        if chat_id and chat_id in user_pending_recommendations:
+            del user_pending_recommendations[chat_id]
+            print(f"[DEBUG] Cleared stale pending recommendation for {chat_id} before auto-send")
+
         message = text.format(
             first_name=row['firstName'],
             water=round(m3_needed, 2),
@@ -394,9 +411,14 @@ async def check_all_users():
         traceback.print_exc()
 
 
-async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, wa):
+async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, wa, width=None):
     try:
         total_needed_m3 = (irrigation_need * area * 10 * wa) / ie
+
+        def get_flow(level):
+            if width is not None:
+                return calculate_chipoletti_flow_rate(width, level)
+            return WATER_FLOW_RATES.get(level, 0)
 
         if chat_id not in user_irrigation_data:
             user_irrigation_data[chat_id] = {
@@ -407,6 +429,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
                 'total_used_m3': 0,
                 'history': [(water_level, datetime.now())],
                 'is_active': True,
+                'width': width,
             }
 
             # We launch notifications only for new watering
@@ -414,7 +437,11 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
         else:
             data = user_irrigation_data[chat_id]
             time_elapsed = (datetime.now() - data['last_update']).total_seconds()
-            flow_rate = WATER_FLOW_RATES.get(data['current_level'], 0)
+            stored_width = data.get('width')
+            if stored_width is not None:
+                flow_rate = calculate_chipoletti_flow_rate(stored_width, data['current_level'])
+            else:
+                flow_rate = WATER_FLOW_RATES.get(data['current_level'], 0)
 
             m3_used = flow_rate * (time_elapsed / 60)
             data['total_used_m3'] += m3_used
@@ -425,7 +452,7 @@ async def calculate_irrigation(chat_id, water_level, irrigation_need, area, ie, 
 
         remaining_m3 = max(0, total_needed_m3 - user_irrigation_data[chat_id]['total_used_m3'])
         print(remaining_m3)
-        flow_rate = WATER_FLOW_RATES.get(water_level, 0)
+        flow_rate = get_flow(water_level)
         print(flow_rate)
         remaining_time = round(remaining_m3 / flow_rate) if flow_rate > 0 else 24 * 60
         hours, minutes = remaining_time // 60, remaining_time % 60
@@ -517,6 +544,14 @@ async def handle_recommendation(message):
             )
             return
 
+        if row['type'] == "treatment" and row['device'] == "chipoletti":
+            user_states[chat_id] = "waiting_for_water_level_chipoletti"
+            await send_message_safe(
+                chat_id,
+                _("As soon as the water level has stabilized, enter the water level (in cm):")
+            )
+            return
+
         if row['device'] == "incremental_meter":
             await send_message_safe(chat_id, _("Enter the m³ on your counter BEFORE irrigation:"))
             user_states[chat_id] = "waiting_for_counter_start"
@@ -526,6 +561,12 @@ async def handle_recommendation(message):
             await send_message_safe(chat_id,
                                     _("As soon as the water level has stabilized, enter the water level (in cm):"))
             user_states[chat_id] = "waiting_for_water_level_control"
+            return
+
+        if row['type'] == "control" and row['device'] == "chipoletti":
+            await send_message_safe(chat_id,
+                                    _("As soon as the water level has stabilized, enter the water level (in cm):"))
+            user_states[chat_id] = "waiting_for_water_level_chipoletti_control"
             return
 
         if row['device'] == "total_meter":
@@ -597,6 +638,126 @@ async def handle_water_level_control(message):
                                            "Please enter the correct value as a whole number (e.g. 0, 1, 2...):"))
     except Exception as e:
         print(f"[ERROR] in handle_water_level_control: {str(e)}")
+        traceback.print_exc()
+        await send_message_safe(chat_id,
+                                _("⚠️ An error occurred. Please try again. If you get this message again, contact support."))
+
+
+@bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_water_level_chipoletti')
+async def handle_water_level_chipoletti(message):
+    chat_id = message.chat.id
+    try:
+        water_level = float(message.text)
+
+        if water_level < 0 or water_level > 30:
+            await send_message_safe(
+                chat_id,
+                _("⚠️ I need a water level from 0 to 25 cm.\n"
+                  "Please enter the correct value as a whole number (e.g. 0, 1, 2...):")
+            )
+            return
+
+        row = await get_irrigation_data(chat_id)
+        if row is None:
+            return
+
+        width = float(row['chipoletti_width'])
+
+        calculation = await calculate_irrigation(
+            chat_id,
+            water_level,
+            float(row['irrigationNeed']),
+            float(row['area']),
+            float(row['ie']),
+            float(row['wa']),
+            width=width,
+        )
+
+        if not calculation['is_completed']:
+            hours, minutes = calculation['remaining_time']
+            msg = _(
+                "Thank you. 💦 At this level {water_level} cm, the recommended irrigation duration is ⏱ {hours}h {minutes}m\n"
+                "Whenever the water level changes by more than 2cm, press 'Start irrigation' one more time and enter the new water level.\n"
+                "Enter 0 if no water flows. Press 'Irrigation finished' when you stop.\n"
+                "📊 Used: {used_m3:.2f} m³ of {total_m3:.2f} m³"
+            ).format(
+                water_level=water_level,
+                hours=hours,
+                minutes=minutes,
+                used_m3=calculation['used_m3'],
+                total_m3=calculation['used_m3'] + calculation['remaining_m3'],
+            )
+            await send_message_safe(chat_id, msg)
+
+        user_states[chat_id] = None
+    except ValueError:
+        await send_message_safe(chat_id, _("⚠️ Please enter a valid positive number (e.g., 12.5)."))
+    except Exception as e:
+        print(f"[ERROR] in handle_water_level_chipoletti: {str(e)}")
+        traceback.print_exc()
+        await send_message_safe(chat_id,
+                                _("⚠️ An error occurred. Please try again. If you get this message again, contact support."))
+
+
+@bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'waiting_for_water_level_chipoletti_control')
+async def handle_water_level_chipoletti_control(message):
+    chat_id = message.chat.id
+    try:
+        water_level = float(message.text)
+
+        if water_level < 0 or water_level > 30:
+            await send_message_safe(
+                chat_id,
+                _("⚠️ I need a water level from 0 to 25 cm.\n"
+                  "Please enter the correct value as a whole number (e.g. 0, 1, 2...):")
+            )
+            return
+
+        row = await get_irrigation_data(chat_id)
+        if row is None:
+            return
+
+        width = float(row['chipoletti_width'])
+        current_time = datetime.now()
+
+        if chat_id not in user_irrigation_data:
+            user_irrigation_data[chat_id] = {
+                'type': 'control',
+                'device': 'chipoletti',
+                'width': width,
+                'levels': [(water_level, current_time)],
+                'total_used': 0.0,
+            }
+            await send_message_safe(
+                chat_id,
+                _("✅ Thank you. Whenever the water level changes by more than 2cm press 'Start irrigation' and enter the new level.\n"
+                  "Enter 0 if water stops. Press 'Irrigation finished' when done.")
+            )
+        else:
+            last_level, last_time = user_irrigation_data[chat_id]['levels'][-1]
+            flow_rate = calculate_chipoletti_flow_rate(width, last_level)
+            time_diff = (current_time - last_time).total_seconds() / 60
+
+            used_water = flow_rate * time_diff
+            user_irrigation_data[chat_id]['total_used'] += used_water
+            user_irrigation_data[chat_id]['levels'].append((water_level, current_time))
+
+            await send_message_safe(
+                chat_id,
+                _("🔄 Updated: +{used_water:.2f} m³ used (total: {total_used:.2f} m³).\n"
+                  "Whenever the water level changes by more than 2cm press 'Start irrigation' and enter the new level.\n"
+                  "Enter 0 if water stops. Press 'Irrigation finished' when done.").format(
+                    used_water=used_water,
+                    total_used=user_irrigation_data[chat_id]['total_used']
+                )
+            )
+
+        user_states[chat_id] = None
+
+    except ValueError:
+        await send_message_safe(chat_id, _("⚠️ Please enter a valid positive number (e.g., 12.5)."))
+    except Exception as e:
+        print(f"[ERROR] in handle_water_level_chipoletti_control: {str(e)}")
         traceback.print_exc()
         await send_message_safe(chat_id,
                                 _("⚠️ An error occurred. Please try again. If you get this message again, contact support."))
@@ -782,6 +943,42 @@ async def handle_send_data(message):
                     data = user_irrigation_data[chat_id]
                     time_elapsed = (datetime.now() - data['last_update']).total_seconds()
                     flow_rate = WATER_FLOW_RATES.get(data['current_level'], 0)
+                    additional_used = flow_rate * (time_elapsed / 60)
+                    data['total_used_m3'] += additional_used
+
+                    await save_irrigation_data(chat_id, data['total_used_m3'], row)
+
+                    data['is_active'] = False
+                    return
+                except Exception as e:
+                    print(f"Error while saving: {str(e)}")
+                    await send_message_safe(chat_id, _("⚠️ Error saving data. Please contact support."))
+            else:
+                await send_message_safe(chat_id,
+                                        _("❌ No active irrigation session found. Press 'Start irrigation' button to start one."))
+
+        elif row['type'] == "control" and row['device'] == "chipoletti":
+            if chat_id in user_irrigation_data and 'levels' in user_irrigation_data[chat_id]:
+                data = user_irrigation_data[chat_id]
+                if data['levels']:
+                    last_level, last_time = data['levels'][-1]
+                    flow_rate = calculate_chipoletti_flow_rate(data['width'], last_level)
+                    time_diff = (datetime.now() - last_time).total_seconds() / 60
+                    data['total_used'] += flow_rate * time_diff
+
+                    await save_irrigation_data(chat_id, data['total_used'], row)
+                    del user_irrigation_data[chat_id]
+            else:
+                await send_message_safe(chat_id,
+                                        _("❌ No active irrigation session found. Press 'Start irrigation' button to start one."))
+            return
+
+        elif row['type'] == "treatment" and row['device'] == "chipoletti":
+            if chat_id in user_irrigation_data and user_irrigation_data[chat_id].get('is_active', False):
+                try:
+                    data = user_irrigation_data[chat_id]
+                    time_elapsed = (datetime.now() - data['last_update']).total_seconds()
+                    flow_rate = calculate_chipoletti_flow_rate(data['width'], data['current_level'])
                     additional_used = flow_rate * (time_elapsed / 60)
                     data['total_used_m3'] += additional_used
 
