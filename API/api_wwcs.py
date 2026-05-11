@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import os
 import traceback
@@ -22,7 +23,18 @@ database_services = Database(DATABASE_URL_SERVICES)
 
 ENV = os.environ.get('ENV')
 root_path = "./" if ENV else None
-app = FastAPI(root_path=root_path)
+
+
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    await database_machines.connect()
+    await database_services.connect()
+    yield
+    await database_machines.disconnect()
+    await database_services.disconnect()
+
+
+app = FastAPI(root_path=root_path, lifespan=lifespan)
 
 origins = ["*"]
 
@@ -33,16 +45,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-async def startup():
-    await database_machines.connect()
-    await database_services.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database_machines.disconnect()
-    await database_services.disconnect()
 
 def _parse_date_range(start: str | None, end: str | None) -> tuple[str, str] | None:
     """Validate start/end dates and return them as a tuple, or None if both are absent."""
