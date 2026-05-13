@@ -39,6 +39,7 @@ nstat <- nrow(sites)
 obs <- data.frame()
 
 for (i in 1:nstat) {
+  print(paste0("Working on site ", i, "/", nstat)) ## BORIS here
   # READ STATION DATA
   
   lowcost <- sqlQuery(
@@ -64,7 +65,8 @@ for (i in 1:nstat) {
         Radiation = rad
       ) %>%
       filter(time >= read_start_date) %>%
-      distinct(time, .keep_all = TRUE)
+      distinct(time, .keep_all = TRUE) %>%
+      filter(minute(time) %in% c(0, 20, 40)) ## BORIS here - only every 2nd timestamp
     
     # Remove outliers that are smaller than -100 or larger than 100
   
