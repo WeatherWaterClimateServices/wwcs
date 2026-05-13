@@ -1224,7 +1224,7 @@ long calc_sleepSeconds(){
 
 /* --------------------------------------------------------------------------------------------------------------------------------
  * name : set_rtc_to_network_datetime
- * description : queries date and time from network and sets the RTC to this
+ * description : queries date and time from ntp and sets the RTC to this
  * input : void
  * output : void
  * ------------------------------------------------------------------------------------------------------------------------------*/
