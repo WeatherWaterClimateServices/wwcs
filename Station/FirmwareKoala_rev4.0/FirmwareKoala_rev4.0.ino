@@ -14,6 +14,7 @@ const char DEFAULT_APN[] = "FlashProvider";   // dummy APN
 const char SITE_ID[] = "FlashSite";           // dummy site ID
 const char GIT_VERSION[] = "FlashGIT";        // dummy git version
 const int NETWORK_MODE = 1234;                // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only
+const int8_t tzQuarterHours = 0;            // timezone wrt UTC; this is quarter hours, positive for east. (eg 4 = UTC+1)
 
 const char GSM_PIN[] = "";                    // dummy GSM PIN
 const int SENSOR_READ_EVERY_MINS = 10;        // time between measurements
@@ -1222,33 +1223,57 @@ long calc_sleepSeconds(){
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
- * name : set_rtc_to_network_date
+ * name : set_rtc_to_network_datetime
  * description : queries date and time from network and sets the RTC to this
  * input : void
  * output : void
  * ------------------------------------------------------------------------------------------------------------------------------*/
-void set_rtc_to_network_datetime(){
-  const uint8_t maxRetries = 5;
+void set_rtc_to_network_datetime() {
+  const char* ntpServers[] = {
+    "time.google.com",
+    "time.cloudflare.com",
+    "pool.ntp.org"
+  };
+  const uint8_t numServers = sizeof(ntpServers) / sizeof(ntpServers[0]);
+  const uint8_t retriesPerServer = 2;  
+
   int year, month, day, hour, minute, second;
   float timezone;
 
-  Serial.print("Waiting for time sync... ");
-  for (uint8_t i = 0; i < maxRetries; i++) {
-    Serial.printf("attempt %i... ", i+1);    
-    if (modem.getNetworkTime(&year, &month, &day, &hour, &minute, &second, &timezone)) {
-      // Check if we got a valid year (not 1980 or 2080)
-      if (year >= 2020 && year != 2080) {
-        Serial.print("Valid time acquired: ");
-        Serial.printf("%04d/%02d/%02d %02d:%02d:%02d\n", year, month, day, hour, minute, second);
-        rtc.setTime(second, minute, hour, day, month, year, 0);           
-        return;
+  Serial.println("Starting NTP time sync...");
+
+  for (uint8_t s = 0; s < numServers; s++) {
+    for (uint8_t r = 0; r < retriesPerServer; r++) {
+      Serial.printf("Server %s, attempt %i... ", ntpServers[s], r + 1);
+
+      int ntpRes = modem.NTPServerSync(ntpServers[s], tzQuarterHours);
+
+      if (ntpRes == 1) {
+        Serial.println("NTP sync OK.");
+
+        if (modem.getNetworkTime(&year, &month, &day,
+                                 &hour, &minute, &second, &timezone)) {
+          // sanity check: reject obviously wrong values
+          if (year >= 2020 && year < 2080) {
+            Serial.printf("Valid time acquired: %04d/%02d/%02d %02d:%02d:%02d (UTC offset %.1fh)\n",
+                          year, month, day, hour, minute, second, timezone);
+            rtc.setTime(second, minute, hour, day, month, year, 0);
+            return;
+          } else {
+            Serial.printf("Got implausible year %d, retrying.\n", year);
+          }
+        } else {
+          Serial.println("getNetworkTime() failed after successful sync.");
+        }
+      } else {
+        Serial.printf("NTP sync failed (code %d).\n", ntpRes);
       }
-    }    
-    delay(2000);
+
+      delay(2000);
+    }
   }
 
-  // if nothing worked
-  Serial.printf("\nFailed to get valid time after %i attempts\n", maxRetries);  
+  Serial.println("Failed to get valid time from all NTP servers.");
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
