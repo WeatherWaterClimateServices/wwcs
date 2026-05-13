@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import os
 import traceback
@@ -22,7 +23,18 @@ database_services = Database(DATABASE_URL_SERVICES)
 
 ENV = os.environ.get('ENV')
 root_path = "./" if ENV else None
-app = FastAPI(root_path=root_path)
+
+
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    await database_machines.connect()
+    await database_services.connect()
+    yield
+    await database_machines.disconnect()
+    await database_services.disconnect()
+
+
+app = FastAPI(root_path=root_path, lifespan=lifespan)
 
 origins = ["*"]
 
@@ -34,22 +46,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup():
-    await database_machines.connect()
-    await database_services.connect()
+def _parse_date_range(start: str | None, end: str | None) -> tuple[str, str] | None:
+    """Validate start/end dates and return them as a tuple, or None if both are absent."""
+    if start is None and end is None:
+        return None
+    if start is None or end is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Both start and end are required")
+    try:
+        start_dt = datetime.datetime.fromisoformat(start)
+        end_dt = datetime.datetime.fromisoformat(end)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Use ISO 8601 (YYYY-MM-DD HH:MM:SS or YYYY-MM-DDTHH:MM:SS)")
+    if start_dt > end_dt:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="start date must be before end date")
+    return (start, end)
 
-@app.on_event("shutdown")
-async def shutdown():
-    await database_machines.disconnect()
-    await database_services.disconnect()
 
 # ---------------------------------------
 # GET OBSERVATION DATA
 # ---------------------------------------
 
-async def get_observation(stationID):
-    query = """
+async def get_observation(stationID, start=None, end=None):
+    if start and end:
+        date_condition = "mo.timestamp BETWEEN :start AND :end"
+        values = {"stationID": stationID, "start": start, "end": end}
+    else:
+        date_condition = "mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)"
+        values = {"stationID": stationID}
+
+    query = f"""
         SELECT
             mo.loggerID,
             CASE WHEN mo.p = -999 THEN NULL ELSE mo.p END AS p,
@@ -62,12 +87,12 @@ async def get_observation(stationID):
         FROM v_machineobs mo
         JOIN SitesHumans.Sites sh ON mo.siteID = sh.siteID
         WHERE sh.type = 'WWCS'
-        AND mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        AND {date_condition}
         AND mo.siteID = :stationID
         ORDER BY timestamp DESC
     """
 
-    rows = await database_machines.fetch_all(query=query, values={"stationID": stationID})
+    rows = await database_machines.fetch_all(query=query, values=values)
     # Convert rows to a list of dictionaries with correct types
     result = [
         {
@@ -86,34 +111,59 @@ async def get_observation(stationID):
 
 
 @app.get("/")
-async def get_obs(response: Response, stationID: str):
+async def get_obs(response: Response, stationID: str, start: str | None = None, end: str | None = None):
     try:
+        dates = _parse_date_range(start, end)
         response.headers['Access-Control-Allow-Origin'] = '*'
-        return await get_observation(stationID)
+        return await get_observation(stationID, start=dates[0] if dates else None, end=dates[1] if dates else None)
+    except HTTPException:
+        raise
     except Exception:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Internal Server Error")
 
 
-@app.get("/areas/{area}")
-async def get_obs_by_area(response: Response, area: str):
+@app.get("/areas/{area}/{date}")
+async def get_obs_by_area(response: Response, area: str, date: str):
     query = """
-        SELECT siteId FROM SitesHumans.Sites
-        WHERE district = :area OR jamoat = :area OR village = :area
+        SELECT
+            :area as area_name,
+            CASE
+                WHEN :area = s.region THEN 'region'
+                WHEN :area = s.district THEN 'district'
+                WHEN :area = s.jamoat THEN 'jamoat'
+                WHEN :area = s.village THEN 'village'
+                ELSE 'unknown'
+            END as area_type,
+            AVG(wf.Tmax) AS avg_Tmax,
+            AVG(wf.Tmin) AS avg_Tmin,
+            AVG(wf.Tmean) AS avg_Tmean,
+            wf.date,
+            wf.timeofday,
+            wf.day,
+            COUNT(DISTINCT s.siteID) as stations_count,
+            MIN(wf.icon) as icon
+        FROM WWCServices.Forecasts wf
+        JOIN SitesHumans.Sites s ON s.siteID = wf.siteID
+        WHERE (:area = s.region OR :area = s.district OR :area = s.jamoat OR :area = s.village)
+          AND wf.date = :date
+          AND wf.timeofday != -1
+        GROUP BY
+            area_type,
+            wf.date,
+            wf.timeofday,
+            wf.day
+        ORDER BY wf.day, wf.timeofday
     """
 
-    rows = await database_machines.fetch_all(query=query, values={"area": area})
+    rows = await database_machines.fetch_all(query=query, values={"area": area, "date": date})
     if len(rows) == 0:
         raise HTTPException(status_code=404, detail="no site found for the given area")
 
     response.headers['Access-Control-Allow-Origin'] = '*'
-    for row in rows:
-        rows = await get_observation(row.siteId)
-        if rows:
-            return rows
 
-    return []
+    return rows
 
 
 async def get_stations_metadata():
@@ -159,8 +209,15 @@ async def get_stations(response: Response):
 
 
 
-async def get_smartmet(siteID):
-    query = """
+async def get_smartmet(siteID, start=None, end=None):
+    if start and end:
+        date_condition = "mo.timestamp BETWEEN :start AND :end"
+        values = {"siteID": siteID, "start": start, "end": end}
+    else:
+        date_condition = "mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)"
+        values = {"siteID": siteID}
+
+    query = f"""
         SELECT
             mo.loggerID,
             mo.timestamp,
@@ -184,12 +241,12 @@ async def get_smartmet(siteID):
             sh.longitude
         FROM v_machineobs mo
         JOIN SitesHumans.Sites sh ON mo.siteID = sh.siteID
-        WHERE mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        WHERE {date_condition}
         AND mo.siteID = :siteID
         ORDER BY mo.timestamp DESC
     """
 
-    rows = await database_machines.fetch_all(query=query, values={"siteID": siteID})
+    rows = await database_machines.fetch_all(query=query, values=values)
 
     # Convert rows to a list of dictionaries with the correct structure
     results = []
@@ -298,150 +355,18 @@ async def get_smartmet(siteID):
 
     return results
 
-async def get_ecmwf(siteID):
-    query = """
-        SELECT
-            mo.loggerID,
-            mo.timestamp,
-            mo.ta,
-            mo.rh,
-            mo.p,
-            mo.ts10cm,
-            mo.pr,
-            mo.wind_speed,
-            mo.wind_dir,
-            mo.wind_gust,
-            mo.rad,
-            mo.U_Battery1,
-            mo.U_Solar,
-            mo.signalStrength,
-            mo.lightning_count,
-            mo.lightning_dist,
-            mo.vapour_press,
-            sh.siteName,
-            sh.latitude,
-            sh.longitude
-        FROM v_machineobs mo
-        JOIN SitesHumans.Sites sh ON mo.siteID = sh.siteID
-        WHERE mo.timestamp > DATE_SUB(NOW(), INTERVAL 1 HOUR)
-        AND mo.siteID = :siteID
-        ORDER BY mo.timestamp DESC
-    """
-
-    rows = await database_machines.fetch_all(query=query, values={"siteID": siteID})
-
-    # Convert rows to a list of dictionaries with the correct structure
-    results = []
-    for row in rows:
-        formatted_data = [
-            {
-                "label": "Air Temperature",
-                "value": None if row.ta is None else float(row.ta),
-                "unit": "°C",
-                "machineName": "air_temperature"
-            },
-            {
-                "label": "Relative Humidity",
-                "value": None if row.rh is None else float(row.rh),
-                "unit": "%",
-                "machineName": "relative_humidity"
-            },
-            {
-                "label": "Air Pressure",
-                "value": None if row.p is None else float(row.p),
-                "unit": "hPa",
-                "machineName": "air_pressure"
-            },
-            {
-                "label": "Precipitation",
-                "value": None if row.pr is None else float(row.pr),
-                "unit": "mm",
-                "machineName": "precipitation"
-            },
-            {
-                "label": "Wind Speed",
-                "value": None if row.wind_speed is None else float(row.wind_speed),
-                "unit": "m/s",
-                "machineName": "wind_speed"
-            },
-            {
-                "label": "Wind Direction",
-                "value": None if row.wind_dir is None else float(row.wind_dir),
-                "unit": "°",
-                "machineName": "wind_direction"
-            },
-            {
-                "label": "Wind Gust",
-                "value": None if row.wind_gust is None else float(row.wind_gust),
-                "unit": "m/s",
-                "machineName": "wind_gust"
-            },
-            {
-                "label": "Radiation",
-                "value": None if row.rad is None else float(row.rad),
-                "unit": "W/m²",
-                "machineName": "radiation"
-            },
-            {
-                "label": "Soil Temperature 10cm",
-                "value": None if row.ts10cm is None else float(row.ts10cm),
-                "unit": "°C",
-                "machineName": "soil_temperature_10cm"
-            },
-            {
-                "label": "Battery Voltage",
-                "value": None if row.U_Battery1 is None else float(row.U_Battery1),
-                "unit": "V",
-                "machineName": "battery_voltage"
-            },
-            {
-                "label": "Solar Voltage",
-                "value": None if row.U_Solar is None else float(row.U_Solar),
-                "unit": "V",
-                "machineName": "solar_voltage"
-            },
-            {
-                "label": "Signal Strength",
-                "value": None if row.signalStrength is None else float(row.signalStrength),
-                "unit": "dBm",
-                "machineName": "signal_strength"
-            },
-            {
-                "label": "Lightning Count",
-                "value": None if row.lightning_count is None else float(row.lightning_count),
-                "unit": "count",
-                "machineName": "lightning_count"
-            },
-            {
-                "label": "Lightning Distance",
-                "value": None if row.lightning_dist is None else float(row.lightning_dist),
-                "unit": "km",
-                "machineName": "lightning_distance"
-            },
-            {
-                "label": "Vapour Pressure",
-                "value": None if row.vapour_press is None else float(row.vapour_press),
-                "unit": "hPa",
-                "machineName": "vapour_pressure"
-            }
-        ]
-
-        results.append({
-            "name": row.siteName,
-            "siteID": siteID,
-            "datetime": convert_timestamp(str(row.timestamp)),
-            "latitude": row.latitude,
-            "longitude": row.longitude,
-            "data": formatted_data
-        })
-
-    return results
+async def get_ecmwf(siteID, start=None, end=None):
+    # get_ecmwf is functionally identical to get_smartmet
+    return await get_smartmet(siteID, start=start, end=end)
 
 @app.get("/ecmwf/")
-async def app_ecmwf(response: Response, siteID: str):
+async def app_ecmwf(response: Response, siteID: str, start: str | None = None, end: str | None = None):
     try:
+        dates = _parse_date_range(start, end)
         response.headers['Access-Control-Allow-Origin'] = '*'
-        return await get_ecmwf(siteID)
+        return await get_ecmwf(siteID, start=dates[0] if dates else None, end=dates[1] if dates else None)
+    except HTTPException:
+        raise
     except Exception:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -449,10 +374,13 @@ async def app_ecmwf(response: Response, siteID: str):
 
 
 @app.get("/smartmet/")
-async def app_smartmet(response: Response, siteID: str):
+async def app_smartmet(response: Response, siteID: str, start: str | None = None, end: str | None = None):
     try:
+        dates = _parse_date_range(start, end)
         response.headers['Access-Control-Allow-Origin'] = '*'
-        return await get_smartmet(siteID)
+        return await get_smartmet(siteID, start=dates[0] if dates else None, end=dates[1] if dates else None)
+    except HTTPException:
+        raise
     except Exception:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -652,6 +580,26 @@ async def get_data_warning_planting(request: Request, response: Response):
     except Exception:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+
+
+@app.get("/planting/jamoat/{area}/{date}")
+async def get_planting_by_area(response: Response, area: str, date: str):
+    query = """
+        SELECT  :area as area_name,
+            'jamoat' as area_type,
+            p.*, s.district, s.jamoat, s.region
+        FROM WWCServices.Planting p
+        JOIN SitesHumans.Sites s ON s.siteID = p.siteID
+        WHERE s.jamoat = :area
+        AND p.date = :date
+    """
+
+    rows = await database_machines.fetch_all(query=query, values={"area": area, "date": date})
+    if len(rows) == 0:
+        raise HTTPException(status_code=404, detail="no site found for the given area")
+
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return rows
 
 
 # ---------------------------------------

@@ -1,0 +1,1 @@
+ALTER TABLE SitesHumans.Sites ADD COLUMN region VARCHAR(50);

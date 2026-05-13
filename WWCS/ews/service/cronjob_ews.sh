@@ -9,6 +9,9 @@ echo "=== CRON JOB ==="
 
 cd /srv/shiny-server/ews/service
 
+# Ensure the cronout folder exists
+mkdir -p cronout
+
 today=$(date +%Y-%m-%d)
 
 if [ -f "/srv/shiny-server/dashboard/ifsdata/tj_area_$today.nc" ]; then

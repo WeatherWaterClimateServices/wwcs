@@ -111,7 +111,8 @@ plot_observations <- function(data, id, var){
   plt_data <- data %>%
               dplyr::mutate(time = lubridate::ymd_hms(timestamp)) %>%
               dplyr::select(var, time) %>% 
-              tidyr::gather("variable","value",-time, na.rm = T) 
+              tidyr::gather("variable","value",-time, na.rm = T) %>%
+              dplyr::mutate(value = replace(value, which(value < -900), NA))
   
   if (nrow(plt_data) > 0) {
     plt <- plt_data %>% ggplot(aes(x = time, y = value, color = variable)) +

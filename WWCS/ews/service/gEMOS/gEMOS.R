@@ -193,8 +193,7 @@ if (file.exists(file)) {
                            type = "parameter")
         
         gemos <- pred %>%
-          dplyr::select(-c(IFS_T_mea, IFS_T_std, TPI5, TPI20, TPI100)) %>% ## , HSU\
-RF)) %>% BORIS here 
+          dplyr::select(-c(IFS_T_mea, IFS_T_std, TPI5, TPI20, TPI100)) %>% ## , HSURF)) %>% BORIS here 
           dplyr::bind_cols(predres) %>%
           tibble::as_tibble()  %>%
           dplyr::rename(IFS_T_mea = location, IFS_T_std = scale)  %>%

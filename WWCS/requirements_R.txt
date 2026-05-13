@@ -39,6 +39,7 @@
 "highcharter",
 "countrycode",
 "dotenv",
-"xlsx"
+"xlsx",
+"exactextractr"
 
 

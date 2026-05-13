@@ -374,7 +374,7 @@ void setup() {
     if (batteryStatus){                                    // enough power to discuss with modem
       Serial.println("... and, yes, we have enough battery.");
       modem_on(&modemTurnedOn);                                          // turn modem on
-      apnConnected = connect_to_network(&signalStrength);  // connect to network
+      apnConnected = connect_to_network(&signalStrength, wakeup_reason);  // connect to network
     } else {
       Serial.println("... but, helas, not enough battery.");
     }
@@ -645,8 +645,8 @@ void modem_off(bool* modemTurnedOn) {
  * input :        void
  * output :       boolean - whether everything needed to connect to apn worked out
  * ------------------------------------------------------------------------------------------------------------------------------*/
-bool connect_to_network(float* signalStrength){
-// establish communication with and initialize modem....................................................................................................
+bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_reason){
+  // establish communication with and initialize modem....................................................................................................
   SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX); // establish serial connection with modem
   delay(1000);
   if (modem.init()) {
@@ -674,7 +674,23 @@ bool connect_to_network(float* signalStrength){
   // get APN from SIM card or use DEFAULT_APN
   const char* APN=get_apn(modem.getIMSI().substring(0, 5).c_str());
   Serial.printf("My APN now is: %s\n", APN);
+ 
+  // if we boot up or hard reset the ESP32, let's clean the modem state fully
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_UNDEFINED) {
+    // Power-on or hardware reset - clean the modem state
+    Serial.println("Power-on/reset detected - set pdp context explicitly.");    
+     
+    // Set PDP context with all parameters
+    modem.sendAT("+CGDCONT=1,\"IP\",\"" + String(APN) + "\",\"0.0.0.0\",0,0,0,0");
+    modem.waitResponse();
 
+    // Configure CAT-M bands (critical!)
+    if (NETWORK_MODE != 13){
+      modem.sendAT("+CBANDCFG=\"CAT-M\",1,2,3,4,5,8,12,13,18,19,20,26,28,39");
+      modem.waitResponse(10000L);  
+    }    
+  }
+  
   // configure modem and connect to network and APN ....................................................................................................
   modem.sendAT("+SGPIO=0,4,1,0");                   // Set SIM7000G GPIO4 LOW, turn off GPS power (only for board version 20200415)
   if (sizeof(GSM_PIN) != 0 && modem.getSimStatus() != 3) {       // Unlock your SIM card with a PIN if needed
@@ -688,22 +704,43 @@ bool connect_to_network(float* signalStrength){
   while (!modem.setPreferredMode(1)){               // 1 CAT-M; 2 NB-Iot; 3 CAT-M and NB-IoT
     delay(100);
   }
-
-  // connect to network
+  
+  // connect to network 
   Serial.print("Waiting for network... ");
-  modem.waitForNetwork();                           // this tries to connect for 60s
-  if (!modem.isNetworkConnected()){                 // if this did not succeed...
-    //Serial.println("in vain. Setting pdp-context and trying to connect again.");
-    Serial.println("in vain.");
-    // esp_task_wdt_reset();                           // reset watchdog
-    // set_pdp(APN);                                      // try to set pdp-context explicitly...
+  modem.waitForNetwork(60000L);  
+  if (!modem.isNetworkConnected()){                 // if this did not succeed...   
+    esp_task_wdt_reset();
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_UNDEFINED) {
+      Serial.print("trying once more because it's the 1st bootup...");
+      modem.restart();
+      delay(2000);
+      if (!modem.waitForNetwork(60000L))
+        Serial.println("in vain.");
+    } else {
+      Serial.println("in vain.");    
+    }
   }
 
-  if (modem.isNetworkConnected()) {                 // if successful, we connect to apn
+  if (modem.isNetworkConnected()){                 // if successful, we connect to apn
     *signalStrength = -777.0;                       // error code - signalStrength remains at this if apn-connect fails
     Serial.println("Network connected");
-    Serial.printf("Connecting to: %s", APN);  //    connect to APN
-    return modem.gprsConnect(APN, GPRS_USER, GPRS_PASS);
+    Serial.printf("Connecting to: %s", APN);  //    connect to APN    
+    if (modem.gprsConnect(APN, GPRS_USER, GPRS_PASS)){        
+      return true;
+    } else if (wakeup_reason == ESP_SLEEP_WAKEUP_UNDEFINED){ // clean up and try once more, if 1st boot      
+      esp_task_wdt_reset();
+      Serial.print("... failed, trying once more...");
+      modem.sendAT("+CIPSHUT");
+      modem.waitResponse(5000L);
+      modem.sendAT("+CGACT=0,1");
+      modem.waitResponse(5000L);
+      delay(2000);
+      if (modem.gprsConnect(APN, GPRS_USER, GPRS_PASS)){    // 2nd attempt
+        return true;
+      }
+    } else {
+      return false;
+    }                                              // APN/GPRS connect did not work
   } else {
     *signalStrength = -666.0;                       // error code - network connect failed
     return false;
@@ -1116,18 +1153,27 @@ long calc_sleepSeconds(){
  * output : void
  * ------------------------------------------------------------------------------------------------------------------------------*/
 void set_rtc_to_network_datetime(){
-  int Year = 0;
-  int Month = 0;
-  int Day = 0;
-  int Hour = 0;
-  int Min = 0;
-  int Sec = 0;
+  const uint8_t maxRetries = 5;
+  int year, month, day, hour, minute, second;
   float timezone;
 
-  bool got_date_time = modem.getNetworkTime(&Year, &Month, &Day,
-    &Hour, &Min, &Sec, &timezone);
+  Serial.print("Waiting for time sync... ");
+  for (uint8_t i = 0; i < maxRetries; i++) {
+    Serial.printf("attempt %i... ", i+1);    
+    if (modem.getNetworkTime(&year, &month, &day, &hour, &minute, &second, &timezone)) {
+      // Check if we got a valid year (not 1980 or 2080)
+      if (year >= 2020 && year != 2080) {
+        Serial.print("Valid time acquired: ");
+        Serial.printf("%04d/%02d/%02d %02d:%02d:%02d\n", year, month, day, hour, minute, second);
+        rtc.setTime(second, minute, hour, day, month, year, 0);           
+        return;
+      }
+    }    
+    delay(2000);
+  }
 
-  rtc.setTime(Sec, Min, Hour, Day, Month, Year, 0);
+  // if nothing worked
+  Serial.printf("\nFailed to get valid time after %i attempts\n", maxRetries);  
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------

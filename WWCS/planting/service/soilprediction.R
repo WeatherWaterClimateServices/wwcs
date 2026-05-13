@@ -184,7 +184,13 @@ for (i in 1:nstat) {
     ) %>%
     dplyr::group_by(siteID, reftime, day, lead) %>%
     dplyr::summarize(IFS_Temperature = mean(WWCS), .groups = "drop")
-  
+
+  ## check whether we have any data for this site in emosmod
+  if (nrow(ifs) == 0){
+    print(paste0("No data for ", s, " in dashboard/appdata/emos.fst. Skipping site."))
+    next
+  }
+  ## otherwise continue
   soildata <- alldata %>%
     dplyr::filter(siteID == s) %>%
     dplyr::select(c(Temperature, day, siteID))
