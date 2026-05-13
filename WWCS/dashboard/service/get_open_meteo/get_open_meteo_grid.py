@@ -97,7 +97,7 @@ def main():
     # Define grid and dates
     dates = list(pd.date_range(today - datetime.timedelta(days=3), today))
     lats = np.arange(np.floor(minlat * 4) / 4, np.ceil(maxlat * 4) / 4, .25)
-    lons = np.arange(np.floor(minlon * 4) / 4, np.floor(maxlon * 4) / 4, .25)
+    lons = np.arange(np.floor(minlon * 4) / 4, np.ceil(maxlon * 4) / 4, .25)
 
     # Preallocate dataset using first call
     first_chunk = ([float(lats[0])], [float(lons[0])])
