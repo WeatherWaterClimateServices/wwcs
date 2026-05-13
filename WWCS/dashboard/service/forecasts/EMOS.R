@@ -16,9 +16,18 @@ library(DBI)
 # PARALLEL COMPUTING
 # ------------------------------------------------
 
-numOfCores <- parallel::detectCores() 
-# Register all the cores
-doParallel::registerDoParallel(numOfCores)
+## BORIS here with input from Claude                                                
+# Leave headroom for MariaDB and other services                                     
+numOfCores <- max(1, parallel::detectCores(logical = FALSE) - 2)
+# Optionally cap further if memory is tight: - 4 cores is enough                    
+numOfCores <- min(numOfCores, 4)
+
+cl <- parallel::makeForkCluster(numOfCores)
+doParallel::registerDoParallel(cl)
+on.exit({ ## make sure that spawned processes when this session ends                
+  parallel::stopCluster(cl)
+  foreach::registerDoSEQ()  # reset to sequential backend                           
+}, add = TRUE)
 
 # SET GLOBAL PARAMETERS
 # ------------------------------------------------
