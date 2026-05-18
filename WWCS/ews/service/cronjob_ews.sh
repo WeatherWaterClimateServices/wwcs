@@ -24,6 +24,9 @@ if [ -f "/srv/shiny-server/dashboard/ifsdata/tj_area_$today.nc" ]; then
   
   R CMD BATCH --no-save /srv/shiny-server/ews/service/calculate_ews.R /srv/shiny-server/ews/service/cronout/ews.out
 
+  # touch restart.txt to force reload of the data
+  touch /srv/shiny-server/dashboard/restart.txt
+
 else
   echo "New forecast not yet available"
 fi

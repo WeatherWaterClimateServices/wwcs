@@ -18,8 +18,4 @@ echo "=== GET LATEST OBSERVATIONS  ==="
 
 R CMD BATCH --no-save get_wwcs/get_wwcs.R cronout/wwcs.out
 
-# touch restart.txt to force reload of the data
-touch ~/wwcs/WWCS/dashboard/restart.txt
-
-
 echo "___ DONE ___"
