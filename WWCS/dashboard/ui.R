@@ -124,15 +124,7 @@ body <- dashboardBody(
       tabPanel(
         i18n$t("Meteogram"),
         plotlyOutput("meteogram", height = "35vh") %>% shinycssloaders::withSpinner(color =
-                                                                                      "lightblue"),
-        tags$div(
-          style = "display: flex; align-items: center; padding: 10px;",
-          tags$div(style = "flex: 1; text-align: right; padding-right: 10px;", p("© weather icons")),
-          # Image part
-          tags$div(style = "flex: 0; display: flex; align-items: center;", 
-                   tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
-                          img(src = "logo_meteoswiss.png", height = "30px")))
-        )
+                                                                                      "lightblue")        
       ),
       tabPanel(
         i18n$t("Map forecast"),

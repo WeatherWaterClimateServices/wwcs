@@ -4,14 +4,14 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
   offset = 0.10
   
   assign_bins <- function(datetime) {
-    hour <- as.numeric(format(datetime, "%H"))
-    if (hour >= 0 & hour < 6) {
+    hour <- as.numeric(format(datetime, "%H")) ## BORIS here - midnight belongs to prev. day
+    if (hour > 0 & hour <= 6) {
       bin <- "0-6am"
       center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(3), tz = timezone_country)
-    } else if (hour >= 6 & hour < 12) {
+    } else if (hour > 6 & hour <= 12) {
       bin <- "7am-12pm"
       center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(9), tz = timezone_country)
-    } else if (hour >= 12 & hour < 18) {
+    } else if (hour > 12 & hour <= 18) {
       bin <- "1pm-6pm"
       center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(15), tz = timezone_country)
     } else {
@@ -63,11 +63,13 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
       ungroup()
     
     forecast_pr_data <- emos_data %>%
-      group_by(bins, center_time) %>%
+      group_by(bins, center_time) %>% 
       summarize(
-        PR = sum(IFS_PR_mea, na.rm = TRUE),
-        PR_std = mean(IFS_PR_std, na.rm = TRUE)
+        PR = sum(IFS_PR_mea, na.rm = TRUE)
+        ## PR_std = mean(IFS_PR_std, na.rm = TRUE) ## BORIS here
       ) %>%
+      ungroup() %>%
+      arrange(center_time) %>%
       dplyr::mutate(PR = ifelse(PR < 0, 0, PR))    
     
     observations_data <- emos_data %>%
@@ -103,29 +105,29 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
       xlimits <- c(min(forecast_data$time), max(forecast_data$time))
       
       xlimits_shadow <- c(min(forecast_data$time), max(observations_data$time))
-      
+
       pictos_list <- list()
-      xpos <- seq(0.02, 0.92, length.out = 10)
+      ## xpos <- seq(0.02, 0.92, length.out = 10) ## BORIS here - replaced by date + 12h
       
       image_path <-
-        "/srv/shiny-server/dashboard/appdata/weather_icons/png/"
+        "/srv/shiny-server/dashboard/www/weather_icons/png/"
       
       
       if (nrow(pictos_data) > 0) {
         for (i in 1:nrow(pictos_data)) {
-          image_file <- paste0(image_path, pictos_data$day[i], "_big.png")
+          image_file <- paste0(image_path, pictos_data$day[i], ".png")
           txt <-
             RCurl::base64Encode(readBin(image_file, "raw", file.info(image_file)[1, "size"]), "txt")
           
           a <-
             list(
               source =  paste('data:image/png;base64', txt, sep = ','),
-              x = xpos[i],
+              x = pictos_data$date[i] + hours(12), ## xpos[i], ## BORIS here
               y = 0.95,
-              xref = "paper",
+              xref = "x", ## "paper", ## BORIS here
               yref = "paper",
-              sizex = 0.08,
-              sizey = 0.08
+              sizex = 24 * 3600 * 1000, ## im ms, 1 day
+              sizey = 0.1
             )
           
           pictos_list[[i]] <- a
@@ -279,8 +281,7 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
             showlegend = FALSE
           ) 
       }
-      
-      
+
       p <- plotly::layout(
         p,
         shapes = list(

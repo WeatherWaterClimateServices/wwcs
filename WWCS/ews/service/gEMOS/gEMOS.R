@@ -27,7 +27,7 @@ ifs_dir <- "/srv/shiny-server/dashboard/ifsdata/"
 obs <- fst::read_fst("/srv/shiny-server/dashboard/appdata/obs.fst")
 
 station_id <- unique(obs$siteID)
-
+rm(obs)
 # READ GRID AND PREDICTOR DATA
 # ------------------------------------------------
 
@@ -67,7 +67,7 @@ ifs_lead <- distinct(dmo, lead) %>%
   na.omit() %>%
   unlist()
 
-ltimes <- seq(0, maxlead)
+## ltimes <- seq(0, maxlead) BORIS here (not needed)
 
 # ALLOCATE PREDICTION DATA
 
@@ -77,6 +77,81 @@ gemos <- data.frame()
 filermp <- paste0(ifs_dir, "tj_area_remap.nc")
 file <- paste0(ifs_dir, "tj_area_", ymd(curr_date), ".nc")
 
+## BORIS here - undo OM's smart downscaling                                         
+extract_mean_temp_vec <- function(train_sites, ncfile, varname) {
+  # open file                                                                       
+  nc <- nc_open(ncfile)
+
+  # read coordinate vectors                                                         
+  lats <- ncvar_get(nc, "lat")
+  lons <- ncvar_get(nc, "lon")
+
+  # read full temperature array (lon × lat × time)                                  
+  temp <- ncvar_get(nc, varname)
+
+  nc_close(nc)
+
+  # helper to find nearest index                                                    
+  nearest_index <- function(coord_vec, target) {
+    which.min(abs(coord_vec - target))
+  }
+
+  # iterate over all requested points                                               
+  means <- sapply(1:nrow(train_sites), function(i) {
+    lat_idx <- nearest_index(lats, train_sites$latitude[i])
+    lon_idx <- nearest_index(lons, train_sites$longitude[i])
+
+    # extract time series at that cell                                              
+    ts <- temp[lon_idx, lat_idx, ]
+
+    mean(ts, na.rm = TRUE) - 273.15
+  }, simplify=TRUE)
+
+    ## return                                                                       
+    data.frame(siteID=train_sites$siteID, Tavg=means)
+}
+if (!file.exists(file)){
+  ## 0. backup copy                                                                 
+  ## dmo_back <- dmo %>%
+  ##   filter(siteID == "DAR005")
+
+  ## 1. get mean from tj_map for all siteIDs                                        
+  map_temps <- preproc_train %>%
+    dplyr::select(siteID, latitude, longitude) %>%
+    extract_mean_temp_vec(file, "IFS_T_mea")
+
+  ## 2. vector of means for all siteIDs and reftime = today                         
+  dmo_temps <- dmo[, c("siteID", "reftime", "IFS_T_mea")] %>%
+    filter(as.Date(reftime) == curr_date) %>%
+    group_by(siteID) %>%
+    summarize(Tavg = mean(IFS_T_mea))
+
+  ## 3. dmo$IFS_T_mea += (1. - 2.)                                                  
+  for (s in intersect(dmo_temps$siteID, preproc_train$siteID)){
+    dmo[dmo$siteID == s, "IFS_T_mea"] <- dmo[dmo$siteID == s, "IFS_T_mea"] +
+      as.numeric(map_temps[map_temps$siteID == s, "Tavg"] -
+      dmo_temps[dmo_temps$siteID == s, "Tavg"])
+  }
+
+  ## ## 4a. test new means                                                          
+  ## check_temps <- dmo %>%                                                         
+  ##   dplyr::select(siteID, reftime, IFS_T_mea) %>%                                
+  ##   filter(as.Date(reftime) == curr_date) %>%                                    
+  ##   group_by(siteID) %>%                                                         
+  ##   summarize(Tavg = mean(IFS_T_mea)) %>%                                        
+  ##   left_join(map_temps, by = "siteID")                                          
+  ## check_temps                                                                    
+
+  ## ## 4b. test example timeseries                                                 
+  ## my.reftime <- "2026-05-05"                                                     
+  ## my.site <- "DAR005"                                                            
+  ## n <- dmo %>%                                                                   
+  ##   filter(siteID == my.site & as.Date(reftime) == my.reftime) %>%               
+  ##   dplyr::select("IFS_T_mea")                                                   
+  ## o <- dmo_back %>%                                                              
+  ##   filter(as.Date(reftime) == my.reftime) %>%                                   
+  ##   dplyr::select("IFS_T_mea")                                                   
+}
 
 # Check if new forecast data is available already
 if (file.exists(file)) {
@@ -117,10 +192,8 @@ if (file.exists(file)) {
                            newdata  = pred,
                            type = "parameter")
         
-        
         gemos <- pred %>%
-#BORIS          dplyr::select(-c(IFS_T_mea, IFS_T_std, TPI5, TPI20, TPI100, HSURF)) %>%
-	  dplyr::select(-c(IFS_T_mea, IFS_T_std, TPI5, TPI20, TPI100)) %>%	
+          dplyr::select(-c(IFS_T_mea, IFS_T_std, TPI5, TPI20, TPI100)) %>% ## , HSURF)) %>% BORIS here 
           dplyr::bind_cols(predres) %>%
           tibble::as_tibble()  %>%
           dplyr::rename(IFS_T_mea = location, IFS_T_std = scale)  %>%
