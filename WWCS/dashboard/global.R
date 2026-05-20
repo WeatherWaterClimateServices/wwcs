@@ -46,19 +46,23 @@ if (!file.exists("appdata/obs.fst")) {
 if (!file.exists("appdata/dmo.fst")) {
   dmo <- data.frame()
 } else {
-  dmo <- fst::read_fst("appdata/dmo.fst")
+  dmo <- fst::read_fst("appdata/dmo.fst") %>%
+    dplyr::select(time, reftime, siteID, ECMWF, q05, q25, q75, q95)
 }
 
 if (!file.exists("appdata/emos.fst")) {
   emos <- data.frame()
 } else {
-  emos <- fst::read_fst("appdata/emos.fst")
+  emos <- fst::read_fst("appdata/emos.fst") %>%
+      dplyr::select(time, reftime, siteID, WWCS, q05, q25, q75, q95, IFS_PR_mea,
+                   Observations)
 }
 
 if (!file.exists("appdata/pictocodes.fst")) {
   pictos <- data.frame()
 } else {
-  pictos <- fst::read_fst("appdata/pictocodes.fst")
+    pictos <- fst::read_fst("appdata/pictocodes.fst") %>%
+        dplyr::select(reftime, siteID, day, date)
 }
 
 # Read administrative areas
