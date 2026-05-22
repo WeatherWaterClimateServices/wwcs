@@ -9,13 +9,19 @@ set -o pipefail
 
 echo "=== CRON JOB ==="
 
-cd /srv/shiny-server/dashboard/service/
+# cd to the directory of this script
+my_dir="$(dirname "$(readlink -f "$0")")"
+cd $my_dir
+pwd
 
 # Ensure the cronout folder exists
 mkdir -p cronout
 
 echo "=== GET LATEST OBSERVATIONS  ==="
+# cd to the wwcs/WWCS (usually ~/wwcs/WWCS), where .Rprofile lives
+cd ../..
+pwd
 
-R CMD BATCH --no-save get_wwcs/get_wwcs.R cronout/wwcs.out
+R CMD BATCH --no-save ${my_dir}/get_wwcs/get_wwcs.R ${my_dir}/cronout/wwcs.out
 
 echo "___ DONE ___"

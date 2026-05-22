@@ -8,40 +8,35 @@ library(RColorBrewer)
 library(raster)
 library(ncdf4)
 
-rm(list = ls())
-
-# SET GLOBAL PARAMETERS
-# ------------------------------------------------
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-
+## SET GLOBAL PARAMETERS - from .Rprofile/config.yaml
+# --------------------------------------------------
 maxlead <- forecast_days * 24
-setwd("/srv/shiny-server/ews/service")
 curr_date <- Sys.Date()
 
-ifs_dir <- "/srv/shiny-server/dashboard/ifsdata/"
+ifs_dir <- file.path(ROOT_DIR, "WWCS/dashboard/ifsdata/")
 
 
 # READ STATION DATA FROM get_wwcs.R
 # ------------------------------------------------
 
-obs <- fst::read_fst("/srv/shiny-server/dashboard/appdata/obs.fst")
+obs <- fst::read_fst(file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst"))
 
 station_id <- unique(obs$siteID)
 rm(obs)
 # READ GRID AND PREDICTOR DATA
 # ------------------------------------------------
-
-preproc_grid <-  readRDS('/home/wwcs/wwcs/WWCS/ews/service/gEMOS/preproc_grid.rds') %>%
+ppg.file <- file.path(ROOT_DIR, "WWCS/ews/service/gEMOS/preproc_grid.rds")
+preproc_grid <-  readRDS(ppg.file) %>%
   dplyr::select(-c(poi)) %>%
   dplyr::distinct()
 
-preproc_train <-  readRDS('/home/wwcs/wwcs/WWCS/ews/service/gEMOS/preproc_train.rds')
+preproc_train <- readRDS(file.path(ROOT_DIR, "WWCS/ews/service/gEMOS/preproc_train.rds"))
 
 poi <- preproc_grid %>% 
        dplyr::select(lon, lat)
 npoi <- nrow(poi)
 
-tj_gadm <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_0.shp")) 
+tj_gadm <- sf::st_read(paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_0.shp")) 
 
 # Define NetCDF parameters for writing output
 # ------------------------------------------------
@@ -56,8 +51,9 @@ lat <-
 
 print(paste0("---READING IFS DATA---"))
 
-# ALLOCATE TRAINING DATA
-dmo <- fst::read_fst("/srv/shiny-server/dashboard/appdata/dmo.fst") %>%
+## ALLOCATE TRAINING DATA
+dmo.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/dmo.fst")
+dmo <- fst::read_fst(dmo.file) %>%
   dplyr::rename(IFS_T_mea = ECMWF) %>%
   dplyr::select(-c(Temperature, q05, q25, q75, q95)) %>%
   dplyr::left_join(preproc_train, by = "siteID")
@@ -155,9 +151,10 @@ if (!file.exists(file)){
 
 # Check if new forecast data is available already
 if (file.exists(file)) {
-  system(paste0("cdo remapbil,gEMOS/gemos_grid.txt ", file, " ", filermp))
+    system(paste0("cdo remapbil,",ROOT_DIR,"/WWCS/ews/service/gEMOS/gemos_grid.txt ",
+                  file, " ", filermp))
   
-  for (i in 1:length(ifs_lead)) {
+  for (i in 1:5){#length(ifs_lead)) {
     tryCatch(
       expr = {
         print(paste0("Training gEMOS IFS data for lead time ", ifs_lead[i]))
@@ -226,8 +223,8 @@ if (file.exists(file)) {
         
         nc <-
           ncdf4::nc_create(
-            paste0(
-              "/srv/shiny-server/dashboard/appdata/gemos_raster/raster_data_",
+            paste0(ROOT_DIR, 
+              "/WWCS/dashboard/appdata/gemos_raster/raster_data_",
               ifs_lead[i],
               ".nc"
             ),
@@ -247,8 +244,8 @@ if (file.exists(file)) {
         raster_plot <- raster::aggregate(raster_mea, fact = 4)
         raster::writeRaster(
           raster_plot,
-          paste0(
-            "/srv/shiny-server/dashboard/appdata/gemos_raster/raster_plot_",
+          paste0(ROOT_DIR,
+            "/WWCS/dashboard/appdata/gemos_raster/raster_plot_",
             ifs_lead[i],
             ".tif"
           ),
@@ -260,7 +257,7 @@ if (file.exists(file)) {
     )
   }
   
-  setwd("/srv/shiny-server/dashboard/appdata/gemos_raster/")
+  setwd(file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/"))
   system("cdo -O mergetime raster_data_*.nc raster_merged.nc")
   
 } else {

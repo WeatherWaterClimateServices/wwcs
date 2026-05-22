@@ -1,7 +1,15 @@
-# Read configuration from text file
+## Read configuration from text file
 
-config <- yaml::yaml.load_file("/home/wwcs/wwcs/WWCS/config.yaml")
-dotenv::load_dot_env("/home/wwcs/wwcs/.env")
+## first determine root path
+ROOT_DIR <- normalizePath(getwd(), mustWork=TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+
+config <- yaml::yaml.load_file(file.path(ROOT_DIR, "WWCS/config.yaml"))
+dotenv::load_dot_env(file.path(ROOT_DIR, ".env"))
 db_password = Sys.getenv("DB_PASSWORD")
 wwcs_domain = config$wwcs_domain
 use_pass = config$use_pass

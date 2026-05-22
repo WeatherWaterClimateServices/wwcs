@@ -8,8 +8,6 @@ library(jsonlite)
 library(dplyr)
 library(tidyr)
 
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-
 ## READ stations from DB - type WMO
 sites <-
   sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%

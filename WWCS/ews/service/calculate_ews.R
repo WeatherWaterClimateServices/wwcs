@@ -6,8 +6,6 @@ library(pool)
 library(sf)
 library(RMySQL)
 
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-
 # ------------------------------------------------
 # DEFINE AND LOAD GENERAL VARIABLES
 # ------------------------------------------------
@@ -17,8 +15,8 @@ warning_window <- seq(currdate, currdate + days(warning_days - 1), by = "days")
 
 
 bd <- sf::st_read(
-  paste0(
-    "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
+  paste0(ROOT_DIR,
+    "/WWCS/boundaries/gadm41_",
     gadm0,
     "_2.shp"
   ),
@@ -90,7 +88,7 @@ thresholds <- dbReadTable(pool_service, "Warnings")
 # Read post-processed forecast data
 
 emos <-
-  fst::read_fst("/srv/shiny-server/dashboard/appdata/emos.fst") %>%
+  fst::read_fst(file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")) %>%
   dplyr::select(c(WWCS, IFS_T_std, reftime, time, siteID, IFS_T_min)) %>%
   dplyr::left_join(sites) %>%
   left_join(thresholds, by = "district") %>%
@@ -209,15 +207,15 @@ ews_station <-
 # -------------------------------------------
 
 file <-
-  "/srv/shiny-server/dashboard/appdata/gemos_raster/raster_merged.nc"
+  paste0(ROOT_DIR, "/WWCS/dashboard/appdata/gemos_raster/raster_merged.nc")
 filesub <-
-  "/srv/shiny-server/dashboard/appdata/gemos_raster/raster_sub.nc"
+  paste0(ROOT_DIR, "/WWCS/dashboard/appdata/gemos_raster/raster_sub.nc")
 filemin <-
-  "/srv/shiny-server/dashboard/appdata/gemos_raster/raster_daymin.nc"
+  paste0(ROOT_DIR, "/WWCS/dashboard/appdata/gemos_raster/raster_daymin.nc")
 filemean <-
-  "/srv/shiny-server/dashboard/appdata/gemos_raster/raster_daymean.nc"
+  paste0(ROOT_DIR, "/WWCS/dashboard/appdata/gemos_raster/raster_daymean.nc")
 fileelev <- 
-  "/srv/shiny-server/dashboard/appdata/gemos_raster/raster_elevation.nc"
+  paste0(ROOT_DIR, "/WWCS/dashboard/appdata/gemos_raster/raster_elevation.nc")
 
 
 system(paste0(
@@ -261,14 +259,13 @@ ifs_frost_std_districts <-
 # Read elevation parameters for grid
 # Check if file elev_districts.Rdata exists, if yes read it from there
 # otherwise from the raster file
-
-if (file.exists("/srv/shiny-server/dashboard/appdata/poi/elev_districts.Rdata")) {
-  elev_districts <-
-    readRDS("/srv/shiny-server/dashboard/appdata/poi/elev_districts.Rdata")
+file.elev.Rdata <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/elev_districts.Rdata")
+if (file.exists(file.elev.Rdata)) {
+  elev_districts <- readRDS(file.elev.Rdata)
 } else {
   elev_districts <-
     exactextractr::exact_extract(elev, bd)
-  saveRDS(elev_districts, "/srv/shiny-server/dashboard/appdata/poi/elev_districts.Rdata")
+  saveRDS(elev_districts, file.elev.Rdata)
 }
 
 ews_district <- data.frame()
