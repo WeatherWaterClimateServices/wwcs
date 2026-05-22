@@ -6,26 +6,32 @@ set -e
 set -o pipefail
 
 echo "=== CRON JOB ==="
-
-cd /srv/shiny-server/ews/service
+# cd to the directory of this script
+my_dir="$(dirname "$(readlink -f "$0")")"
+cd $my_dir
+pwd
 
 # Ensure the cronout folder exists
 mkdir -p cronout
 
+# cd to the wwcs/WWCS (usually ~/wwcs/WWCS), where .Rprofile lives
+cd ../..
+pwd
+
 today=$(date +%Y-%m-%d)
 
-if [ -f "/srv/shiny-server/dashboard/ifsdata/tj_area_$today.nc" ]; then
+if [ -f "dashboard/ifsdata/tj_area_$today.nc" ]; then
 
   echo "=== POSTPROCESS FORECASTS GLOBALLY (gEMOS) ==="
   
-  R CMD BATCH --no-save /srv/shiny-server/ews/service/gEMOS/gEMOS.R /srv/shiny-server/ews/service/cronout/gemos.out
+  R CMD BATCH --no-save ${my_dir}/gEMOS/gEMOS.R ${my_dir}/cronout/gemos.out
   
   echo "=== CALCULATE WARNING LEVELS ==="
   
-  R CMD BATCH --no-save /srv/shiny-server/ews/service/calculate_ews.R /srv/shiny-server/ews/service/cronout/ews.out
+  R CMD BATCH --no-save ${my_dir}/calculate_ews.R ${my_dir}/cronout/ews.out
 
-  # touch restart.txt to force reload of the data
-  touch /srv/shiny-server/dashboard/restart.txt
+  # touch restart.txt to force reload of the data in the dashboard
+  touch dashboard/restart.txt
 
 else
   echo "New forecast not yet available"
