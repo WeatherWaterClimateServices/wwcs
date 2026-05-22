@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import mysql.connector
 import numpy as np
