@@ -11,13 +11,10 @@ import openmeteo_requests
 import requests_cache
 import retry_requests
 
-from common import USERNAME, PASSWORD
+from common import USERNAME, PASSWORD, ROOT_DIR
 
 
-ROOT_PATH = Path("/home/wwcs/wwcs/WWCS")
-#ROOT_PATH = Path("/home/boris/wwcs/WWCS_repo/wwcs/WWCS")
-#ROOT_PATH = Path("/home/jdavid/sandboxes/Caritas/wwcs/WWCS")
-
+ROOT_PATH = ROOT_DIR / "WWCS"
 DATA_PATH = ROOT_PATH / "dashboard" / "ifsdata"
 
 

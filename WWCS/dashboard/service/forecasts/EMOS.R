@@ -1,4 +1,3 @@
-rm(list = ls())
 gc()
 
 # Required Libraries
@@ -31,7 +30,7 @@ on.exit({ ## make sure that spawned processes when this session ends
 
 # SET GLOBAL PARAMETERS - coming from .Rprofile and config.yaml
 # -------------------------------------------------------------
-
+print(getwd())
 maxlead <- forecast_days * 24
 
 curr_date <- Sys.Date() 
@@ -44,7 +43,7 @@ ifs_dir <- file.path(ROOT_DIR, "WWCS/dashboard/ifsdata/")
 # READ STATION DATA FROM get_wwcs.R
 # ------------------------------------------------
 
-obs <- fst::read_fst(file.path(ROOT_DIR, "dashboard/appdata/obs.fst"))
+obs <- fst::read_fst(file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst"))
 
 station_id <- unique(obs$siteID)
 
