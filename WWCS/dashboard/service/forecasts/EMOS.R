@@ -29,11 +29,8 @@ on.exit({ ## make sure that spawned processes when this session ends
   foreach::registerDoSEQ()  # reset to sequential backend                           
 }, add = TRUE)
 
-# SET GLOBAL PARAMETERS
-# ------------------------------------------------
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-
-setwd("/srv/shiny-server/dashboard/service")
+# SET GLOBAL PARAMETERS - coming from .Rprofile and config.yaml
+# -------------------------------------------------------------
 
 maxlead <- forecast_days * 24
 
@@ -42,12 +39,12 @@ read_start_date <- curr_date - lubridate::days(forecast_days + train_period)
 
 dates <- as.character(seq(ymd(read_start_date), ymd(curr_date), by = 'days'))
 
-ifs_dir <- "/srv/shiny-server/dashboard/ifsdata/"
+ifs_dir <- file.path(ROOT_DIR, "WWCS/dashboard/ifsdata/")
 
 # READ STATION DATA FROM get_wwcs.R
 # ------------------------------------------------
 
-obs <- fst::read_fst("/srv/shiny-server/dashboard/appdata/obs.fst")
+obs <- fst::read_fst(file.path(ROOT_DIR, "dashboard/appdata/obs.fst"))
 
 station_id <- unique(obs$siteID)
 
@@ -224,5 +221,6 @@ dmo <- dmo %>%
   ) %>%
   dplyr::rename(ECMWF = IFS_T_mea, Observations = Temperature_mean)
 
-fst::write_fst(dmo, path = "/srv/shiny-server/dashboard/appdata/dmo.fst", compress = 0)
-fst::write_fst(emos, path = "/srv/shiny-server/dashboard/appdata/emos.fst", compress = 0)
+setwd(file.path(ROOT_DIR, "WWCS/dashboard/appdata"))
+fst::write_fst(dmo, path = "dmo.fst", compress = 0)
+fst::write_fst(emos, path = "emos.fst", compress = 0)
