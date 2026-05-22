@@ -7,13 +7,8 @@ library(zoo)
 library(callr)
 library(stringr)
 
-rm(list = ls())
-
-setwd("/srv/shiny-server/dashboard/service/get_wwcs/")
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-
-# SET GLOBAL PARAMETERS
-# ------------------------------------------------
+# SET GLOBAL PARAMETERS - comes form .Rprofile / config.yaml
+# ----------------------------------------------------------
 
 read_start_date <-
   as.POSIXct(as.Date(Sys.Date() - days(60)), tz = timezone_country)
@@ -176,5 +171,5 @@ for (i in 1:nstat) {
 
 # STORE DATA 
 # ------------------------------------------------
-
-fst::write_fst(obs, path = "/srv/shiny-server/dashboard/appdata/obs.fst", compress = 0)
+outfile <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst")
+fst::write_fst(obs, path = outfile, compress = 0)
