@@ -209,6 +209,7 @@ if __name__ == '__main__':
                     'end_date': (date + forecast_delta).strftime('%Y-%m-%d'),
                     'hourly': hourly,
                     'models': 'ecmwf_ifs025',  # ECMWF IFS 0.25° ensemble
+                    'elevation': 'nan',
                 },
                 output_config,
             )

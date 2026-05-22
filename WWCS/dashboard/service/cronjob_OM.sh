@@ -29,10 +29,10 @@ echo "=== GET OBSERVATIONS AND POSTPROCESS FORECASTS ==="
 cd ../..
 pwd
 
-R CMD BATCH --no-save ${my_dir}/forecasts/EMOS.R ${my_dir}/cronout/emos.out
+# R CMD BATCH --no-save ${my_dir}/forecasts/EMOS.R ${my_dir}/cronout/emos.out
 
 echo "=== PROCESS WEATHER PICTOGRAMS FROM FORECASTS ==="
 
-R CMD BATCH --no-save ${my_dir}/forecasts/process_pictos.R  ${my_dir}/cronout/pictos.out
+# R CMD BATCH --no-save ${my_dir}/forecasts/process_pictos.R  ${my_dir}/cronout/pictos.out
 
-R CMD BATCH --no-save ${my_dir}/forecasts/prepare_api_data.R  ${my_dir}/cronout/api.out
+# R CMD BATCH --no-save ${my_dir}/forecasts/prepare_api_data.R  ${my_dir}/cronout/api.out
