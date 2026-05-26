@@ -26,9 +26,9 @@ sidebar <-
   dashboardSidebar(
   width = 300, 
   sidebarMenu(
-    menuItem(i18n$t("Overview"), tabName = "overview", icon = icon("dashboard")),
-    menuItem(i18n$t("Site Parameters"), tabName = "control", icon = icon("th")),
-    menuItem(i18n$t("Irrigation"), tabName = "manual", icon = icon("water"))
+    menuItem(i18n$t("Overview"), tabName = "overview", icon = icon("dashboard")) # , ## BORIS here
+#    menuItem(i18n$t("Site Parameters"), tabName = "control", icon = icon("th")), 
+#    menuItem(i18n$t("Irrigation"), tabName = "manual", icon = icon("water"))
   ),
   div(
     style = "padding-left: 10px; padding-right: 10px;",
