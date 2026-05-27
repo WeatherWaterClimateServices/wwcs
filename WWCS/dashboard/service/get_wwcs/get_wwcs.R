@@ -17,14 +17,12 @@ kmean <- 12 # Number of records used for rolling mean (12 = 2h)
 
 deployments <-
   sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
-  distinct(siteID, .keep_all = TRUE)  %>%
-  filter(!stringr::str_detect(siteID, pattern = "-S")) # Do not include soil moisture measurements
+  distinct(siteID, .keep_all = TRUE)
 
 sites <-
-  sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
+  sqlQuery(query = "select * from Sites WHERE forecast=1", dbname = "SitesHumans") %>%
   dplyr::distinct(siteID, .keep_all = TRUE)  %>%
-  dplyr::filter(!stringr::str_detect(siteID, pattern = "-S")) %>% 
-  as_tibble() # Do not include soil moisture measurements
+  as_tibble() 
 
 nstat <- nrow(sites)
 

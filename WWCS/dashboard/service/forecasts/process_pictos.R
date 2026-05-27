@@ -204,7 +204,6 @@ emos <- fst::read_fst("/srv/shiny-server/dashboard/appdata/emos.fst") %>%
 
 station_id <- emos %>%
   dplyr::select(siteID) %>%
-  dplyr::filter(!stringr::str_detect(siteID, pattern = "-S")) %>% # Do not include soil moisture measurements
   unique() %>%
   unlist()
 
