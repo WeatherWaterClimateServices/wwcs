@@ -109,8 +109,7 @@ sites <-
 
 deployments <-
   sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
-  dplyr::distinct(siteID, .keep_all = TRUE)  %>%
-  dplyr::filter(!stringr::str_detect(siteID, pattern = "-S")) # Do not include soil moisture measurements
+  dplyr::distinct(siteID, .keep_all = TRUE)
 
 # Add empty rows in obs with the siteID that are not in the sites dataframe
 sites_not_in_obs <- sites %>%

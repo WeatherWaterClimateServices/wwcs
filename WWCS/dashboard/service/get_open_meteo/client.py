@@ -37,7 +37,7 @@ def get_sites():
         database='SitesHumans',
     ) as cnx:
         with cnx.cursor() as cursor:
-            cursor.execute("SELECT siteID, latitude, longitude FROM Sites WHERE siteID NOT LIKE '%-S%'")
+            cursor.execute("SELECT siteID, latitude, longitude FROM Sites WHERE forecast=1")
             return cursor.fetchall()
 
 class Client:

@@ -19,11 +19,10 @@ options(pillar.sigfig = 7)
 source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 train_points <-
-  sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
+  sqlQuery(query = "select * from Sites WHERE forecast=1", dbname = "SitesHumans") %>%
   dplyr::distinct(siteID, .keep_all = TRUE)  %>%
-  dplyr::filter(!stringr::str_detect(siteID, pattern = "-S")) %>% 
   dplyr::mutate(lat = as.numeric(latitude), lon = as.numeric(longitude)) %>%
-  tibble::as_tibble() # Do not include soil moisture measurements
+  tibble::as_tibble() 
 
 
 # CREATE SPATIAL GRID FOR SPATIAL MODEL
