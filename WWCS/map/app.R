@@ -112,8 +112,8 @@ ready <- which(mapdata$status == "green" & mapdata$type == "WWCS")
 hold <- which(mapdata$status == "yellow" & mapdata$type == "WWCS")
 late <- which(mapdata$status == "red" & mapdata$type == "WWCS")
 
-ready_hydromet <- which(mapdata$status == "green" & mapdata$type == "TJHM")
-hold_hydromet <- which(mapdata$status != "green" & mapdata$type == "TJHM")
+ready_hydromet <- which(mapdata$status == "green" & mapdata$type != "WWCS")
+hold_hydromet <- which(mapdata$status != "green" & mapdata$type != "WWCS")
 
 bounds <- 5
 
@@ -286,7 +286,7 @@ server <- function(input, output, session) {
       ) %>%
       addLayersControl(
         position = c("bottomright"),
-        overlayGroups = c("WWCS", "WWCS (hold)", "WWCS (down)", "TJHM"),
+        overlayGroups = c("WWCS", "WWCS (hold)", "WWCS (down)", "Non-WWCS"),
         options = layersControlOptions(collapsed = TRUE)
       ) 
   })
@@ -325,7 +325,7 @@ server <- function(input, output, session) {
           label = mapdata$siteID[ready_hydromet],
           layerId = mapdata$siteID[ready_hydromet],
           icon = icons_hydromet_ready,
-          group = "TJHM",
+          group = "Non-WWCS",
           labelOptions = labelOptions(
             style = list(
               "color" = "white",
@@ -347,7 +347,7 @@ server <- function(input, output, session) {
           label = mapdata$siteID[hold_hydromet],
           layerId = mapdata$siteID[hold_hydromet],
           icon = icons_hydromet_hold,
-          group = "TJHM",
+          group = "Non-WWCS",
           labelOptions = labelOptions(
             style = list(
               "color" = "white",
@@ -442,8 +442,6 @@ server <- function(input, output, session) {
               "Temperature" = "ta",
               "Relative Humidity" = "rh",
               "Pressure" = "p",
-              "PM2.5" = "PM25",
-              "PM10" = "PM10",
               "Solar" = "U_Solar",
               "Signal" = "signalStrength",
               "Voltage Battery" = "U_Battery",
@@ -482,7 +480,7 @@ server <- function(input, output, session) {
           ),
           plotlyOutput("plot", height = "35vh")
         )
-      } else if (selected$type == "TJHM") {
+      } else if (selected$type != "WWCS") {
         tabPanel(
           "Graph",
           checkboxGroupInput(
