@@ -24,7 +24,7 @@ sites <- left_join(sites, deployments)
 
 ## Definitions
 # Time window (ISO 8601 UTC). Set either bound to NULL for open-ended.
-DATETIME_FROM <- format(Sys.time() - 3 * 24 * 3600, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+DATETIME_FROM <- format(Sys.time() - 7 * 24 * 3600, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
 DATETIME_TO   <- NULL
 
 OBS_VARS_TO_KEEP <- c("air_temperature", "relative_humidity", "wind_speed", "wind_direction", 
@@ -123,11 +123,16 @@ for (station_id in sites$loggerID){
   } ## end repeat loop - downloading data for station_id in chunks  
   
   ## extract data and prepare/filter/clean, first in long table format
-  df_long <- all_features$properties %>% tibble() %>%
-    mutate(siteID = wigos_station_identifier,
-          time = as.POSIXct(sub(".*/", "", phenomenonTime),
-                                    format="%Y-%m-%dT%H:%M:%SZ", tz="UTC")        
-        )
+  if (nrow(all_features) > 0){
+     df_long <- all_features$properties %>% tibble() %>%
+         mutate(siteID = wigos_station_identifier,
+                time = as.POSIXct(sub(".*/", "", phenomenonTime),
+                                  format="%Y-%m-%dT%H:%M:%SZ", tz="UTC")        
+                )
+  } else {
+    cat("No data for station ", station_id)
+    next
+  }
 
   ## filter for required parameters
   if (!is.null(OBS_VARS_TO_KEEP)) {
