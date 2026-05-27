@@ -43,7 +43,7 @@ def get_sites():
 class Client:
 
     def __init__(self):
-        cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
+        cache_session = requests_cache.CachedSession('.cache', expire_after=3600, backend='memory')
         retry_session = retry_requests.retry(cache_session, retries=5, backoff_factor=0.2)
         self.client = openmeteo_requests.Client(session=retry_session)
 

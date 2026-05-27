@@ -69,9 +69,8 @@ required_irrig_parameters <- c(
   "measurement_device",
   "humanID")
 
-## do we have exactly these parameters in all fieldproperty jsons?
-if (!all(required_irrig_parameters %in% names(irrig_site_parameters)) ||
-    !all(names(irrig_site_parameters) %in% required_irrig_parameters)){
+## do we have exactly these parameters in all fieldproperty jsons? BORIS here - as a minimal set
+if (!all(required_irrig_parameters %in% names(irrig_site_parameters))){
   stop("I don't have all required parameters in the fieldproperties column. Check the wiki and your Sites table.")
 }
 
