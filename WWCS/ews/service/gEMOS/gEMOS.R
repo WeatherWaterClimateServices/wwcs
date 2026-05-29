@@ -154,7 +154,7 @@ if (file.exists(file)) {
     system(paste0("cdo remapbil,",ROOT_DIR,"/WWCS/ews/service/gEMOS/gemos_grid.txt ",
                   file, " ", filermp))
   
-  for (i in 1:5){#length(ifs_lead)) {
+  for (i in 1:length(ifs_lead)) {
     tryCatch(
       expr = {
         print(paste0("Training gEMOS IFS data for lead time ", ifs_lead[i]))
