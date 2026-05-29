@@ -26,6 +26,7 @@ gadm0: "KHM"
 # Define time-zone (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)  
 
 timezone_country: "Asia/Bangkok"
+timezone_stationdata: "Asia/Bangkok"
 
 # Parameters for EMOS
 

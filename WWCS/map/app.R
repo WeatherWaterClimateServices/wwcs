@@ -12,9 +12,14 @@ library(plotly)
 library(shinydashboard)
 library(shinymanager)
 
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-
-# Load the credentials
+# Load the credentials - to come from .Rprofile and config.yaml
+ROOT_DIR <- normalizePath(getwd(), mustWork=TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
 
 credentials <- data.frame(
   user = c("caritas", "tjhm", "coes"),
@@ -55,12 +60,14 @@ mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 sites <-
   sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
   distinct(siteID, .keep_all = TRUE)  %>%
-  as_tibble() # Do not include soil moisture measurements
+  as_tibble() 
 
 deployments <-
   sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
-  as_tibble() # Do not include soil moisture measurements
+  as_tibble() 
 
+print(timezone_country)
+#print(timezone_stationdata)
 
 lastobs <-
   sqlQuery(
@@ -75,7 +82,10 @@ lastobs <-
     ,
     dbname = "Machines"
   ) %>%
-  as_tibble()
+  as_tibble() %>%
+   dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
+                   tz = timezone_stationdata), tz = timezone_country))
+
 
 
 # Join all elements and create new columns status that checks if timestamp is within the last hour
@@ -250,6 +260,8 @@ server <- function(input, output, session) {
       ),
       dbname = "Machines"
     ) %>%
+      # dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
+      #                 tz = timezone_stationdata), tz = timezone_country)) %>%
       as_data_frame())
   
   
@@ -391,7 +403,9 @@ server <- function(input, output, session) {
       ),
       dbname = "Machines"
     ) %>%
-      as_data_frame()
+      as_tibble() %>%
+      dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
+                      tz = timezone_stationdata), tz = timezone_country))
     
   })
   
@@ -427,7 +441,10 @@ server <- function(input, output, session) {
       ),
       dbname = "Machines"
     ) %>%
-      as_data_frame()
+      as_tibble %>%
+      dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
+                     tz = timezone_stationdata), tz = timezone_country))
+      
     
     print(station_data$data)
     showModal(modalDialog(style = "text-align:center;", tabsetPanel(

@@ -25,6 +25,7 @@ setlat = config$setlat
 gadm0 = config$gadm0
 
 timezone_country = config$timezone_country
+timezone_stationdata = config$timezone_stationdata
 
 wis2wmo_url = config$wis2wmo_url
 wis2wmo_collection = config$wis2wmo_collection

@@ -26,6 +26,7 @@ gadm0: "UZB"
 # Define time-zone (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
 
 timezone_country: "Asia/Tashkent"
+timezone_stationdata: "Asia/Tashkent"
 
 # Zoom level for map applications
 

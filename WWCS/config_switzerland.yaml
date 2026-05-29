@@ -28,6 +28,7 @@ gadm0: "CHE"
 # Define time-zone (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)  
 
 timezone_country: "Europe/Zurich"
+timezone_stationdata: "Europe/Zurich"
 
 # Parameters for EMOS
 

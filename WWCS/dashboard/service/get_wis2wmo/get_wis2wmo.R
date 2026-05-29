@@ -161,7 +161,7 @@ for (station_id in sites$loggerID){
   df_wide <- df_wide %>%
     rename(any_of(renames)) %>%
     mutate(received = Sys.time(),
-      timestamp=lubridate::with_tz(as.POSIXct(time, tz = "UTC"), tz = timezone_country))
+      timestamp=lubridate::with_tz(as.POSIXct(time, tz = "UTC"), tz = timezone_stationdata))
     
   # Validate columns against DB table and keep only jointly common cols
   con <- connect_db()

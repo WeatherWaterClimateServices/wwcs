@@ -26,9 +26,9 @@ gadm0: "TJK"
 # Define time-zone (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
 
 timezone_country: "Asia/Dushanbe"
+timezone_stationdata: "Asia/Dushanbe"
 
 # Parameters for EMOS
-
 train_period: 30 # Days with which to train temperature forecasts
 forecast_days: 10 # Days to consider of ECMWF forecasts
 miss_val: 0.50 # Amount of missing values to allow in the station data

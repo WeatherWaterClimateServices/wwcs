@@ -41,11 +41,12 @@ for (i in 1:nstat) {
   )
   
   if (nrow(lowcost) > 0) {
-    # Round Minutes, Use Celsius, Omit unnecessary variables, Remove duplicates
+    # Round Minutes, adjust tz, Use Celsius, Omit unnecessary variables, Remove duplicates
     station <- lowcost %>%
       as_tibble() %>%
       dplyr::rename(time = timestamp) %>%
-      dplyr::mutate(time = floor_date(as.POSIXct(time, tz = timezone_country), "minute")) %>%
+      dplyr::mutate(time = lubridate::with_tz(as.POSIXct(time, tz = timezone_stationdata), tz = timezone_country)) %>%
+      dplyr::mutate(time = floor_date(time, "minute")) %>%
       dplyr::rename(
         Temperature = ta,
         Pressure = p,

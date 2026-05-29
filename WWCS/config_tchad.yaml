@@ -23,8 +23,9 @@ dashboard_default_station: "TCHAD01"
 
 gadm0: "TCD"
 
-# Define time-zone (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) 
+# Define time-zones (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) 
 timezone_country: "Africa/Ndjamena"
+timezone_stationdata: "UTC"
 
 # URL and collection for WIS2box / WMO distributed stations
 wis2wmo_url: "https://wis2.meteotchad.org/oapi"
