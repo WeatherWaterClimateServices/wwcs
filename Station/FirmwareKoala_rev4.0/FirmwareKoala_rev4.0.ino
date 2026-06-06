@@ -27,9 +27,9 @@ const int  PORT = 443;
 const int MAX_LOOPS = 500;
 const int MAX_RECORDS = 300;
 const bool CLIMAVUE50 = false;                // whether the climavue50 is connected to this station
-const bool TippingBucket = true;              // whether a tipping bucket isis connected to this station
+const bool TippingBucket = false;              // whether a tipping bucket isis connected to this station
 const float mmPerTip = 0.2;                   // mm per tip of the tipping bucket
-const bool AIRQUALITY_SDS011 = true;                     // whether we measure air quality
+const bool AIRQUALITY_SDS011 = false;                     // whether we measure air quality
 
 /* DEFINES - PARTLY BOARD-SPECIFIC*/
 #define SerialAT Serial1                           // Serial communication with Modem
@@ -219,7 +219,7 @@ void setup() {
   delay(1000);
 
   // check if we wake up due to tipping bucket - raintCounter++ and back to sleep
-  if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+  if (TippingBucket && wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
     nowSec = rtc.getEpoch();
     Serial.printf("Rain wake - current: %i (last: %i + duration: %i)\n", 
                  nowSec, lastScheduledWakeTime, nowSec - lastScheduledWakeTime);
@@ -552,7 +552,9 @@ void setup() {
   }
   Serial.print("Going to sleep. sleepsecs incl correction for network time and delta: ");
   Serial.println(sleepSeconds);
-  esp_sleep_enable_ext0_wakeup((gpio_num_t)RAIN_PIN, 0);  // make sure we wake up from tipping bucket
+  if (TippingBucket){
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)RAIN_PIN, 0);  // make sure we wake up from tipping bucket
+  }
   esp_sleep_enable_timer_wakeup((sleepSeconds) * uS_TO_S_FACTOR);
   lastScheduledWakeTime = rtc.getEpoch();                           // this is a scheduled sleep, so update this var
   delay(200);
