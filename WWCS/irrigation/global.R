@@ -15,18 +15,20 @@ library(dplyr)
 library(shinyjs)
 library(shinymanager)
 
-
-rm(list = ls())
-setwd("/srv/shiny-server/irrigation/")
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
+# Load the credentials - to come from .Rprofile and config.yaml
+ROOT_DIR <- normalizePath(getwd(), mustWork=TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
+source(file.path(ROOT_DIR, "WWCS/irrigation/R/calc_et0.R"))
 options(shiny.sanitize.errors = FALSE)
 
 # ------------------------------------------------
-# SET PARAMETERS
+# DB CONNECTIONS
 # ------------------------------------------------
-
-window <- 150
-
 
 pool <-
   dbPool(
@@ -63,16 +65,13 @@ if (nrow(sites_map_ui) == 0) {
   sites_map_ui <- default_station %>% select(siteID)
 }
 
-source("./R/calc_et0.R")
-
-
-mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
+mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 
 # SET LANGUAGE TRANSLATION
 # ------------------------------------------------
-
+translat.file <- file.path(ROOT_DIR, "WWCS/irrigation/www/translation.json")
 i18n <-
-  shiny.i18n::Translator$new(translation_json_path = 'www/translation.json')
+  shiny.i18n::Translator$new(translation_json_path = translat.file)
 i18n$set_translation_language('en')
 shiny.i18n::usei18n(i18n)
 
@@ -110,9 +109,8 @@ irrigation_colors <-
 # Read shapefiles in the folder /srv/shiny-server/irrigation/appdata/Shapefiles with the sf package
 # Read all shape files in the folder and concatenate them into one sf object with the name plot_polygons
 
-
-for (file in list.files("/srv/shiny-server/irrigation/appdata/Shapefiles", pattern = ".shp", full.names = TRUE)) {
-  
+shape.path <- file.path(ROOT_DIR, "WWCS/irrigation/appdata/Shapefiles")
+for (file in list.files(shape.path, pattern = ".shp", full.names = TRUE)) {  
   try({
     plot_polygons <- plot_polygons %>%
       rbind(

@@ -5,9 +5,10 @@ library(lubridate)
 library(tidyjson)
 library(tidyr)
 
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-source("/srv/shiny-server/irrigation/R/calc_et0.R")
-crop.parameters <- readr::read_csv(file = "/srv/shiny-server/irrigation/appdata/CropParameters.csv", show_col_types = FALSE)
+## read some functions and parameters from files
+source(file.path(ROOT_DIR, "WWCS/irrigation/R/calc_et0.R"))
+cropparm.file <- file.path(ROOT_DIR, "WWCS/irrigation/appdata/CropParameters.csv")
+crop.parameters <- readr::read_csv(file = cropparm.file, show_col_types = FALSE)
 
 yesterday <- Sys.Date() - 1
 
