@@ -66,8 +66,6 @@ deployments <-
   sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
   as_tibble() 
 
-print(timezone_country)
-#print(timezone_stationdata)
 
 lastobs <-
   sqlQuery(
@@ -260,8 +258,6 @@ server <- function(input, output, session) {
       ),
       dbname = "Machines"
     ) %>%
-      # dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
-      #                 tz = timezone_stationdata), tz = timezone_country)) %>%
       as_data_frame())
   
   
@@ -459,6 +455,8 @@ server <- function(input, output, session) {
               "Temperature" = "ta",
               "Relative Humidity" = "rh",
               "Pressure" = "p",
+              "PM2.5" = "PM25",
+              "PM10" = "PM10",
               "Solar" = "U_Solar",
               "Signal" = "signalStrength",
               "Voltage Battery" = "U_Battery",
