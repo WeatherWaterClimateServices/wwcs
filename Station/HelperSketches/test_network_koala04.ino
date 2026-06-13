@@ -10,8 +10,8 @@
 
 
 const String CBAND="ALL_MODE"; // can be EGSM_MODE, DCS_MODE, ALL_MODE
-const String APN="TM";           // your APN - babilon, internet...
-const int NETWORK_MODE=2;    // 2 Automatic, 13 GSM only, 38 LTE only, 51 GSM and LTE only
+const String APN="internet";           // your APN - babilon, internet...
+const int NETWORK_MODE=13;    // 2 Automatic, 13 GSM only, 38 LTE only, 51 GSM and LTE only
 
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
@@ -29,8 +29,8 @@ const int NETWORK_MODE=2;    // 2 Automatic, 13 GSM only, 38 LTE only, 51 GSM an
 // #define DUMP_AT_COMMANDS
 
 #include <TinyGsmClient.h>
-#include <SPI.h>
-#include <Ticker.h>
+// #include <SPI.h>
+// #include <Ticker.h>
 
 #ifdef DUMP_AT_COMMANDS
 #include <StreamDebugger.h>
@@ -119,7 +119,7 @@ void setup()
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, HIGH);
 
-    // modem_reset();
+    modem_reset();
 
     modem_on();
 
@@ -146,6 +146,25 @@ void setup()
       Serial.println("Init ok.");
     } else {
       Serial.println("init failed.");
+    }
+
+    // Teardown -- do various things which hopefully help to make the modem start clean
+    modem.gprsDisconnect();
+    bool isLTE = (NETWORK_MODE != 13);
+    if (isLTE) {
+      modem.sendAT("+CIPSHUT");
+      modem.waitResponse(5000L);
+      modem.sendAT("+CGACT=0,1");
+      modem.waitResponse(5000L);
+    }
+    modem.sendAT("+CGATT=0");
+    modem.waitResponse(8000L);
+    delay(4000);
+
+    if (modem.init()){
+      Serial.println("2nd init ok.");
+    } else {
+      Serial.println("2nd init failed.");
     }
 
     //test sim card is online ?
@@ -267,8 +286,8 @@ void setup()
         Serial.print("About the available bands:");
         Serial.println(res);
     }
-
-    
+ 
+ 
     // Check network signal and registration information
     Serial.println("Checking network signal and registration for network mode " + 
       String(NETWORK_MODE) + " and for band " + CBAND);
