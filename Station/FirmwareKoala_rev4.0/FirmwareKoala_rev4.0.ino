@@ -14,6 +14,7 @@ const char DEFAULT_APN[] = "FlashProvider";   // dummy APN
 const char SITE_ID[] = "FlashSite";           // dummy site ID
 const char GIT_VERSION[] = "FlashGIT";        // dummy git version
 const int NETWORK_MODE = 1234;                // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only
+const int8_t tzQuarterHours = 0;            // timezone wrt UTC; this is quarter hours, positive for east. (eg 4 = UTC+1)
 
 const char GSM_PIN[] = "";                    // dummy GSM PIN
 const int SENSOR_READ_EVERY_MINS = 10;        // time between measurements
@@ -26,6 +27,9 @@ const int  PORT = 443;
 const int MAX_LOOPS = 500;
 const int MAX_RECORDS = 300;
 const bool CLIMAVUE50 = false;                // whether the climavue50 is connected to this station
+const bool TippingBucket = false;              // whether a tipping bucket isis connected to this station
+const float mmPerTip = 0.2;                   // mm per tip of the tipping bucket
+const bool AIRQUALITY_SDS011 = false;                     // whether we measure air quality
 
 /* DEFINES - PARTLY BOARD-SPECIFIC*/
 #define SerialAT Serial1                           // Serial communication with Modem
@@ -53,6 +57,11 @@ const bool CLIMAVUE50 = false;                // whether the climavue50 is conne
 #define POWER5V_ENABLE 13                           //I/O for enable or disable 5Volt power on board (power used for climavue50)
 #define SDI_pin 14                                  // SDI12 data pin
 
+#define RAIN_PIN 14                                 // for tipping bucket
+
+#define ESP_RX_FROM_SDS011 22
+#define ESP_TX_TO_SDS011 21
+
 #define TINY_GSM_MODEM_SIM7000                  // define modem etc for TinyGSM
 #define TINY_GSM_RX_BUFFER 1024                    // Set RX buffer to 1Kb
 
@@ -69,6 +78,7 @@ const bool CLIMAVUE50 = false;                // whether the climavue50 is conne
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP3XX.h>                        // BMP390 library
 #include <SDI12.h>                                 // SDI12 for the ClimaVue50
+#include <SDS011.h>                                 // for SDS011 air quality sensor
 #include "esp_err.h"
 #include "esp_task_wdt.h"                          // for hardware watchdog
 #include <StreamDebugger.h>
@@ -76,6 +86,7 @@ const bool CLIMAVUE50 = false;                // whether the climavue50 is conne
 #include "mbedtls/md.h"
 #include "esp_mac.h"
 #include "driver/gpio.h"
+#include "driver/rtc_io.h"
 
 //....................................................................................................
 //....................................................................................................
@@ -94,7 +105,7 @@ const char COMPILE_DATE_FILE[] = __DATE__ " " __TIME__ " " __FILE__;
 const unsigned int fullCapacity = 5500;            // Maximum value of battery capacity is 5500 mAh
 int RecordsInFlash = 0;                           // counter of records stored in flash
 ESP32Time rtc;                                    // object to interact with RTC
-//TinyGsmClientSecure clients(modem);               // network client (secure)
+
 TinyGsmClient client(modem);                      // several network clients
 SSLClient clients(&client);
 HttpClient https(clients, SERVER, PORT);          // init https client
@@ -106,9 +117,13 @@ TwoWire I2C_2 = TwoWire(1);  //I2C2 line
 
 // variables that survive in RTC memory during deep sleep
 RTC_DATA_ATTR int sleepDelta = 0;                 // to capture deviation at wakeup due to RCT drift
-RTC_DATA_ATTR int loopCounterRestart = 0;                // count the loops and force ESP to restart every MAX_LOOPS loops
+RTC_DATA_ATTR unsigned long sleepSeconds = SENSOR_READ_EVERY_MINS * 60;   // this is the default value, valid if time update from network fails
+RTC_DATA_ATTR int loopCounterRestart = 0;         // count the loops and force ESP to restart every MAX_LOOPS loops
 RTC_DATA_ATTR char storedJSON[4096];              // here measurements are stored for submission every n loops
-RTC_DATA_ATTR int loopCounterTransm = 0;         // count the loops before transmission
+RTC_DATA_ATTR int loopCounterTransm = 0;          // count the loops before transmission
+
+RTC_DATA_ATTR unsigned long lastScheduledWakeTime = 0;    // in seconds since 1970 (RTC clock); for scheduler timing
+RTC_DATA_ATTR int rainCounter = 0;
 
 // Global (static) buffers
 char SHA256PayLoad[80];                           // combined string which goes into SHA256 BORIS: should/could be moved to setup()
@@ -120,6 +135,9 @@ char timeStamp[128];                              // GSM datetime
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 void setup() {
 //....................................................................................................
+  // register wakeup reason  
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();  
+
   /* variable definition */
   uint8_t mac[6];                                   // MAC address
   char loggerID[18];                                // ID of the logger, include MAC address
@@ -153,14 +171,17 @@ void setup() {
   float climavue50Compass = -999.99;                   // compass heading (0 ... 359)
   float climavue50NWS = -999.99;                       // north wind speed (0.00 ... 40.00)
   float climavue50EWS = -999.99;                       // east wind speed (0.00 ... 40.00)
-  gpio_num_t power5VEnablePin = (gpio_num_t) POWER5V_ENABLE;  // the climavue50 power pin in proper type
+  
+  float pm25 = -999.99;                                // air quality parameters, to be measured by SDS011
+  float pm10 = -999.99;
 
   float signalStrength = -999.99;                   // network signal strength, init with error value
   unsigned long millisAtConnection;                 // millis() when initiating network - to compute sleepSecs
-  bool postSuccess = false;                         // whether the http response was successful (2XX) or not
-  int sleepSeconds = SENSOR_READ_EVERY_MINS * 60;            // this is the default value, valid if time update from network fails
+  bool postSuccess = false;                         // whether the http response was successful (2XX) or not  
+  int remainingSleepSec = 0;                        // used to calculate remaining sleep if wakeup from tipping bucket
+  unsigned long nowSec = 0;                         // used to store current epoch (sec since 1970, from RTC)
 
-  bool flashOK = false;                                // bool: wether we mount the flash
+  bool flashOK = false;                             // bool: wether we mount the flash
   bool apnConnected = false;                        // bool: wether we connected to APN
   bool serverConnected = false;                     // bool: wether we connected to the server
   bool batteryStatus = false;                       // battery ok for turning on the modem?
@@ -184,10 +205,37 @@ void setup() {
   ESP_ERROR_CHECK(esp_task_wdt_reconfigure(&twdt_config)); // from here: https://forum.arduino.cc/t/watchdog-doesnt-work-with-esp32-3-0-1/1270966
   esp_task_wdt_add(NULL);                           // add current thread to WDT watch
 
-//....................................................................................................
-/* Communication Init, collect basic information */
-  Serial.begin(115200);                               // Init Console and send after several infos
+  // if we have a tipping bucket, turn on RAIN_PIN
+  if (TippingBucket){
+    rtc_gpio_init((gpio_num_t)RAIN_PIN);
+    rtc_gpio_set_direction((gpio_num_t)RAIN_PIN, RTC_GPIO_MODE_INPUT_ONLY);
+    rtc_gpio_pulldown_dis((gpio_num_t)RAIN_PIN);
+    rtc_gpio_pullup_en((gpio_num_t)RAIN_PIN);
+    pinMode(RAIN_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(RAIN_PIN), countRain, FALLING);    
+  }
+
+  Serial.begin(115200);                               // Init Console 
   delay(1000);
+
+  // check if we wake up due to tipping bucket - rainCounter++ and back to sleep
+  if (TippingBucket && wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+    nowSec = rtc.getEpoch();
+    Serial.printf("Rain wake - current: %i (last: %i + duration: %i)\n", 
+                 nowSec, lastScheduledWakeTime, nowSec - lastScheduledWakeTime);
+    rainCounter++;
+    remainingSleepSec = min(sleepSeconds, sleepSeconds - (nowSec - lastScheduledWakeTime));
+    if (remainingSleepSec > 0){        
+      Serial.printf("Going to sleep after rain-triggered wakeup for %is.\n", remainingSleepSec);
+      esp_sleep_enable_ext0_wakeup((gpio_num_t)RAIN_PIN, 0);
+      esp_sleep_enable_timer_wakeup(remainingSleepSec * uS_TO_S_FACTOR);
+      esp_deep_sleep_start();
+    }
+  }
+  // otherwise carry on.
+  
+//....................................................................................................
+/* Communication Init, collect basic information */  
   Serial.println("\nGOOD MORNING SECTION");
   Serial.print("setup()running on core ");
   Serial.println(xPortGetCoreID());
@@ -208,6 +256,12 @@ void setup() {
   }
   const int NB_LOOPS_B4_TRANSM = TRANSMIT_EVERY_MINS / SENSOR_READ_EVERY_MINS;
   Serial.printf("I'll transmit every %d loops.\n", NB_LOOPS_B4_TRANSM);
+
+  // check whether we have a conflicting use of sensors
+  if (CLIMAVUE50 && AIRQUALITY_SDS011){
+    Serial.println("\nCan't have both Climavue50 and SDS011, only one 5V pin.\n");
+    return;
+  }
 
   // init I2C buses
   Serial.print("Init I2C busses... ");
@@ -232,8 +286,7 @@ void setup() {
   }
 
   //....................................................................................................
-  // only init coulomb counter and potentially power up climavue50 at power start, not a timer wakeup start.
-  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  // only init coulomb counter and potentially power up climavue50 at power start, not a timer wakeup start.  
   wakeup_stuff(wakeup_reason);
 
   // read the battery - voltage, temperature, remaining capacity (=charge)
@@ -244,7 +297,7 @@ void setup() {
             (int)batV, (int)(batV*10)%10, (int)batTemp, (int)(batTemp*10)%10, (int)batCharge);
   }
 
-  if (batV > 3.5 || batV <= 0) { // voltage in V BORIS: increased thresh to 3.5; the <0 includes -999, in case the battery sensor is broken
+  if (batV > 3.5 || batV <= 0) { // voltage in V; the <0 includes -999, in case the battery sensor is broken carry on
     batteryStatus = true;
   }
   pinMode(PIN_ADC_SOLAR, INPUT);                    // configure ADC for solar panel measurement
@@ -295,6 +348,11 @@ void setup() {
   }
   Serial.println("BMP390 measurement: " + String(bmpTemp) + "; " + String(bmpPres));
 
+  // tipping bucket measurement
+  if (TippingBucket){    
+    Serial.println(String(rainCounter) + " tips during the last period, corresponding to " + String(rainCounter * mmPerTip) + "mm");
+  }
+
   /* sensor climavue50 measurements*/
   if (CLIMAVUE50){
     climavue50_measurement(
@@ -304,6 +362,14 @@ void setup() {
         &climavue50SensorTemp, &climavue50XOrient, &climavue50YOrient, &climavue50Compass,
         &climavue50NWS, &climavue50EWS
     );
+  }
+  
+  // measure PM2.5 and PM10 from SDS011
+  if (AIRQUALITY_SDS011){
+    if (!sds011_measurement(&pm25, &pm10)){
+      Serial.println("Could not make a valid SDS011 measurement, check wiring!");
+    }
+    Serial.println("SDS011 measurement: PM2.5=" + String(pm25) + ", PM10=" + String(pm10));
   }
 //....................................................................................................
 /* Prepare data to be publish */
@@ -324,6 +390,10 @@ void setup() {
   singleRecordJSON["U_Solar"] = solarV;
   singleRecordJSON["loggerID"] = loggerID;
   singleRecordJSON["git_version"] = String(GIT_VERSION);
+  if (TippingBucket){
+    singleRecordJSON["pr"] = rainCounter * mmPerTip;
+    rainCounter = 0;
+  }
   if (CLIMAVUE50){
     singleRecordJSON["rad"] = climavue50Solar;
     singleRecordJSON["pr"] = climavue50Precip;
@@ -342,6 +412,10 @@ void setup() {
     singleRecordJSON["compass"] = climavue50Compass;
     singleRecordJSON["wind_speed_N"] = climavue50NWS;
     singleRecordJSON["wind_speed_E"] = climavue50EWS;
+  }
+  if (AIRQUALITY_SDS011){
+    singleRecordJSON["PM25"] = pm25;
+    singleRecordJSON["PM10"] = pm10;
   }
 
   // check whether one such records fits enough times into the RTC memory
@@ -478,10 +552,14 @@ void setup() {
   }
   Serial.print("Going to sleep. sleepsecs incl correction for network time and delta: ");
   Serial.println(sleepSeconds);
+  if (TippingBucket){
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)RAIN_PIN, 0);  // make sure we wake up from tipping bucket
+  }
   esp_sleep_enable_timer_wakeup((sleepSeconds) * uS_TO_S_FACTOR);
+  lastScheduledWakeTime = rtc.getEpoch();                           // this is a scheduled sleep, so update this var
   delay(200);
-  blink_led(2, 200);                                    // light show: end of code
-  gpio_hold_en(power5VEnablePin);                                    // keep climavue pwr pin during sleep
+  blink_led(2, 200);                                    // light show: end of code  
+  gpio_hold_en((gpio_num_t) POWER5V_ENABLE);                                    // keep climavue pwr pin during sleep  
   esp_deep_sleep_start();
 }
 
@@ -534,7 +612,7 @@ void wakeup_stuff(esp_sleep_wakeup_cause_t wakeup_reason){
       if (CLIMAVUE50){
         pinMode(POWER5V_ENABLE, OUTPUT); // start power for climavue50
         digitalWrite(POWER5V_ENABLE, HIGH);
-        delay(5000);
+        delay(5000);        
       } else {
         pinMode(POWER5V_ENABLE, OUTPUT); // don't start power for climavue50
         digitalWrite(POWER5V_ENABLE, LOW);
@@ -640,6 +718,25 @@ void modem_off(bool* modemTurnedOn) {
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
+ * name :         teardown_modem
+ * description :  try various things to get the modem clean again
+ * input :        void
+ * output :       void
+ * ------------------------------------------------------------------------------------------------------------------------------*/
+void teardown_modem(){ 
+  modem.gprsDisconnect();
+  if (NETWORK_MODE != 13){ // if we potentially deal with LTE, do this
+    modem.sendAT("+CIPSHUT");
+    modem.waitResponse(5000L);
+    modem.sendAT("+CGACT=0,1");
+    modem.waitResponse(5000L);        
+  }
+  modem.sendAT("+CGATT=0"); 
+  modem.waitResponse(8000L);           // generous on 2G
+  delay(NETWORK_MODE != 13 ? 2000 : 4000);
+}
+
+/* --------------------------------------------------------------------------------------------------------------------------------
  * name :         connect_to_network
  * description :  do init of the modem
  * input :        void
@@ -682,7 +779,7 @@ bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_r
      
     // Set PDP context with all parameters
     modem.sendAT("+CGDCONT=1,\"IP\",\"" + String(APN) + "\",\"0.0.0.0\",0,0,0,0");
-    modem.waitResponse();
+    modem.waitResponse(3000L);
 
     // Configure CAT-M bands (critical!)
     if (NETWORK_MODE != 13){
@@ -701,11 +798,14 @@ bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_r
   while (!modem.setNetworkMode(NETWORK_MODE)){                // 2 Automatic; 13 GSM only; 38 LTE only; 51 GSM and LTE only
     delay(100);
   }
-  while (!modem.setPreferredMode(1)){               // 1 CAT-M; 2 NB-Iot; 3 CAT-M and NB-IoT
-    delay(100);
+  if (NETWORK_MODE != 13){
+    while (!modem.setPreferredMode(1)){               // 1 CAT-M; 2 NB-Iot; 3 CAT-M and NB-IoT
+      delay(100);
+    }
   }
-  
-  // connect to network 
+  //
+  // now - connect to network
+  //
   Serial.print("Waiting for network... ");
   modem.waitForNetwork(60000L);  
   if (!modem.isNetworkConnected()){                 // if this did not succeed...   
@@ -714,6 +814,7 @@ bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_r
       Serial.print("trying once more because it's the 1st bootup...");
       modem.restart();
       delay(2000);
+      teardown_modem();
       if (!modem.waitForNetwork(60000L))
         Serial.println("in vain.");
     } else {
@@ -729,12 +830,9 @@ bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_r
       return true;
     } else if (wakeup_reason == ESP_SLEEP_WAKEUP_UNDEFINED){ // clean up and try once more, if 1st boot      
       esp_task_wdt_reset();
-      Serial.print("... failed, trying once more...");
-      modem.sendAT("+CIPSHUT");
-      modem.waitResponse(5000L);
-      modem.sendAT("+CGACT=0,1");
-      modem.waitResponse(5000L);
-      delay(2000);
+      Serial.print("... failed, trying once more since we are on 1st boot up...");
+      teardown_modem();
+      
       if (modem.gprsConnect(APN, GPRS_USER, GPRS_PASS)){    // 2nd attempt
         return true;
       }
@@ -1147,33 +1245,57 @@ long calc_sleepSeconds(){
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
- * name : set_rtc_to_network_date
- * description : queries date and time from network and sets the RTC to this
+ * name : set_rtc_to_network_datetime
+ * description : queries date and time from ntp and sets the RTC to this
  * input : void
  * output : void
  * ------------------------------------------------------------------------------------------------------------------------------*/
-void set_rtc_to_network_datetime(){
-  const uint8_t maxRetries = 5;
+void set_rtc_to_network_datetime() {
+  const char* ntpServers[] = {
+    "time.google.com",
+    "time.cloudflare.com",
+    "pool.ntp.org"
+  };
+  const uint8_t numServers = sizeof(ntpServers) / sizeof(ntpServers[0]);
+  const uint8_t retriesPerServer = 2;  
+
   int year, month, day, hour, minute, second;
   float timezone;
 
-  Serial.print("Waiting for time sync... ");
-  for (uint8_t i = 0; i < maxRetries; i++) {
-    Serial.printf("attempt %i... ", i+1);    
-    if (modem.getNetworkTime(&year, &month, &day, &hour, &minute, &second, &timezone)) {
-      // Check if we got a valid year (not 1980 or 2080)
-      if (year >= 2020 && year != 2080) {
-        Serial.print("Valid time acquired: ");
-        Serial.printf("%04d/%02d/%02d %02d:%02d:%02d\n", year, month, day, hour, minute, second);
-        rtc.setTime(second, minute, hour, day, month, year, 0);           
-        return;
+  Serial.println("Starting NTP time sync...");
+
+  for (uint8_t s = 0; s < numServers; s++) {
+    for (uint8_t r = 0; r < retriesPerServer; r++) {
+      Serial.printf("Server %s, attempt %i... ", ntpServers[s], r + 1);
+
+      int ntpRes = modem.NTPServerSync(ntpServers[s], tzQuarterHours);
+
+      if (ntpRes == 1) {
+        Serial.println("NTP sync OK.");
+
+        if (modem.getNetworkTime(&year, &month, &day,
+                                 &hour, &minute, &second, &timezone)) {
+          // sanity check: reject obviously wrong values
+          if (year >= 2020 && year < 2080) {
+            Serial.printf("Valid time acquired: %04d/%02d/%02d %02d:%02d:%02d (UTC offset %.1fh)\n",
+                          year, month, day, hour, minute, second, timezone);
+            rtc.setTime(second, minute, hour, day, month, year, 0);
+            return;
+          } else {
+            Serial.printf("Got implausible year %d, retrying.\n", year);
+          }
+        } else {
+          Serial.println("getNetworkTime() failed after successful sync.");
+        }
+      } else {
+        Serial.printf("NTP sync failed (code %d).\n", ntpRes);
       }
-    }    
-    delay(2000);
+
+      delay(2000);
+    }
   }
 
-  // if nothing worked
-  Serial.printf("\nFailed to get valid time after %i attempts\n", maxRetries);  
+  Serial.println("Failed to get valid time from all NTP servers.");
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
@@ -1207,80 +1329,6 @@ void blink_led(int nbBlinking, int delayMs){
       delay(delayMs);
       digitalWrite(LED_PIN, HIGH);                // turn off LED
       delay(delayMs);
-  }
-}
-
-/* --------------------------------------------------------------------------------------------------------------------------------
- * name :         set_pdp
- * description :  sets pdp-context explicitly - if network connection cannot be established
- * input :        void
- * output :       void
- * ------------------------------------------------------------------------------------------------------------------------------*/
-void set_pdp(const char* APN){
-  Serial.printf("Trying to set pdp context with %s\n", APN);
-  int counter=0;
-  int lastIndex=0;
-  int numberOfPieces = 24;
-  String pieces[24];
-  String input;
-  char buffer[100];
-
-  SerialAT.println("AT+CGDCONT?");
-  delay(500);
-  if (SerialAT.available()) {
-    input = SerialAT.readString();
-    for (int i = 0; i < input.length(); i++) {
-      if (input.substring(i, i + 1) == "\n") {
-        pieces[counter] = input.substring(lastIndex, i);
-        lastIndex = i + 1;
-        counter++;
-      }
-      if (i == input.length() - 1) {
-        pieces[counter] = input.substring(lastIndex, i);
-      }
-    }
-
-    Serial.println(input);
-
-    // Reset for reuse
-    input = "";
-    counter = 0;
-    lastIndex = 0;
-
-    for ( int y = 0; y < numberOfPieces; y++) {
-      for ( int x = 0; x < pieces[y].length(); x++) {
-        char c = pieces[y][x];  //gets one byte from buffer
-        if (c == ',') {
-          if (input.indexOf(": ") >= 0) {
-            String data = input.substring((input.indexOf(": ") + 1));
-            if ( data.toInt() > 0 && data.toInt() < 25) {
-              snprintf(buffer, sizeof(buffer), "+CGDCONT=%d,\"IP\",\"%s\",\"0.0.0.0\",0,0,0,0", data.toInt(), APN);
-              modem.sendAT(buffer);
-            }
-            input = "";
-            break;
-          }
-          // Reset for reuse
-          input = "";
-        }
-        else {
-          input += c;
-        }
-      }
-    }
-  } else {
-    Serial.println("Failed to get PDP!");
-  }
-
-
-  Serial.println("\nWaiting for network...");
-  if (!modem.waitForNetwork()) {
-    Serial.println("fail.");
-    return;
-  }
-
-  if (modem.isNetworkConnected()) {
-    Serial.println("Network connected after setting pdp-context explicitly.");
   }
 }
 
@@ -1342,4 +1390,72 @@ void hashing(const char* payload, char* hashedKey){
 void getTime() {
   struct tm timeinfo = rtc.getTimeStruct();
   strftime(timeStamp, sizeof(timeStamp) - 1, "%Y-%m-%d %H:%M:%S", &timeinfo);
+}
+
+/* ------------------------------------------------------------------------------------------------------------
+ * name :         countRain
+ * description :  increments rainCounter when RAIN_PIN is pulled low, with some generous timing
+ * input :        void
+ * output :       void
+ * ----------------------------------------------------------------------------------------------------------*/
+void countRain() {
+  static unsigned long last_interrupt_time = 0;
+  unsigned long current_interrupt_time = millis();
+  
+  if (current_interrupt_time - last_interrupt_time > 200) { // debounce time of XX ms
+    if (digitalRead(RAIN_PIN) == LOW) { // check if pin is stable and low
+      rainCounter++;      
+    }
+  }
+  
+  last_interrupt_time = current_interrupt_time;
+}
+
+/* --------------------------------------------------------------------------------------------------------------------------------
+   name :         sds011_measurement
+   description :  spin up sds011, measure over a few sec, check and return
+   input :        void
+   output :       void
+   ------------------------------------------------------------------------------------------------------------------------------*/
+bool sds011_measurement(float* pm25, float* pm10){
+  bool success = false;
+  esp_task_wdt_reset();                               // this takes a little longer... reset the watchdog
+  Serial.println("Measuring SDS011... wake-up of 30sec...");
+  gpio_hold_dis((gpio_num_t) POWER5V_ENABLE);                                    // unlock 5V pin
+  pinMode(POWER5V_ENABLE, OUTPUT); // start 5V pin
+  digitalWrite(POWER5V_ENABLE, HIGH);
+  delay(2000);
+
+  SDS011 sds011; // init sds011 object
+  sds011.begin(ESP_RX_FROM_SDS011, ESP_TX_TO_SDS011);  // ESP32_RX, ESP32_TX; note that these must be wired as follows: ESP32_RX <-> SDS011_TX and vice versa
+
+  // wake up and pull for 30 sec
+  sds011.wakeup();
+  delay(30000);
+
+  // now measure during 10 secs
+  float pm25_sum = 0, pm10_sum = 0;
+  float pm25_i, pm10_i; // individual readings
+  int read_count = 0;
+  for (int i=0; i<10; i++){
+    int error = sds011.read(&pm25_i, &pm10_i);
+    Serial.printf("SDS011 round %d; PM2.5: %d, PM10: %d [mug/m^3]\n", i, (int)(pm25_i * 10), (int)(pm10_i * 10));
+    if (error == 0){
+      pm25_sum += pm25_i;
+      pm10_sum += pm10_i;
+      read_count++;
+    }
+    delay(1000);
+  }
+  if (read_count > 0){
+    *pm25 = pm25_sum / (float)read_count;
+    *pm10 = pm10_sum / (float)read_count;
+    success = true;  
+  }
+
+  // power off
+  sds011.sleep();
+  digitalWrite(POWER5V_ENABLE, LOW);  
+  delay(1000);
+  return success;
 }
