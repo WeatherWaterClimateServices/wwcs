@@ -35,6 +35,8 @@ plot_observations <- function(data, id, var){
         "darkgreen",
         "purple",
         "darkblue",
+        "darkblue",
+        "steelblue",
         "darkblue"
       ),
       c(
@@ -71,42 +73,44 @@ plot_observations <- function(data, id, var){
         "ts10cm",
         "tilt_x",
         "tilt_y",
-        "Temp_Humisens"
+        "Temp_Humisens",
+        "PM25",
+        "PM10"
       )
     )
   
-  labels <- setNames(
-    c("°C", "%", "mb", "mV", "db", "mV", "°C", "%", "mV", "°C", "mV",
-      "°", "", "km", "mm", "W/m2", "m/s", "°", "m/s", "m/s", "m/s", "mb", "°C", "°", "°", "°C"),
-    c(
-      "ta",
-      "rh",
-      "p",
-      "U_solar",
-      "signalStrength",
-      "U_battery",
-      "logger_ta",
-      "logger_rh",
-      "Charge_Battery",
-      "Temp_Battery",
-      "U_Battery1",
-      "compass",
-      "lightning_count",
-      "lightning_dist",
-      "pr",
-      "rad",
-      "wind_speed",
-      "wind_dir",
-      "wind_gust",
-      "wind_speed_E",
-      "wind_speed_N",
-      "vapour_press",
-      "ts10cm",
-      "tilt_x",
-      "tilt_y",
-      "Temp_Humisens"
-    )
-  )
+  ## labels <- setNames(
+  ##   c("°C", "%", "mb", "mV", "db", "mV", "°C", "%", "mV", "°C", "mV",
+  ##     "°", "", "km", "mm", "W/m2", "m/s", "°", "m/s", "m/s", "m/s", "mb", "°C", "°", "°", "°C"),
+  ##   c(
+  ##     "ta",
+  ##     "rh",
+  ##     "p",
+  ##     "U_solar",
+  ##     "signalStrength",
+  ##     "U_battery",
+  ##     "logger_ta",
+  ##     "logger_rh",
+  ##     "Charge_Battery",
+  ##     "Temp_Battery",
+  ##     "U_Battery1",
+  ##     "compass",
+  ##     "lightning_count",
+  ##     "lightning_dist",
+  ##     "pr",
+  ##     "rad",
+  ##     "wind_speed",
+  ##     "wind_dir",
+  ##     "wind_gust",
+  ##     "wind_speed_E",
+  ##     "wind_speed_N",
+  ##     "vapour_press",
+  ##     "ts10cm",
+  ##     "tilt_x",
+  ##     "tilt_y",
+  ##     "Temp_Humisens"
+  ##   )
+  ## )
   
   plt_data <- data %>%
               dplyr::mutate(time = lubridate::ymd_hms(timestamp)) %>%
