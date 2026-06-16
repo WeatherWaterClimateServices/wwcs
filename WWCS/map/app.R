@@ -95,7 +95,7 @@ mapdata <-
   dplyr::mutate(status = ifelse(
     timestamp > Sys.time() - hours(1),
     "green",
-    ifelse(timestamp > Sys.time() - hours(24), "yellow", "red")
+    ifelse(timestamp > Sys.time() - hours(24), "orange", "red")
   )) %>%
   dplyr::mutate(status = ifelse(is.na(timestamp), "red", status)) %>%
   dplyr::mutate(status = ifelse(is.na(ta) | ta < -100, "red", status)) %>%
@@ -109,24 +109,27 @@ mapdata <-
   dplyr::filter(timestamp == max(timestamp)) %>%
   dplyr::ungroup()
 
-# Count total number of stations and number of stations with status green, yellow and red
+# Count total number of stations and number of stations with status green, orange and red
 
 total <- nrow(mapdata %>% dplyr::filter(type == "WWCS"))
 green <- nrow(filter(mapdata, status == "green" & type == "WWCS"))
-yellow <- nrow(filter(mapdata, status == "yellow" & type == "WWCS"))
+orange <- nrow(filter(mapdata, status == "orange" & type == "WWCS"))
 red <- nrow(filter(mapdata, status == "red" & type == "WWCS"))
 
 ready <- which(mapdata$status == "green" & mapdata$type == "WWCS")
-hold <- which(mapdata$status == "yellow" & mapdata$type == "WWCS")
+hold <- which(mapdata$status == "orange" & mapdata$type == "WWCS")
 late <- which(mapdata$status == "red" & mapdata$type == "WWCS")
 
 ready_hydromet <- which(mapdata$status == "green" & mapdata$type != "WWCS")
 hold_hydromet <- which(mapdata$status != "green" & mapdata$type != "WWCS")
 
+climavue <- which(mapdata$type == "WWCS" & !is.na(mapdata$lightning_count))
+airq <- which(mapdata$type == "WWCS" & !is.na(mapdata$PM25))
+basic <- setdiff(which(mapdata$type == "WWCS"), c(climavue, airq))
+    
 bounds <- 5
 
 # Define icons of the map
-
 icons_green <- awesomeIcons(
   markerColor = "green",
   iconColor = "white",
@@ -294,7 +297,7 @@ server <- function(input, output, session) {
       ) %>%
       addLayersControl(
         position = c("bottomright"),
-        overlayGroups = c("WWCS", "WWCS (hold)", "WWCS (down)", "Non-WWCS"),
+        overlayGroups = c("Basic", "ClimaVue50", "AirQ", "Other"),
         options = layersControlOptions(collapsed = TRUE)
       ) 
   })
@@ -302,16 +305,25 @@ server <- function(input, output, session) {
   
   # Update the visibility of markers based on user input
   observe({
-    if (length(ready) > 0) {
+    if (length(basic) > 0) {
+      my.text <- paste0(round(unlist(mapdata[basic, "ta"])), " \n ", "°C")
+      my.text[mapdata$status[basic] != "green"] <- paste0(NA)  
       proxy <- leafletProxy("map")
       proxy %>%
         addAwesomeMarkers(
-          lng = mapdata$longitude[ready],
-          lat = mapdata$latitude[ready],
-          label = mapdata$siteID[ready],
-          layerId = mapdata$siteID[ready],
-          icon = icons_green,
-          group = "WWCS",
+          lng = mapdata$longitude[basic],
+          lat = mapdata$latitude[basic],
+          label = mapdata$siteID[basic],
+          layerId = mapdata$siteID[basic],
+          icon = awesomeIcons(
+              markerColor = mapdata$status[basic],
+              iconColor = "white",
+              squareMarker = F,
+              icon = NULL,
+              text = my.text,
+              fontFamily = "Helvetica"
+          ),
+          group = "Basic",
           labelOptions = labelOptions(
             style = list(
               "color" = "white",
@@ -323,7 +335,67 @@ server <- function(input, output, session) {
           )
         )
     }
-    
+
+    if (length(climavue) > 0) {
+      my.text <- paste0(round(unlist(mapdata[climavue, "ta"])), " \n ", "°C")
+      my.text[mapdata$status[climavue] != "green"] <- paste0(NA)  
+      proxy <- leafletProxy("map")
+      proxy %>%
+        addAwesomeMarkers(
+          lng = mapdata$longitude[climavue],
+          lat = mapdata$latitude[climavue],
+          label = mapdata$siteID[climavue],
+          layerId = mapdata$siteID[climavue],
+          icon = awesomeIcons(
+              markerColor = mapdata$status[climavue],
+              iconColor = "white",
+              squareMarker = F,
+              icon = NULL,
+              text = my.text,
+              fontFamily = "Helvetica"
+          ),
+          group = "ClimaVue50",
+          labelOptions = labelOptions(
+            style = list(
+              "color" = "white",
+              "font-size" = "14px",
+              "background-color" = "#404040",
+              "border-color" = "#404040",
+              "font-weight" = "bold"
+            )
+          )
+        )
+    }
+
+    if (length(airq) > 0) {
+      proxy <- leafletProxy("map")
+      proxy %>%
+        addAwesomeMarkers(
+          lng = mapdata$longitude[airq],
+          lat = mapdata$latitude[airq],
+          label = mapdata$siteID[airq],
+          layerId = mapdata$siteID[airq],
+          icon = awesomeIcons(
+              markerColor = "darkgreen", #mapdata$status[airq],
+              iconColor = "white",
+              squareMarker = F,
+              icon = NULL,
+              text = paste0(round(unlist(mapdata[airq, "PM25"])), " \n ", "ppm"),
+              fontFamily = "Helvetica"
+          ),
+          group = "AirQ",
+          labelOptions = labelOptions(
+            style = list(
+              "color" = "white",
+              "font-size" = "14px",
+              "background-color" = "#404040",
+              "border-color" = "#404040",
+              "font-weight" = "bold"
+            )
+          )
+        )
+    }
+
     if (length(ready_hydromet) > 0) {
       proxy <- leafletProxy("map") 
       proxy %>%
@@ -333,7 +405,7 @@ server <- function(input, output, session) {
           label = mapdata$siteID[ready_hydromet],
           layerId = mapdata$siteID[ready_hydromet],
           icon = icons_hydromet_ready,
-          group = "Non-WWCS",
+          group = "Other",
           labelOptions = labelOptions(
             style = list(
               "color" = "white",
@@ -355,7 +427,7 @@ server <- function(input, output, session) {
           label = mapdata$siteID[hold_hydromet],
           layerId = mapdata$siteID[hold_hydromet],
           icon = icons_hydromet_hold,
-          group = "Non-WWCS",
+          group = "Other",
           labelOptions = labelOptions(
             style = list(
               "color" = "white",
@@ -368,14 +440,14 @@ server <- function(input, output, session) {
         )
     }
   })
-  
-  output$status <- renderText({
+
+    output$status <- renderText({
     paste0(
       total,
       " WWCS stations - ",
       green,
       " on time stations - ",
-      yellow,
+      orange,
       " late stations - ",
       red,
       " very late stations"
@@ -422,7 +494,7 @@ server <- function(input, output, session) {
     
     if (selected$status == "green") {
       selected$title = paste0(selected$id, " (running)")
-    } else if (selected$status == "yellow") {
+    } else if (selected$status == "orange") {
       selected$title = paste0(selected$id, " (late since ", selected$lastobs, " hours)")
     } else {
       selected$title = paste0(selected$id, " (down since ", selected$lastobs, " days)")
@@ -671,51 +743,6 @@ server <- function(input, output, session) {
     } 
   })
   
-  observe({
-    if (length(hold) > 0) {
-      proxy <- leafletProxy('map')
-      proxy %>%
-        addAwesomeMarkers(
-          lng = mapdata$longitude[hold],
-          lat = mapdata$latitude[hold],
-          label = mapdata$siteID[hold],
-          layerId = mapdata$siteID[hold],
-          icon = icons_hold,
-          group = "WWCS (hold)",
-          labelOptions = labelOptions(
-            style = list(
-              "color" = "white",
-              "font-size" = "14px",
-              "background-color" = "#404040",
-              "border-color" = "#404040",
-              "font-weight" = "bold"
-            )
-          )
-        )
-    }
-    
-    if (length(late) > 0) {
-      proxy <- leafletProxy('map')
-      proxy %>%
-        addAwesomeMarkers(
-          lng = mapdata$longitude[late],
-          lat = mapdata$latitude[late],
-          label = mapdata$siteID[late],
-          layerId = mapdata$siteID[late],
-          icon = icons_late,
-          group = "WWCS (down)",
-          labelOptions = labelOptions(
-            style = list(
-              "color" = "white",
-              "font-size" = "14px",
-              "background-color" = "#404040",
-              "border-color" = "#404040",
-              "font-weight" = "bold"
-            )
-          )
-        )
-    }
-  })
 }
 
 # Run the Shiny app
