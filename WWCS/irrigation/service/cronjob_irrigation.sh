@@ -13,4 +13,4 @@ echo "=== CALCULATE IRRIGATION ADVICE ==="
 # cd to the wwcs/WWCS (usually ~/wwcs/WWCS), where .Rprofile lives
 cd ../..
 pwd
-R CMD BATCH ${my_dir}/irrigation_calculation.R ${my_dir}/cronout/irrigation.out
+R CMD BATCH --no-save ${my_dir}/irrigation_calculation.R ${my_dir}/cronout/irrigation.out
