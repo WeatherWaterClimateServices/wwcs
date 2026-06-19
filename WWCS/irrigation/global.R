@@ -141,8 +141,8 @@ credentials <- data.frame(
   # mandatory
   start = c("2019-04-15"),
   # optinal (all others)
-  expire = c(NA, NA),
-  admin = c(FALSE, TRUE),
+  expire = c(NA),
+  admin = c(FALSE),
   comment = "Simple and secure authentification mechanism
   for single ‘Shiny’ applications.",
   stringsAsFactors = FALSE
