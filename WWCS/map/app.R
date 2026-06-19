@@ -368,6 +368,8 @@ server <- function(input, output, session) {
     }
 
     if (length(airq) > 0) {
+      my.text <- paste0(round(unlist(mapdata[airq, "PM25"])), " \n ", "ppm")
+      my.text[mapdata$status[airq] != "green"] <- paste0(NA)  
       proxy <- leafletProxy("map")
       proxy %>%
         addAwesomeMarkers(
@@ -380,7 +382,7 @@ server <- function(input, output, session) {
               iconColor = "white",
               squareMarker = F,
               icon = NULL,
-              text = paste0(round(unlist(mapdata[airq, "PM25"])), " \n ", "ppm"),
+              text = my.text, 
               fontFamily = "Helvetica"
           ),
           group = "AirQ",
