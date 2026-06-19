@@ -21,11 +21,11 @@ server <- function(input, output, session) {
     
     sites <- dbReadTable(pool, "Sites")  %>%
       dplyr::as_tibble() %>%
-      dplyr::filter(type == "WWCS") %>%
+      dplyr::filter(irrigation == 1) %>%
       dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
     
     dbReadTable(pool, "Sites")   %>%
-      dplyr::filter(type == "WWCS") %>%
+      dplyr::filter(irrigation == 1) %>%
       dplyr::select(fieldproperties) %>%
       unlist() %>%
       spread_all %>%
@@ -361,11 +361,11 @@ server <- function(input, output, session) {
   observeEvent(input$edit_button, priority = 20, {
     sites <- dbReadTable(pool, "Sites")  %>%
       dplyr::as_tibble() %>%
-      dplyr::filter(type == "WWCS") %>%
+      dplyr::filter(irrigation == 1) %>%
       dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
     
     SQL_df <- dbReadTable(pool, "Sites")   %>%
-      dplyr::filter(type == "WWCS") %>%
+      dplyr::filter(irrigation == 1) %>%
       dplyr::select(fieldproperties) %>%
       unlist() %>%
       spread_all %>%
