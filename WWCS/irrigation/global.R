@@ -135,7 +135,7 @@ if (!exists("plot_polygons")) {
 # ------------------------------- Login page
 
 credentials <- data.frame(
-  user = c("caritas", "omar"),
+  user = c("caritas"),
   # mandatory
   password = c(servicepass),
   # mandatory
