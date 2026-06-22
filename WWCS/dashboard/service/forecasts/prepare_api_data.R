@@ -1,34 +1,28 @@
 # Required Libraries
 # ------------------------------------------------
-
 library(tidyr)
 library(tidyverse)
 library(lubridate)
 library(pool)
 library(RMySQL)
 
-rm(list = ls())
-
-setwd("/srv/shiny-server/dashboard/service/forecasts")
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-
-
+# SET GLOBAL PARAMETERS - coming from .Rprofile and config.yaml
+# -------------------------------------------------------------
 pool_service <-
   dbPool(
     RMariaDB::MariaDB(),
     user = 'wwcs',
     password = db_password,
-    dbname = 'WWCServices',
+    dbname = ifelse(ENV=="PROD", "WWCServices", "WWCServices_DEV"),
     host = 'localhost'
   )
 
 # READ DATA
 # ------------------------------------------------
-
-emos <-
-  fst::read_fst("/srv/shiny-server/dashboard/appdata/emos.fst")
-pictos <-
-  fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes.fst")
+emos.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")
+emos <- fst::read_fst(emos.file)
+picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes.fst")
+pictos <- fst::read_fst(picto.file)
 
 forecasts <- emos %>%
   dplyr::mutate(date = as.Date(date(time))) %>%
@@ -37,6 +31,7 @@ forecasts <- emos %>%
     Tmax = round(max(WWCS), 2),
     Tmin = round(min(WWCS), 2),
     Tmean = round(mean(WWCS), 2),
+    Precip = round(sum(IFS_PR_mea), 1),
     .groups = "drop"
   )
 
@@ -51,17 +46,17 @@ forecasts <- forecasts %>%
                                             "days"))) %>%
   dplyr::mutate(date = as.Date(reftime)) %>%
   dplyr::select(-c("reftime")) %>%
-  dplyr::arrange(siteID, date, day, Tmax, Tmin, Tmean, icon) %>%
+  dplyr::arrange(siteID, date, day, Tmax, Tmin, Tmean, Precip, icon) %>%
   dplyr::filter(day < 6)
 
-
-readr::write_delim(forecasts, file = "/srv/shiny-server/dashboard/service/forecasts/forecasts_api.csv", delim = ",")
+forecast.file <- file.path(ROOT_DIR, "WWCS/dashboard/service/forecasts/forecasts_api.csv")
+readr::write_delim(forecasts, file = forecast.file, delim = ",")
 
 # --------------------------------
 # Expand API for day and night
 # --------------------------------
-
-icons_daynight <- fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes_daynight.fst") %>%
+picto_dn.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes_daynight.fst")
+icons_daynight <- fst::read_fst(picto_dn.file) %>%
   dplyr::mutate(icon = paste0(ifelse(daynight == "night", night, day), ".png")) %>%
   dplyr::select(reftime, date, siteID, icon, timeofday)  %>%
   dplyr::as_tibble()
@@ -82,6 +77,7 @@ forecasts_daynight <- emos %>%
     Tmax = round(max(WWCS), 2),
     Tmin = round(min(WWCS), 2),
     Tmean = round(mean(WWCS), 2),
+    Precip = round(sum(IFS_PR_mea), 1),
     .groups = "drop"
   ) %>%
   dplyr::left_join(icons_daynight) %>%
@@ -91,8 +87,8 @@ forecasts_daynight <- emos %>%
   dplyr::arrange(siteID, date, day, timeofday) %>%
   dplyr::filter(day < 6)
 
-
-readr::write_delim(forecasts_daynight, file = "/srv/shiny-server/dashboard/service/forecasts/forecasts_daynight_api.csv", delim = ",")
+forecast_dn.file <- file.path(ROOT_DIR, "WWCS/dashboard/service/forecasts/forecasts_daynight_api.csv")
+readr::write_delim(forecasts_daynight, file = forecast_dn.file, delim = ",")
 
 forecasts <- forecasts %>%
   dplyr::mutate(timeofday = -1)
@@ -112,8 +108,8 @@ for (i in 1:nrow(forecasts_all)) {
       pool::dbExecute(
         pool_service,
         sprintf(
-          'REPLACE INTO Forecasts (siteID, date, Tmax, Tmin, Tmean, icon, day, timeofday)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?);'
+          'REPLACE INTO Forecasts (siteID, date, Tmax, Tmin, Tmean, Precip, icon, day, timeofday)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);'
 
         ),
         params = list(
@@ -122,6 +118,7 @@ for (i in 1:nrow(forecasts_all)) {
           forecasts_all$Tmax[i],
           forecasts_all$Tmin[i],
           forecasts_all$Tmean[i],
+          forecasts_all$Precip[i],
           forecasts_all$icon[i],
           forecasts_all$day[i],
           forecasts_all$timeofday[i]
