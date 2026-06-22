@@ -1,7 +1,9 @@
 # Configuration file for the WWCS application
 
 wwcs_domain: "wwcs.tj" # Domain name of the server
-use_pass: "TRUE" # Define if a password is needed to login to services
+use_pass: ["dashboard", "irrigation", "map"] # Define WWCS where a password is needed to login to services
+auth_users: ["caritas", "tjhm"]
+
 
 # Define area of WWCS application
 

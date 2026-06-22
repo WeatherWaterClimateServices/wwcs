@@ -1,7 +1,9 @@
 # Configuration file for the WWCS application
 
 wwcs_domain: "164.90.231.18" # Domain name of the server
-use_pass: "FALSE" # Define if a password is needed to login to services
+use_pass: [] # Define WWCS where a password is needed to login to services
+auth_users: ["caritas"]
+
 
 # Define area of WWCS application                                                  
 # 45.7910882210682, 5.7761397522042435

@@ -22,16 +22,9 @@ while (!file.exists(file.path(ROOT_DIR, ".git"))) {
 source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
 
 credentials <- data.frame(
-  user = c("caritas", "tjhm", "coes"),
-  # mandatory
-  password = c(servicepass, servicepass, servicepass),
-  # mandatory
+  user = auth_users,
+  password = servicepass,
   start = c("2019-04-15"),
-  # optinal (all others)
-  expire = c(NA, NA, NA),
-  admin = c(FALSE, FALSE, FALSE),
-  comment = "Simple and secure authentification mechanism
-  for single ‘Shiny’ applications.",
   stringsAsFactors = FALSE
 )
 
@@ -212,13 +205,9 @@ ui <- fluidPage(
   verbatimTextOutput("status")
 )
 
-if (exists("use_pass")) {
-  # Second layer: existing logic
-  if (use_pass == FALSE) {
-    ui
-  } else {
-    ui <- secure_app(ui)
-  }
+# Wrap your UI with secure_app
+if ("map" %in% use_pass){
+  ui <- secure_app(ui)
 } else {
   ui
 }

@@ -188,13 +188,9 @@ ui <- tagList(
   )
 )
 
-if (exists("use_pass")) {
-  # Second layer: existing logic
-  if (use_pass == FALSE) {
-    ui
-  } else {
-    ui <- secure_app(ui)
-  }
+# Wrap your UI with secure_app
+if ("dashboard" %in% use_pass){
+  ui <- secure_app(ui)
 } else {
   ui
 }

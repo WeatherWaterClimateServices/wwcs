@@ -212,8 +212,9 @@ ui <- tagList(
     body
   )
 )
+
 # Wrap your UI with secure_app
-if (exists("use_pass") && use_pass == TRUE){
+if ("irrigation" %in% use_pass){
   ui <- secure_app(ui)
 } else {
   ui

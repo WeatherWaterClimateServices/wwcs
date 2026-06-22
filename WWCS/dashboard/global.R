@@ -10,24 +10,21 @@ library(lubridate)
 library(shinymanager)
 
 
-rm(list = ls())
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-setwd("/srv/shiny-server/dashboard/")
+# Load the credentials - to come from .Rprofile and config.yaml
+ROOT_DIR <- normalizePath(getwd(), mustWork=TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
 options(shiny.sanitize.errors = FALSE)
 
 # Load the credentials
-
 credentials <- data.frame(
-  user = c("caritas", "tjhm"),
-  # mandatory
-  password = c(servicepass, servicepass),
-  # mandatory
+  user = auth_users,
+  password = servicepass,
   start = c("2019-04-15"),
-  # optinal (all others)
-  expire = c(NA, NA),
-  admin = c(FALSE, FALSE),
-  comment = "Simple and secure authentification mechanism
-  for single ‘Shiny’ applications.",
   stringsAsFactors = FALSE
 )
 
@@ -36,39 +33,41 @@ credentials <- data.frame(
 
 # check if all the files are available in the appdata folder
 # otherwise assign an empty data frame
-
-if (!file.exists("appdata/obs.fst")) {
+obs.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst")
+if (!file.exists(obs.file)) {
   obs <- data.frame()
 } else {
-  obs <- fst::read_fst("appdata/obs.fst")
+  obs <- fst::read_fst(obs.file)
 }
 
-if (!file.exists("appdata/dmo.fst")) {
+dmo.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/dmo.fst")
+if (!file.exists(dmo.file)) {
   dmo <- data.frame()
 } else {
-  dmo <- fst::read_fst("appdata/dmo.fst") %>%
+  dmo <- fst::read_fst(dmo.file) %>%
     dplyr::select(time, reftime, siteID, ECMWF, q05, q25, q75, q95)
 }
 
-if (!file.exists("appdata/emos.fst")) {
+emos.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")
+if (!file.exists(emos.file)) {
   emos <- data.frame()
 } else {
-  emos <- fst::read_fst("appdata/emos.fst") %>%
+  emos <- fst::read_fst(emos.file) %>%
       dplyr::select(time, reftime, siteID, WWCS, q05, q25, q75, q95, IFS_PR_mea,
                    Observations)
 }
 
-if (!file.exists("appdata/pictocodes.fst")) {
+picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes.fst")
+if (!file.exists(picto.file)) {
   pictos <- data.frame()
 } else {
-    pictos <- fst::read_fst("appdata/pictocodes.fst") %>%
+    pictos <- fst::read_fst(picto.file) %>%
         dplyr::select(reftime, siteID, day, date)
 }
 
 # Read administrative areas
 bd <- sf::st_read(
-  paste0(
-    "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
+  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_",
     gadm0,
     "_2.shp"
   ),
@@ -81,24 +80,24 @@ if (gadm0 == "TJK") {
   bd$district[14] = "Rudaki2"
 }
 
-mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
+mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 
-if (!file.exists("./appdata/gemos_raster/raster_plot_0.tif")) {
+raster0.file <-
+    file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_plot_0.tif")
+if (!file.exists(raster0.file)) {
   ifsmap <- data.frame()
 } else {
-  ifsmap <- raster::raster("./appdata/gemos_raster/raster_plot_0.tif")
+  ifsmap <- raster::raster(raster0.file)
 }
 
-if (!file.exists("/srv/shiny-server/dashboard/appdata/gemos_raster/raster_merged.nc")) {
+rastermgd.file <-
+    file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_merged.nc")
+if (!file.exists(rastermgd.file)) {
   gemos_mea <- data.frame()
   gemos_std <- data.frame()
 } else {
-  gemos_mea <-
-    raster::brick("/srv/shiny-server/dashboard/appdata/gemos_raster/raster_merged.nc",
-                  varname = "IFS_T_mea")
-  gemos_std <-
-    raster::brick("/srv/shiny-server/dashboard/appdata/gemos_raster/raster_merged.nc",
-                  varname = "IFS_T_std")
+  gemos_mea <- raster::brick(rastermgd.file, varname = "IFS_T_mea")
+  gemos_std <- raster::brick(rastermrd.file, varname = "IFS_T_std")
 }
 
 sites <-
@@ -152,9 +151,9 @@ view_obs_default <- 2
 
 # SET LANGUAGE TRANSLATION
 # ------------------------------------------------
-
+json.path <- file.path(ROOT_DIR, "WWCS/dashboard/www/translation.json")
 i18n <-
-  shiny.i18n::Translator$new(translation_json_path = 'www/translation.json')
+  shiny.i18n::Translator$new(translation_json_path = json.path)
 
 i18n$set_translation_language('en')
 shiny.i18n::usei18n(i18n)

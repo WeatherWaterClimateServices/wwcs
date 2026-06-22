@@ -157,11 +157,6 @@ ui <- fluidPage(
   verbatimTextOutput("status")
 )
 
-## secure the access to the app (we don't do this here)
-# if (exists("use_pass") && use_pass == TRUE){
-#   ui <- secure_app(ui)
-# }
-
 # Define Server
 server <- function(input, output, session) {
   

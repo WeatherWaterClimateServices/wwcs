@@ -307,19 +307,12 @@ server <- function(input, output, session) {
     print(input$period_raster)
     timeraster <-
       as.numeric(difftime(input$period_raster, time_range_f$max, units = "hours"))
-    
-    print(timeraster)
-    print(paste0(
-      "/srv/shiny-server/dashboard/appdata/gemos_raster/raster_plot_",
-      timeraster,
-      ".tif"
-    ))
-    
+
     if (timeraster < 0) {
       timeraster <- 0
     }
     
-    raster_path <- paste0("./appdata/gemos_raster/raster_plot_", timeraster, ".tif")
+    raster_path <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_plot_", timeraster, ".tif")
     
     # Check if the file exists
     if (file.exists(raster_path)) {
@@ -343,7 +336,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$raster, {
     if (input$raster) {
-        raster_path <- paste0("./appdata/gemos_raster/raster_plot_0.tif")
+        raster_path <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_plot_0.tif")
         
         if (file.exists(raster_path)) {
           proxy <- leafletProxy('map')

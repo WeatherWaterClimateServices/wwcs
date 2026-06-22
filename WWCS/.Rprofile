@@ -13,6 +13,8 @@ dotenv::load_dot_env(file.path(ROOT_DIR, ".env"))
 db_password = Sys.getenv("DB_PASSWORD")
 wwcs_domain = config$wwcs_domain
 use_pass = config$use_pass
+auth_users = config$auth_users
+servicepass = strsplit(Sys.getenv("SERVICE_PASSWORD"), ",")[[1]]
 
 minlat = config$minlat
 maxlat = config$maxlat
@@ -50,7 +52,6 @@ warning_default_station = config$warning_default_station
 # Irrigation parameters
 
 irrigation_default_station = config$irrigation_default_station
-servicepass = Sys.getenv("SERVICE_PASSWORD")
 window = config$window
 
 # Planting parameters

@@ -25,8 +25,8 @@ while (!file.exists(file.path(ROOT_DIR, ".git"))) {
 source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
 source(file.path(ROOT_DIR, "WWCS/irrigation/R/calc_et0.R"))
 options(shiny.sanitize.errors = FALSE)
-
-# ------------------------------------------------
+print(servicepass)
+## ------------------------------------------------
 # DB CONNECTIONS
 # ------------------------------------------------
 
@@ -133,17 +133,9 @@ if (!exists("plot_polygons")) {
 
 
 # ------------------------------- Login page
-
 credentials <- data.frame(
-  user = c("caritas"),
-  # mandatory
-  password = c(servicepass),
-  # mandatory
+  user = auth_users,
+  password = servicepass,
   start = c("2019-04-15"),
-  # optinal (all others)
-  expire = c(NA),
-  admin = c(FALSE),
-  comment = "Simple and secure authentification mechanism
-  for single ‘Shiny’ applications.",
   stringsAsFactors = FALSE
 )
