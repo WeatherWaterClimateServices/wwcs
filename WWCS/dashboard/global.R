@@ -97,7 +97,7 @@ if (!file.exists(rastermgd.file)) {
   gemos_std <- data.frame()
 } else {
   gemos_mea <- raster::brick(rastermgd.file, varname = "IFS_T_mea")
-  gemos_std <- raster::brick(rastermrd.file, varname = "IFS_T_std")
+  gemos_std <- raster::brick(rastermgd.file, varname = "IFS_T_std")
 }
 
 sites <-
