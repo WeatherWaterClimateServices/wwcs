@@ -25,7 +25,7 @@ while (!file.exists(file.path(ROOT_DIR, ".git"))) {
 source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
 source(file.path(ROOT_DIR, "WWCS/irrigation/R/calc_et0.R"))
 options(shiny.sanitize.errors = FALSE)
-print(servicepass)
+
 ## ------------------------------------------------
 # DB CONNECTIONS
 # ------------------------------------------------

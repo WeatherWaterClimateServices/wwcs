@@ -59,12 +59,21 @@ for (i in 1:nstat) {
         Radiation = rad
       ) %>%
       filter(time >= read_start_date) %>%
-      distinct(time, .keep_all = TRUE) %>%
-      filter(minute(time) %in% c(0, 20, 40)) ## BORIS here - only every 2nd timestamp
+      distinct(time, .keep_all = TRUE)
+
+      ## compress station data to lower time resolution - not lower than hourly, though
+      station <- station %>%
+        dplyr::mutate(bins = ceiling_date(time, "30 minutes")) %>%
+        dplyr::group_by(bins) %>%
+        dplyr::summarize(
+          across(c(Precipitation, lightning_count), sum),
+          across(c(lightning_dist, WindSpeed, wind_speed_E, wind_speed_N), mean),
+          across(c(wind_gust), max),
+          across(everything(), last)) %>%
+          select(-c(bins))
+                 
     
-    # Remove outliers that are smaller than -100 or larger than 100
-  
-    if (nrow(station) > 0) {
+      ## Remove outliers that are smaller than -100 or larger than 100
       station <- station %>%
         mutate(
           Temperature = ifelse(Temperature < -100, NA, Temperature),
@@ -81,7 +90,7 @@ for (i in 1:nstat) {
                          as.POSIXct("2021-01-01", tz = timezone_country),
                          time)
         )
-    }
+    } ## lowcost not empty
     
     meta_deploy <- deployments %>%
       filter(siteID == sites$siteID[i])
