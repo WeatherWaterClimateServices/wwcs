@@ -39,20 +39,24 @@ for (i in 1:nstat) {
     query = paste0("SELECT * FROM v_machineobs WHERE siteID = '", sites$siteID[i], "';"),
     dbname = "Machines"
   )
-  
-  if (nrow(lowcost) > 0) {
-    # Round Minutes, adjust tz, Use Celsius, Omit unnecessary variables, Remove duplicates
-    station <- lowcost %>%
+
+  if (nrow(lowcost) == 0){
+      print(paste("No data found for site", sites$siteID[i]))
+      next
+  }
+
+  ## Round Minutes, adjust tz, Use Celsius, Omit unnecessary variables, Remove duplicates
+  station <- lowcost %>%
       as_tibble() %>%
       dplyr::rename(time = timestamp) %>%
       dplyr::mutate(time = lubridate::with_tz(as.POSIXct(time, tz = timezone_stationdata), tz = timezone_country)) %>%
       dplyr::mutate(time = floor_date(time, "minute")) %>%
       dplyr::rename(
-        Temperature = ta,
-        Pressure = p,
-        RH = rh,
-        Solar = U_Solar,
-        Battery = U_Battery,
+                 Temperature = ta,
+                 Pressure = p,
+                 RH = rh,
+                 Solar = U_Solar,
+                 Battery = U_Battery,
         Signal = signalStrength,
         Precipitation = pr,
         WindSpeed = wind_speed,
@@ -61,36 +65,43 @@ for (i in 1:nstat) {
       filter(time >= read_start_date) %>%
       distinct(time, .keep_all = TRUE)
 
-      ## compress station data to lower time resolution - not lower than hourly, though
-      station <- station %>%
-        dplyr::mutate(bins = ceiling_date(time, "30 minutes")) %>%
-        dplyr::group_by(bins) %>%
-        dplyr::summarize(
-          across(c(Precipitation, lightning_count), sum),
-          across(c(lightning_dist, WindSpeed, wind_speed_E, wind_speed_N), mean),
-          across(c(wind_gust), max),
-          across(everything(), last)) %>%
-          select(-c(bins))
-                 
-    
-      ## Remove outliers that are smaller than -100 or larger than 100
-      station <- station %>%
-        mutate(
-          Temperature = ifelse(Temperature < -100, NA, Temperature),
-          RH = ifelse(RH < -100, NA, RH),
-          Pressure = ifelse(Pressure < -100, NA, Pressure),
-          Solar = ifelse(Solar < -100, NA, Solar),
-          Battery = ifelse(Battery < -100, NA, Battery),
-          Signal = ifelse(Signal < -100, NA, Signal), 
-          time = as.POSIXct(time, tz = timezone_country),
-          time = if_else(time < as.POSIXct("2021-01-01", tz = timezone_country),
-                         as.POSIXct("2021-01-01", tz = timezone_country),
-                         time),
-          time = if_else(time > Sys.time() + days(1),
-                         as.POSIXct("2021-01-01", tz = timezone_country),
-                         time)
-        )
-    } ## lowcost not empty
+    ## compress station data to lower time resolution - not lower than hourly, though
+    ## do it in 2 parts
+    ## 1 - the direct data at 0, 30 mins
+    station_raw <- station %>%
+        dplyr::filter(minute(time) %in% c(0, 30))
+
+    ## 2 - variables which need aggregation
+    station_agg <- station %>%
+      dplyr::mutate(time_30min = ceiling_date(time, "30 minutes")) %>%
+      dplyr::group_by(time_30min) %>%
+      dplyr::summarize(
+        across(c(Precipitation, lightning_count), sum),
+        across(c(lightning_dist, WindSpeed, wind_speed_E, wind_speed_N), mean),
+        across(c(wind_gust), max))
+
+    ## 3 - join the two
+    station <- station_raw %>%
+      dplyr::select(-c(setdiff(names(station_agg), "time_30min"))) %>%
+      left_join(station_agg, by = c("time" = "time_30min"))          
+
+    ## Remove outliers that are smaller than -100 or larger than 100
+    station <- station %>%
+      mutate(
+        Temperature = ifelse(Temperature < -100, NA, Temperature),
+        RH = ifelse(RH < -100, NA, RH),
+        Pressure = ifelse(Pressure < -100, NA, Pressure),
+        Solar = ifelse(Solar < -100, NA, Solar),
+        Battery = ifelse(Battery < -100, NA, Battery),
+        Signal = ifelse(Signal < -100, NA, Signal), 
+        time = as.POSIXct(time, tz = timezone_country),
+        time = if_else(time < as.POSIXct("2021-01-01", tz = timezone_country),
+                       as.POSIXct("2021-01-01", tz = timezone_country),
+                       time),
+        time = if_else(time > Sys.time() + days(1),
+                       as.POSIXct("2021-01-01", tz = timezone_country),
+                       time)
+      )
     
     meta_deploy <- deployments %>%
       filter(siteID == sites$siteID[i])
@@ -148,7 +159,7 @@ for (i in 1:nstat) {
           Radiation_mean = Radiation
         ) %>%
         as_tibble()
-    }
+    } ## station not WWCS
     
     # Compute Evapotranspiration
     et0_input <- station_meta %>%
@@ -172,10 +183,8 @@ for (i in 1:nstat) {
     # MERGE STATION DATA IN DATAFRAME
     obs <- obs %>%
       bind_rows(station_et0) %>%
-      as_tibble()
-  }
-}
-
+        as_tibble()
+} ## loop through all sites
 
 # STORE DATA 
 # ------------------------------------------------
