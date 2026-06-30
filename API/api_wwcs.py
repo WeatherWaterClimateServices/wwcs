@@ -641,14 +641,14 @@ def convert_timestamp(original_timestamp: str) -> str:
 
 # ── Air Quality ──────────────────────────────────────────────────────────────
 
-STATION_IDS = (
+STATION_IDS = [
     '70:b8:f6:02:ad:80',  # KULOB006_ECO  Kulyab
     '70:b8:f6:02:9c:38',  # DYU007_ECO    Park Ayni
     '70:b8:f6:02:9e:a0',  # DYU01_ECO     CaCH Dushanbe
     '70:b8:f6:02:aa:30',  # DYU006_ECO    Hydromet office
     '70:b8:f6:02:a9:68',  # DYU012_ECO    Physicotechnical Institute
     '70:b8:f6:02:9d:5c',  # DYU008_ECO    School No77
-)
+]
 
 
 def _aqi_from_pm25(pm25: float) -> int:
@@ -668,7 +668,10 @@ def _aqi_from_pm25(pm25: float) -> int:
 
 @app.get("/airquality/stations")
 async def get_airquality_stations(response: Response):
-    ids = "', '".join(STATION_IDS)
+    # Named params avoid colon-in-MAC conflicting with :param syntax
+    placeholders = ", ".join(f":id{i}" for i in range(len(STATION_IDS)))
+    values = {f"id{i}": sid for i, sid in enumerate(STATION_IDS)}
+
     query = f"""
         SELECT mo.loggerID, mo.`timestamp`, mo.PM25, mo.PM10,
                mo.ta AS temperature, mo.rh AS humidity,
@@ -677,12 +680,12 @@ async def get_airquality_stations(response: Response):
         INNER JOIN (
             SELECT loggerID, MAX(`timestamp`) AS latest_ts
             FROM Machines.MachineObs
-            WHERE loggerID IN ('{ids}')
+            WHERE loggerID IN ({placeholders})
             GROUP BY loggerID
         ) latest ON mo.loggerID = latest.loggerID
                AND mo.`timestamp` = latest.latest_ts
     """
-    rows = await database_machines.fetch_all(query=query)
+    rows = await database_machines.fetch_all(query=query, values=values)
     result = []
     for row in rows:
         r = dict(row)
@@ -694,14 +697,17 @@ async def get_airquality_stations(response: Response):
 
 @app.get("/airquality/history")
 async def get_airquality_history(response: Response, hours: int = 24):
-    ids = "', '".join(STATION_IDS)
+    placeholders = ", ".join(f":id{i}" for i in range(len(STATION_IDS)))
+    values = {f"id{i}": sid for i, sid in enumerate(STATION_IDS)}
+
+    # hours is FastAPI-validated int — safe to interpolate directly
     query = f"""
         SELECT mo.loggerID, mo.`timestamp`, mo.PM25, mo.PM10
         FROM Machines.MachineObs mo
-        WHERE mo.loggerID IN ('{ids}')
+        WHERE mo.loggerID IN ({placeholders})
           AND mo.`timestamp` >= NOW() - INTERVAL {hours} HOUR
         ORDER BY mo.loggerID, mo.`timestamp` ASC
     """
-    rows = await database_machines.fetch_all(query=query)
+    rows = await database_machines.fetch_all(query=query, values=values)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return [dict(row) for row in rows]
