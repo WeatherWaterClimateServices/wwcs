@@ -636,3 +636,72 @@ def convert_timestamp(original_timestamp: str) -> str:
     """Convert ISO timestamp to RFC 1123 format."""
     dt = datetime.datetime.fromisoformat(original_timestamp)
     return dt.strftime("%a, %d %b %Y %H:%M:%S GMT+5")
+
+
+
+# ── Air Quality ──────────────────────────────────────────────────────────────
+
+STATION_IDS = (
+    '70:b8:f6:02:ad:80',  # KULOB006_ECO  Kulyab
+    '70:b8:f6:02:9c:38',  # DYU007_ECO    Park Ayni
+    '70:b8:f6:02:9e:a0',  # DYU01_ECO     CaCH Dushanbe
+    '70:b8:f6:02:aa:30',  # DYU006_ECO    Hydromet office
+    '70:b8:f6:02:a9:68',  # DYU012_ECO    Physicotechnical Institute
+    '70:b8:f6:02:9d:5c',  # DYU008_ECO    School No77
+)
+
+
+def _aqi_from_pm25(pm25: float) -> int:
+    breakpoints = [
+        (0.0,   12.0,   0,  50),
+        (12.1,  35.4,  51, 100),
+        (35.5,  55.4, 101, 150),
+        (55.5, 150.4, 151, 200),
+        (150.5, 250.4, 201, 300),
+        (250.5, 500.4, 301, 500),
+    ]
+    for c_lo, c_hi, aqi_lo, aqi_hi in breakpoints:
+        if c_lo <= pm25 <= c_hi:
+            return round((aqi_hi - aqi_lo) / (c_hi - c_lo) * (pm25 - c_lo) + aqi_lo)
+    return 500
+
+
+@app.get("/airquality/stations")
+async def get_airquality_stations(response: Response):
+    ids = "', '".join(STATION_IDS)
+    query = f"""
+        SELECT mo.loggerID, mo.`timestamp`, mo.PM25, mo.PM10,
+               mo.ta AS temperature, mo.rh AS humidity,
+               mo.wind_speed, mo.wind_dir
+        FROM Machines.MachineObs mo
+        INNER JOIN (
+            SELECT loggerID, MAX(`timestamp`) AS latest_ts
+            FROM Machines.MachineObs
+            WHERE loggerID IN ('{ids}')
+            GROUP BY loggerID
+        ) latest ON mo.loggerID = latest.loggerID
+               AND mo.`timestamp` = latest.latest_ts
+    """
+    rows = await database_machines.fetch_all(query=query)
+    result = []
+    for row in rows:
+        r = dict(row)
+        r['aqi'] = _aqi_from_pm25(r.get('PM25') or 0)
+        result.append(r)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return result
+
+
+@app.get("/airquality/history")
+async def get_airquality_history(response: Response, hours: int = 24):
+    ids = "', '".join(STATION_IDS)
+    query = f"""
+        SELECT mo.loggerID, mo.`timestamp`, mo.PM25, mo.PM10
+        FROM Machines.MachineObs mo
+        WHERE mo.loggerID IN ('{ids}')
+          AND mo.`timestamp` >= NOW() - INTERVAL {hours} HOUR
+        ORDER BY mo.loggerID, mo.`timestamp` ASC
+    """
+    rows = await database_machines.fetch_all(query=query)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return [dict(row) for row in rows]
