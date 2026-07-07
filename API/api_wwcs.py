@@ -648,6 +648,9 @@ STATION_IDS = [
     '70:b8:f6:02:aa:30',  # DYU006_ECO    Hydromet office
     '70:b8:f6:02:a9:68',  # DYU012_ECO    Physicotechnical Institute
     '70:b8:f6:02:9d:5c',  # DYU008_ECO    School No77
+    '70:b8:f6:01:cc:04',  # VAH001_ECO    Vahdat Centre
+    '70:b8:f6:01:cc:00',  # HIS003_ECO    Hissor Centre
+    '70:b8:f6:02:a9:6c',  # DYU010_ECO    Presidential Lyceum Dushanbe
 ]
 
 
