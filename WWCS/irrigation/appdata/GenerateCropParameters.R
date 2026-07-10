@@ -269,6 +269,28 @@ Cotton180dKenjabaev <-
                             rep(last(RDs), nrow(crop.parameters)-length(RDs))))
 crop.parameters <- full_join(crop.parameters, Cotton180dKenjabaev, by = "Index")
 
+##
+## Panicum forage grass for livestock feed duration 60 days
+## parameters provided by Caritas Switzerland team in Uzbekistan
+##
+Ls <- c(ini = 15, dev = 20, mid = 15, late = 10)
+Kc <- c(ini = 0.40, mid = 1, end = 0.85)
+RD <- c(min = 0.10, max = 1.35)
+Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
+         seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
+         rep(Kc[["mid"]], Ls[["mid"]]),
+         seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
+RDs <-
+  c(seq(RD[["min"]], RD[["max"]], length=sum(Ls[["ini"]], Ls[["dev"]], Ls[["mid"]])),
+    rep(RD[["max"]], Ls[["late"]]))
+
+PanicumFrg60d <-
+  data.frame(Index=1:nrow(crop.parameters),
+             PanicumFrg60d_Kc=c(Kcs,
+                                rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             PanicumFrg60d_RD=c(RDs,
+                                rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, PanicumFrg60d, by = "Index")
 
 ## write out
 write.csv(crop.parameters, "CropParameters.csv", row.names = FALSE)
