@@ -48,126 +48,157 @@ if (gadm0 == "TJK") {
 
 mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
-# Load data from database
+# Load data from database and compute station status, statistics and icons.
+# Wrapped in a function so the server can re-run it periodically (see
+# auto_refresh in the server function). Previously this ran only once when
+# the R process started, so icon colours and statistics were a stale
+# snapshot until the process happened to restart.
 
-sites <-
-  sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
-  distinct(siteID, .keep_all = TRUE)  %>%
-  as_tibble() 
+load_map_data <- function() {
 
-deployments <-
-  sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
-  as_tibble() 
+  sites <-
+    sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
+    distinct(siteID, .keep_all = TRUE)  %>%
+    as_tibble()
 
-
-lastobs <-
-  sqlQuery(
-    query = "
-  SELECT dt.*
-  FROM MachineObs dt
-  INNER JOIN (
-  SELECT loggerID, MAX(timestamp) AS max_timestamp
-  FROM MachineObs
-  GROUP BY loggerID
-  ) dt_max ON dt.loggerID = dt_max.loggerID AND dt.timestamp = dt_max.max_timestamp;"
-    ,
-    dbname = "Machines"
-  ) %>%
-  as_tibble() %>%
-   dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
-                   tz = timezone_stationdata), tz = timezone_country))
+  deployments <-
+    sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
+    as_tibble()
 
 
+  lastobs <-
+    sqlQuery(
+      query = "
+    SELECT dt.*
+    FROM MachineObs dt
+    INNER JOIN (
+    SELECT loggerID, MAX(timestamp) AS max_timestamp
+    FROM MachineObs
+    GROUP BY loggerID
+    ) dt_max ON dt.loggerID = dt_max.loggerID AND dt.timestamp = dt_max.max_timestamp;"
+      ,
+      dbname = "Machines"
+    ) %>%
+    as_tibble() %>%
+     dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
+                     tz = timezone_stationdata), tz = timezone_country))
 
-# Join all elements and create new columns status that checks if timestamp is within the last hour
 
-mapdata <-
-  sites %>%
-  dplyr::left_join(deployments, by = c("siteID"), multiple = "all") %>%
-  dplyr::left_join(lastobs, by = c("loggerID")) %>%
-  dplyr::mutate(status = ifelse(
-    timestamp > Sys.time() - hours(1),
-    "green",
-    ifelse(timestamp > Sys.time() - hours(24), "orange", "red")
-  )) %>%
-  dplyr::mutate(status = ifelse(is.na(timestamp), "red", status)) %>%
-  dplyr::mutate(status = ifelse(is.na(ta) | ta < -100, "red", status)) %>%
-  dplyr::mutate(time_diff = ifelse(
-    is.na(timestamp),
-    NA,
-    difftime(Sys.time(), timestamp, units = "hours")
-  )) %>%
-  dplyr::mutate(time_lastobs = ifelse(time_diff < 24, floor(time_diff), round(time_diff / 24, 0))) %>%
-  dplyr::group_by(siteID) %>%
-  dplyr::filter(timestamp == max(timestamp)) %>%
-  dplyr::ungroup()
 
-# Count total number of stations and number of stations with status green, orange and red
+  # Join all elements and create new columns status that checks if timestamp is within the last hour
 
-total <- nrow(mapdata %>% dplyr::filter(type == "WWCS"))
-green <- nrow(filter(mapdata, status == "green" & type == "WWCS"))
-orange <- nrow(filter(mapdata, status == "orange" & type == "WWCS"))
-red <- nrow(filter(mapdata, status == "red" & type == "WWCS"))
+  mapdata <-
+    sites %>%
+    dplyr::left_join(deployments, by = c("siteID"), multiple = "all") %>%
+    dplyr::left_join(lastobs, by = c("loggerID")) %>%
+    dplyr::mutate(status = ifelse(
+      timestamp > Sys.time() - hours(1),
+      "green",
+      ifelse(timestamp > Sys.time() - hours(24), "orange", "red")
+    )) %>%
+    dplyr::mutate(status = ifelse(is.na(timestamp), "red", status)) %>%
+    dplyr::mutate(status = ifelse(is.na(ta) | ta < -100, "red", status)) %>%
+    dplyr::mutate(time_diff = ifelse(
+      is.na(timestamp),
+      NA,
+      difftime(Sys.time(), timestamp, units = "hours")
+    )) %>%
+    dplyr::mutate(time_lastobs = ifelse(time_diff < 24, floor(time_diff), round(time_diff / 24, 0))) %>%
+    dplyr::group_by(siteID) %>%
+    dplyr::filter(timestamp == max(timestamp)) %>%
+    dplyr::ungroup()
 
-ready <- which(mapdata$status == "green" & mapdata$type == "WWCS")
-hold <- which(mapdata$status == "orange" & mapdata$type == "WWCS")
-late <- which(mapdata$status == "red" & mapdata$type == "WWCS")
+  # Count total number of stations and number of stations with status green, orange and red
 
-ready_hydromet <- which(mapdata$status == "green" & mapdata$type != "WWCS")
-hold_hydromet <- which(mapdata$status != "green" & mapdata$type != "WWCS")
+  total <- nrow(mapdata %>% dplyr::filter(type == "WWCS"))
+  green <- nrow(filter(mapdata, status == "green" & type == "WWCS"))
+  orange <- nrow(filter(mapdata, status == "orange" & type == "WWCS"))
+  red <- nrow(filter(mapdata, status == "red" & type == "WWCS"))
 
-climavue <- which(mapdata$type == "WWCS" & !is.na(mapdata$lightning_count))
-airq <- which(mapdata$type == "WWCS" & !is.na(mapdata$PM25))
-basic <- setdiff(which(mapdata$type == "WWCS"), c(climavue, airq))
-    
+  ready <- which(mapdata$status == "green" & mapdata$type == "WWCS")
+  hold <- which(mapdata$status == "orange" & mapdata$type == "WWCS")
+  late <- which(mapdata$status == "red" & mapdata$type == "WWCS")
+
+  ready_hydromet <- which(mapdata$status == "green" & mapdata$type != "WWCS")
+  hold_hydromet <- which(mapdata$status != "green" & mapdata$type != "WWCS")
+
+  climavue <- which(mapdata$type == "WWCS" & !is.na(mapdata$lightning_count))
+  airq <- which(mapdata$type == "WWCS" & !is.na(mapdata$PM25))
+  basic <- setdiff(which(mapdata$type == "WWCS"), c(climavue, airq))
+
+  # Define icons of the map
+  icons_green <- awesomeIcons(
+    markerColor = "green",
+    iconColor = "white",
+    squareMarker = F,
+    icon = NULL,
+    text = paste0(round(unlist(mapdata[ready, "ta"])), " \n ", "°C"),
+    fontFamily = "Helvetica"
+  )
+
+  icons_hold <- awesomeIcons(
+    markerColor = "beige",
+    iconColor = "white",
+    squareMarker = F,
+    icon = NULL,
+    text = paste0(round(unlist(mapdata[hold, "ta"])), " \n ", "°C"),
+    fontFamily = "Helvetica"
+  )
+
+  icons_late <- awesomeIcons(
+    markerColor = "red",
+    iconColor = "white",
+    squareMarker = F,
+    icon = NULL,
+    #text = paste0(round(unlist(mapdata[late,"ta"]))," \n ","°C"),
+    text = paste0(NA),
+    fontFamily = "Helvetica"
+  )
+
+  icons_hydromet_ready <- awesomeIcons(
+    markerColor = "blue",
+    iconColor = "white",
+    squareMarker = F,
+    icon = NULL,
+    text = paste0(round(unlist(mapdata[ready_hydromet,"ta"])), " \n ", "°C"),
+    fontFamily = "Helvetica"
+  )
+
+  icons_hydromet_hold <- awesomeIcons(
+    markerColor = "lightblue",
+    iconColor = "white",
+    squareMarker = F,
+    icon = NULL,
+    text = paste0(NA),
+    fontFamily = "Helvetica"
+  )
+
+  list(
+    mapdata = mapdata,
+    total = total,
+    green = green,
+    orange = orange,
+    red = red,
+    ready = ready,
+    hold = hold,
+    late = late,
+    ready_hydromet = ready_hydromet,
+    hold_hydromet = hold_hydromet,
+    climavue = climavue,
+    airq = airq,
+    basic = basic,
+    icons_green = icons_green,
+    icons_hold = icons_hold,
+    icons_late = icons_late,
+    icons_hydromet_ready = icons_hydromet_ready,
+    icons_hydromet_hold = icons_hydromet_hold
+  )
+}
+
+# How often the map re-queries the database (milliseconds)
+refresh_interval <- 10 * 60 * 1000
+
 bounds <- 5
-
-# Define icons of the map
-icons_green <- awesomeIcons(
-  markerColor = "green",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  text = paste0(round(unlist(mapdata[ready, "ta"])), " \n ", "°C"),
-  fontFamily = "Helvetica"
-)
-
-icons_hold <- awesomeIcons(
-  markerColor = "beige",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  text = paste0(round(unlist(mapdata[hold, "ta"])), " \n ", "°C"),
-  fontFamily = "Helvetica"
-)
-
-icons_late <- awesomeIcons(
-  markerColor = "red",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  #text = paste0(round(unlist(mapdata[late,"ta"]))," \n ","°C"),
-  text = paste0(NA),
-  fontFamily = "Helvetica"
-)
-
-icons_hydromet_ready <- awesomeIcons(
-  markerColor = "blue",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  text = paste0(round(unlist(mapdata[ready_hydromet,"ta"])), " \n ", "°C"),
-  fontFamily = "Helvetica"
-)
-
-icons_hydromet_hold <- awesomeIcons(
-  markerColor = "lightblue",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  text = paste0(NA),
-  fontFamily = "Helvetica"
-)
 
 # Function to align element in the center
 
@@ -225,8 +256,19 @@ server <- function(input, output, session) {
     reactiveValuesToList(res_auth)
     updateTabItems(session, "sidebar", "overview")
   })
-  
-  
+
+
+  # Re-query the database every refresh_interval so icon colours and the
+  # statistics below the map reflect the current station status without
+  # requiring a restart of the R process
+  auto_refresh <- reactiveTimer(refresh_interval)
+
+  map <- reactive({
+    auto_refresh()
+    load_map_data()
+  })
+
+
   # Initialize reactive values
   
   selected <- reactiveValues(
@@ -256,8 +298,10 @@ server <- function(input, output, session) {
   
   
   # Render the leaflet map
+  # isolate() keeps the base map static; marker updates happen via
+  # leafletProxy in the observer below on every data refresh
   output$map <- renderLeaflet({
-    leaflet("map", data = mapdata,
+    leaflet("map", data = isolate(map())$mapdata,
             options = leafletOptions(minZoom = 6, maxZoom = 17)) %>%
       setView(lng = setlon,
               lat = setlat,
@@ -292,8 +336,23 @@ server <- function(input, output, session) {
   })
   
   
-  # Update the visibility of markers based on user input
+  # Draw the station markers and update them on every data refresh
   observe({
+    d <- map()
+    mapdata <- d$mapdata
+    basic <- d$basic
+    climavue <- d$climavue
+    airq <- d$airq
+    ready_hydromet <- d$ready_hydromet
+    hold_hydromet <- d$hold_hydromet
+    icons_hydromet_ready <- d$icons_hydromet_ready
+    icons_hydromet_hold <- d$icons_hydromet_hold
+
+    # Remove the previous markers so refreshed statuses replace them
+    # instead of stacking duplicates on the map
+    proxy <- leafletProxy("map")
+    proxy %>% clearGroup(c("Basic", "ClimaVue50", "AirQ", "Other"))
+
     if (length(basic) > 0) {
       my.text <- paste0(round(unlist(mapdata[basic, "ta"])), " \n ", "°C")
       my.text[mapdata$status[basic] != "green"] <- paste0(NA)  
@@ -432,15 +491,16 @@ server <- function(input, output, session) {
     }
   })
 
-    output$status <- renderText({
+  output$status <- renderText({
+    d <- map()
     paste0(
-      total,
+      d$total,
       " WWCS stations - ",
-      green,
+      d$green,
       " on time stations - ",
-      orange,
+      d$orange,
       " late stations - ",
-      red,
+      d$red,
       " very late stations"
     )
   })
@@ -472,6 +532,7 @@ server <- function(input, output, session) {
   # -------------------------------  Map Marker Click Event
   
   observeEvent(input$map_marker_click, {
+    mapdata <- map()$mapdata
     selected$id <- input$map_marker_click$id
     selected$name <- mapdata[mapdata$siteID == input$map_marker_click$id, "siteName"]
     selected$logger <- mapdata[mapdata$siteID == input$map_marker_click$id, "loggerID"]
