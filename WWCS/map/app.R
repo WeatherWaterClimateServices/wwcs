@@ -34,7 +34,7 @@ credentials <- data.frame(
 bd <- sf::st_read(
   paste0(
     "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
-	  gadm0,
+    gadm0,
     "_2.shp"
   ),
   as_tibble = TRUE
@@ -48,129 +48,67 @@ if (gadm0 == "TJK") {
 
 mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
-# Load data from database
+# Fetch and join all station data from the database
+fetch_mapdata <- function() {
+  sites <-
+    sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
+    distinct(siteID, .keep_all = TRUE) %>%
+    as_tibble()
 
-sites <-
-  sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
-  distinct(siteID, .keep_all = TRUE)  %>%
-  as_tibble() 
+  deployments <-
+    sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
+    as_tibble()
 
-deployments <-
-  sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
-  as_tibble() 
-
-
-lastobs <-
-  sqlQuery(
-    query = "
+  lastobs <-
+    sqlQuery(
+      query = "
   SELECT dt.*
   FROM MachineObs dt
   INNER JOIN (
   SELECT loggerID, MAX(timestamp) AS max_timestamp
   FROM MachineObs
   GROUP BY loggerID
-  ) dt_max ON dt.loggerID = dt_max.loggerID AND dt.timestamp = dt_max.max_timestamp;"
-    ,
-    dbname = "Machines"
-  ) %>%
-  as_tibble() %>%
-   dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
-                   tz = timezone_stationdata), tz = timezone_country))
+  ) dt_max ON dt.loggerID = dt_max.loggerID AND dt.timestamp = dt_max.max_timestamp;",
+      dbname = "Machines"
+    ) %>%
+    as_tibble() %>%
+    dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
+                     tz = timezone_stationdata), tz = timezone_country))
 
-
-
-# Join all elements and create new columns status that checks if timestamp is within the last hour
-
-mapdata <-
   sites %>%
-  dplyr::left_join(deployments, by = c("siteID"), multiple = "all") %>%
-  dplyr::left_join(lastobs, by = c("loggerID")) %>%
-  dplyr::mutate(status = ifelse(
-    timestamp > Sys.time() - hours(1),
-    "green",
-    ifelse(timestamp > Sys.time() - hours(24), "orange", "red")
-  )) %>%
-  dplyr::mutate(status = ifelse(is.na(timestamp), "red", status)) %>%
-  dplyr::mutate(status = ifelse(is.na(ta) | ta < -100, "red", status)) %>%
-  dplyr::mutate(time_diff = ifelse(
-    is.na(timestamp),
-    NA,
-    difftime(Sys.time(), timestamp, units = "hours")
-  )) %>%
-  dplyr::mutate(time_lastobs = ifelse(time_diff < 24, floor(time_diff), round(time_diff / 24, 0))) %>%
-  dplyr::group_by(siteID) %>%
-  dplyr::filter(timestamp == max(timestamp)) %>%
-  dplyr::ungroup()
+    dplyr::left_join(deployments, by = c("siteID"), multiple = "all") %>%
+    dplyr::left_join(lastobs, by = c("loggerID")) %>%
+    dplyr::mutate(status = ifelse(
+      timestamp > Sys.time() - hours(1),
+      "green",
+      ifelse(timestamp > Sys.time() - hours(24), "orange", "red")
+    )) %>%
+    dplyr::mutate(status = ifelse(is.na(timestamp), "red", status)) %>%
+    dplyr::mutate(status = ifelse(is.na(ta) | ta < -100, "red", status)) %>%
+    dplyr::mutate(time_diff = ifelse(
+      is.na(timestamp),
+      NA,
+      difftime(Sys.time(), timestamp, units = "hours")
+    )) %>%
+    dplyr::mutate(time_lastobs = ifelse(time_diff < 24, floor(time_diff), round(time_diff / 24, 0))) %>%
+    dplyr::group_by(siteID) %>%
+    dplyr::filter(timestamp == max(timestamp)) %>%
+    dplyr::ungroup()
+}
 
-# Count total number of stations and number of stations with status green, orange and red
+# Global reactive value — one copy shared across all sessions
+mapdata_rv <- reactiveVal(fetch_mapdata())
 
-total <- nrow(mapdata %>% dplyr::filter(type == "WWCS"))
-green <- nrow(filter(mapdata, status == "green" & type == "WWCS"))
-orange <- nrow(filter(mapdata, status == "orange" & type == "WWCS"))
-red <- nrow(filter(mapdata, status == "red" & type == "WWCS"))
+# Refresh every 10 minutes using Shiny's event loop (not per-session)
+refresh_loop <- function() {
+  mapdata_rv(fetch_mapdata())
+  later::later(refresh_loop, 600)
+}
+later::later(refresh_loop, 600)
 
-ready <- which(mapdata$status == "green" & mapdata$type == "WWCS")
-hold <- which(mapdata$status == "orange" & mapdata$type == "WWCS")
-late <- which(mapdata$status == "red" & mapdata$type == "WWCS")
-
-ready_hydromet <- which(mapdata$status == "green" & mapdata$type != "WWCS")
-hold_hydromet <- which(mapdata$status != "green" & mapdata$type != "WWCS")
-
-climavue <- which(mapdata$type == "WWCS" & !is.na(mapdata$lightning_count))
-airq <- which(mapdata$type == "WWCS" & !is.na(mapdata$PM25))
-basic <- setdiff(which(mapdata$type == "WWCS"), c(climavue, airq))
-    
 bounds <- 5
 
-# Define icons of the map
-icons_green <- awesomeIcons(
-  markerColor = "green",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  text = paste0(round(unlist(mapdata[ready, "ta"])), " \n ", "°C"),
-  fontFamily = "Helvetica"
-)
-
-icons_hold <- awesomeIcons(
-  markerColor = "beige",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  text = paste0(round(unlist(mapdata[hold, "ta"])), " \n ", "°C"),
-  fontFamily = "Helvetica"
-)
-
-icons_late <- awesomeIcons(
-  markerColor = "red",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  #text = paste0(round(unlist(mapdata[late,"ta"]))," \n ","°C"),
-  text = paste0(NA),
-  fontFamily = "Helvetica"
-)
-
-icons_hydromet_ready <- awesomeIcons(
-  markerColor = "blue",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  text = paste0(round(unlist(mapdata[ready_hydromet,"ta"])), " \n ", "°C"),
-  fontFamily = "Helvetica"
-)
-
-icons_hydromet_hold <- awesomeIcons(
-  markerColor = "lightblue",
-  iconColor = "white",
-  squareMarker = F,
-  icon = NULL,
-  text = paste0(NA),
-  fontFamily = "Helvetica"
-)
-
 # Function to align element in the center
-
 alignCenter <- function(el) {
   htmltools::tagAppendAttributes(el, style = "margin-left:auto;margin-right:auto;")
 }
@@ -214,21 +152,21 @@ if ("map" %in% use_pass){
 
 # Define Server
 server <- function(input, output, session) {
-  
+
   # ------------------------------- Login Security
-  
+
   # call the server part
   # check_credentials returns a function to authenticate users
   res_auth <- secure_server(check_credentials = check_credentials(credentials))
-  
+
   output$auth_output <- renderPrint({
     reactiveValuesToList(res_auth)
     updateTabItems(session, "sidebar", "overview")
   })
-  
-  
+
+
   # Initialize reactive values
-  
+
   selected <- reactiveValues(
     id = NA,
     name = NA,
@@ -242,23 +180,13 @@ server <- function(input, output, session) {
     title = NA,
     type = NA
   )
-  
-  station_data <- reactiveValues(# Get the data for the selected station
-    data = sqlQuery(
-      query = paste0(
-        "select * from MachineObs where loggerID = \"3c:71:bf:e1:4b:9c\" and timestamp >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)"
-      ),
-      dbname = "Machines"
-    ) %>%
-      as_data_frame())
-  
-  
-  
-  
-  # Render the leaflet map
+
+  station_data <- reactiveValues(data = NULL)
+
+
+  # Render the leaflet map (base layers only — markers updated reactively below)
   output$map <- renderLeaflet({
-    leaflet("map", data = mapdata,
-            options = leafletOptions(minZoom = 6, maxZoom = 17)) %>%
+    leaflet("map", options = leafletOptions(minZoom = 6, maxZoom = 17)) %>%
       setView(lng = setlon,
               lat = setlat,
               zoom = 8) %>%
@@ -288,16 +216,29 @@ server <- function(input, output, session) {
         position = c("bottomright"),
         overlayGroups = c("Basic", "ClimaVue50", "AirQ", "Other"),
         options = layersControlOptions(collapsed = TRUE)
-      ) 
+      )
   })
-  
-  
-  # Update the visibility of markers based on user input
+
+
+  # Update markers whenever mapdata_rv changes (on load and every 10-min refresh)
   observe({
+    mapdata <- mapdata_rv()
+
+    climavue <- which(mapdata$type == "WWCS" & !is.na(mapdata$lightning_count))
+    airq     <- which(mapdata$type == "WWCS" & !is.na(mapdata$PM25))
+    basic    <- setdiff(which(mapdata$type == "WWCS"), c(climavue, airq))
+    ready_hydromet <- which(mapdata$status == "green" & mapdata$type != "WWCS")
+    hold_hydromet  <- which(mapdata$status != "green" & mapdata$type != "WWCS")
+
+    proxy <- leafletProxy("map") %>%
+      clearGroup("Basic") %>%
+      clearGroup("ClimaVue50") %>%
+      clearGroup("AirQ") %>%
+      clearGroup("Other")
+
     if (length(basic) > 0) {
       my.text <- paste0(round(unlist(mapdata[basic, "ta"])), " \n ", "°C")
-      my.text[mapdata$status[basic] != "green"] <- paste0(NA)  
-      proxy <- leafletProxy("map")
+      my.text[mapdata$status[basic] != "green"] <- paste0(NA)
       proxy %>%
         addAwesomeMarkers(
           lng = mapdata$longitude[basic],
@@ -327,8 +268,7 @@ server <- function(input, output, session) {
 
     if (length(climavue) > 0) {
       my.text <- paste0(round(unlist(mapdata[climavue, "ta"])), " \n ", "°C")
-      my.text[mapdata$status[climavue] != "green"] <- paste0(NA)  
-      proxy <- leafletProxy("map")
+      my.text[mapdata$status[climavue] != "green"] <- paste0(NA)
       proxy %>%
         addAwesomeMarkers(
           lng = mapdata$longitude[climavue],
@@ -358,8 +298,7 @@ server <- function(input, output, session) {
 
     if (length(airq) > 0) {
       my.text <- paste0(round(unlist(mapdata[airq, "PM25"])), " \n ", "ppm")
-      my.text[mapdata$status[airq] != "green"] <- paste0(NA)  
-      proxy <- leafletProxy("map")
+      my.text[mapdata$status[airq] != "green"] <- paste0(NA)
       proxy %>%
         addAwesomeMarkers(
           lng = mapdata$longitude[airq],
@@ -367,11 +306,11 @@ server <- function(input, output, session) {
           label = mapdata$siteID[airq],
           layerId = mapdata$siteID[airq],
           icon = awesomeIcons(
-              markerColor = "darkgreen", #mapdata$status[airq],
+              markerColor = "darkgreen",
               iconColor = "white",
               squareMarker = F,
               icon = NULL,
-              text = my.text, 
+              text = my.text,
               fontFamily = "Helvetica"
           ),
           group = "AirQ",
@@ -388,14 +327,20 @@ server <- function(input, output, session) {
     }
 
     if (length(ready_hydromet) > 0) {
-      proxy <- leafletProxy("map") 
       proxy %>%
         addAwesomeMarkers(
           lng = mapdata$longitude[ready_hydromet],
           lat = mapdata$latitude[ready_hydromet],
           label = mapdata$siteID[ready_hydromet],
           layerId = mapdata$siteID[ready_hydromet],
-          icon = icons_hydromet_ready,
+          icon = awesomeIcons(
+            markerColor = "blue",
+            iconColor = "white",
+            squareMarker = F,
+            icon = NULL,
+            text = paste0(round(unlist(mapdata[ready_hydromet, "ta"])), " \n ", "°C"),
+            fontFamily = "Helvetica"
+          ),
           group = "Other",
           labelOptions = labelOptions(
             style = list(
@@ -408,16 +353,22 @@ server <- function(input, output, session) {
           )
         )
     }
-    
+
     if (length(hold_hydromet) > 0) {
-      proxy <- leafletProxy("map") 
       proxy %>%
         addAwesomeMarkers(
           lng = mapdata$longitude[hold_hydromet],
           lat = mapdata$latitude[hold_hydromet],
           label = mapdata$siteID[hold_hydromet],
           layerId = mapdata$siteID[hold_hydromet],
-          icon = icons_hydromet_hold,
+          icon = awesomeIcons(
+            markerColor = "lightblue",
+            iconColor = "white",
+            squareMarker = F,
+            icon = NULL,
+            text = paste0(NA),
+            fontFamily = "Helvetica"
+          ),
           group = "Other",
           labelOptions = labelOptions(
             style = list(
@@ -432,24 +383,25 @@ server <- function(input, output, session) {
     }
   })
 
-    output$status <- renderText({
+  output$status <- renderText({
+    mapdata <- mapdata_rv()
+    total  <- nrow(mapdata %>% dplyr::filter(type == "WWCS"))
+    green  <- nrow(filter(mapdata, status == "green"  & type == "WWCS"))
+    orange <- nrow(filter(mapdata, status == "orange" & type == "WWCS"))
+    red    <- nrow(filter(mapdata, status == "red"    & type == "WWCS"))
     paste0(
-      total,
-      " WWCS stations - ",
-      green,
-      " on time stations - ",
-      orange,
-      " late stations - ",
-      red,
-      " very late stations"
+      total,  " WWCS stations - ",
+      green,  " on time stations - ",
+      orange, " late stations - ",
+      red,    " very late stations"
     )
   })
-  
-  
+
+
   # Create a reactive value to store the selected siteID
-  
+
   observeEvent(input$range, {
-    
+
     station_data$data <- sqlQuery(
       query = paste0(
         "select * from MachineObs where loggerID = \'",
@@ -465,13 +417,14 @@ server <- function(input, output, session) {
       as_tibble() %>%
       dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
                       tz = timezone_stationdata), tz = timezone_country))
-    
+
   })
-  
-  
+
+
   # -------------------------------  Map Marker Click Event
-  
+
   observeEvent(input$map_marker_click, {
+    mapdata <- mapdata_rv()
     selected$id <- input$map_marker_click$id
     selected$name <- mapdata[mapdata$siteID == input$map_marker_click$id, "siteName"]
     selected$logger <- mapdata[mapdata$siteID == input$map_marker_click$id, "loggerID"]
@@ -482,7 +435,7 @@ server <- function(input, output, session) {
     selected$status <- mapdata[mapdata$siteID == input$map_marker_click$id, "status"]
     selected$lastobs <- mapdata[mapdata$siteID == input$map_marker_click$id, "time_lastobs"]
     selected$type <- mapdata[mapdata$siteID == input$map_marker_click$id, "type"]
-    
+
     if (selected$status == "green") {
       selected$title = paste0(selected$id, " (running)")
     } else if (selected$status == "orange") {
@@ -490,8 +443,8 @@ server <- function(input, output, session) {
     } else {
       selected$title = paste0(selected$id, " (down since ", selected$lastobs, " days)")
     }
-    
-    
+
+
     station_data$data <- sqlQuery(
       query = paste0(
         "select * from MachineObs where loggerID = \"",
@@ -503,8 +456,8 @@ server <- function(input, output, session) {
       as_tibble %>%
       dplyr::mutate(timestamp = lubridate::with_tz(as.POSIXct(timestamp,
                      tz = timezone_stationdata), tz = timezone_country))
-      
-    
+
+
     print(station_data$data)
     showModal(modalDialog(style = "text-align:center;", tabsetPanel(
       if (any(!is.na(station_data$data$Charge_Battery))) {
@@ -657,62 +610,65 @@ server <- function(input, output, session) {
       }
     )))
   })
-  
-  
+
+
   # ------------------------------- Value Boxes
-  
+
   output$id <- renderValueBox({
     valueBox(paste0(selected$id), paste('Station'), color = "teal")
   })
-  
+
   output$name <- renderValueBox({
     valueBox(paste0(selected$name), paste('Location Name'), color = "teal")
   })
   output$alt <- renderValueBox({
     valueBox(paste0(selected$altitude, " m"), paste('Altitude'), color = "teal")
   })
-  
+
   output$logger <- renderValueBox({
     valueBox(paste0(selected$logger), paste('loggerID'), color = "teal")
   })
-  
+
   output$sdate <- renderValueBox({
     valueBox(paste0(selected$startdate), paste('Start Date'), color = "teal")
   })
-  
+
   output$lat <- renderValueBox({
     valueBox(paste0(selected$lat), paste('Latitude'), color = "teal")
   })
-  
+
   output$lng <- renderValueBox({
     valueBox(paste0(selected$lon), paste('Longitude'))
   })
-  
-  
+
+
   # ------------------------------- Plot of observations data
-  
+
   output$plot <- renderPlotly({
+    req(!is.null(station_data$data))
     data <- station_data$data
     plot_observations(data, id = selected$id, var = input$var)
   })
-  
+
   output$plot_maintenance <- renderPlotly({
+    req(!is.null(station_data$data))
     data <- station_data$data
     print(data)
     plot_maintenance(data,
                      id = selected$id,
                      desktop = shinybrowser::get_all_info()$device == "Desktop")
   })
-  
+
   output$table <- DT::renderDataTable({
-    table <- station_data$data  %>%
+    req(!is.null(station_data$data))
+    table <- station_data$data %>%
       dplyr::select(c(1:14)) %>%
       dplyr::select(tidyselect::where(~ sum(!is.na(.x)) > 0))
-    
+
     DT::datatable(table)
   })
-  
-  
+
+
   output$downloadData <- downloadHandler(
     filename = function() {
       paste('data-', Sys.Date(), '.csv', sep = '')
@@ -721,19 +677,19 @@ server <- function(input, output, session) {
       write.csv(station_data$data, file)
     }
   )
-  
-  
+
+
   # ------------------------------- Add markers and adjust zoom level depending on device
-  
+
   reactive({
     if (shinybrowser::get_all_info()$device == "Desktop") {
       leafletProxy("map") %>%
         setView(lng = setlon,
                 lat = setlat,
                 zoom = 7) # Zoom level for larger devices
-    } 
+    }
   })
-  
+
 }
 
 # Run the Shiny app
