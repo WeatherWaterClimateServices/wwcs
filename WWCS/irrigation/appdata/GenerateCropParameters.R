@@ -292,6 +292,25 @@ PanicumFrg60d <-
                                 rep(last(RDs), nrow(crop.parameters)-length(RDs))))
 crop.parameters <- full_join(crop.parameters, PanicumFrg60d, by = "Index")
 
+
+## Artemis potato with growth duration of 95 days as a second crop in Uzbekistan
+Ls <- c(ini = 15, dev = 25, mid = 35, late = 20) 
+Kc <- c(ini = 0.45, mid = 1.10, end = 0.75)
+RD <- c(min = 0.10, max = 0.60)
+Kcs <- c(rep(Kc[["ini"]], Ls[["ini"]]),
+         seq(Kc[["ini"]], Kc[["mid"]], length=Ls[["dev"]]),
+         rep(Kc[["mid"]], Ls[["mid"]]),
+         seq(Kc[["mid"]], Kc[["end"]], length=Ls[["late"]]))
+RDs <- c(seq(RD[["min"]], RD[["max"]], length= sum (Ls[["ini"]], Ls[["dev"]], Ls[["mid"]])), rep(RD[["max"]], Ls[["late"]]))
+Artemis95d<-
+  data.frame(Index=1:nrow(crop.parameters),
+             Artemis95d_Kc=c(Kcs,
+                             rep(last(Kcs), nrow(crop.parameters)-length(Kcs))),
+             Artemis95d_RD=c(RDs,
+                             rep(last(RDs), nrow(crop.parameters)-length(RDs))))
+crop.parameters <- full_join(crop.parameters, Artemis95d, by = "Index")
+
+
 ## write out
 write.csv(crop.parameters, "CropParameters.csv", row.names = FALSE)
 Sys.chmod("CropParameters.csv", mode = "0666", use_umask = FALSE)
