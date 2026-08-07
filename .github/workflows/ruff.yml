@@ -18,6 +18,6 @@ jobs:
       with:
         python-version: '3.10'
 
-    - run: pip install ruff
+    - run: pip install ruff==0.15.22
 
     - run: ruff check
