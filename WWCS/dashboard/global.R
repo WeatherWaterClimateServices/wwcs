@@ -9,345 +9,200 @@ library(RMySQL)
 library(lubridate)
 library(shinymanager)
 
-
-# Load the credentials - to come from .Rprofile and config.yaml
-ROOT_DIR <- normalizePath(getwd(), mustWork=TRUE)
+# ---- Auth & credentials ----
+ROOT_DIR <- normalizePath(getwd(), mustWork = TRUE)
 while (!file.exists(file.path(ROOT_DIR, ".git"))) {
   parent <- dirname(ROOT_DIR)
   if (parent == ROOT_DIR) break
   ROOT_DIR <- parent
 }
-source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
+source(file.path(ROOT_DIR, "WWCS/.Rprofile"))
 options(shiny.sanitize.errors = FALSE)
 
-# Load the credentials
 credentials <- data.frame(
-  user = auth_users,
+  user     = auth_users,
   password = servicepass,
-  start = c("2019-04-15"),
+  start    = c("2019-04-15"),
   stringsAsFactors = FALSE
 )
 
-# READ DATA
-# ------------------------------------------------
-
-# check if all the files are available in the appdata folder
-# otherwise assign an empty data frame
-obs.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst")
-if (!file.exists(obs.file)) {
-  obs <- data.frame()
-} else {
-  obs <- fst::read_fst(obs.file)
-}
-
-dmo.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/dmo.fst")
-if (!file.exists(dmo.file)) {
-  dmo <- data.frame()
-} else {
-  dmo <- fst::read_fst(dmo.file) %>%
-    dplyr::select(time, reftime, siteID, ECMWF, q05, q25, q75, q95)
-}
-
-emos.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")
-if (!file.exists(emos.file)) {
-  emos <- data.frame()
-} else {
-  emos <- fst::read_fst(emos.file) %>%
-      dplyr::select(time, reftime, siteID, WWCS, q05, q25, q75, q95, IFS_PR_mea,
-                   Observations)
-}
-
-picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes.fst")
-if (!file.exists(picto.file)) {
-  pictos <- data.frame()
-} else {
-    pictos <- fst::read_fst(picto.file) %>%
-        dplyr::select(reftime, siteID, day, date)
-}
-
-# Read administrative areas
+# ---- Static resources (loaded once at startup) ----
 bd <- sf::st_read(
-  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_",
-    gadm0,
-    "_2.shp"
-  ),
+  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_2.shp"),
   as_tibble = TRUE
 ) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
-
-if (gadm0 == "TJK") {
-  bd$district[14] = "Rudaki2"
-}
+if (gadm0 == "TJK") bd$district[14] <- "Rudaki2"
 
 mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 
-raster0.file <-
-    file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_plot_0.tif")
-if (!file.exists(raster0.file)) {
-  ifsmap <- data.frame()
-} else {
-  ifsmap <- raster::raster(raster0.file)
-}
-
-rastermgd.file <-
-    file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_merged.nc")
-if (!file.exists(rastermgd.file)) {
-  gemos_mea <- data.frame()
-  gemos_std <- data.frame()
-} else {
-  gemos_mea <- raster::brick(rastermgd.file, varname = "IFS_T_mea")
-  gemos_std <- raster::brick(rastermgd.file, varname = "IFS_T_std")
-}
-
-sites <-
-  sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
-  distinct(siteID, .keep_all = TRUE)  %>%
-  dplyr::filter(forecast == 1) %>% 
-  as_tibble() # Do not include soil moisture measurements
-
-deployments <-
-  sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
-  dplyr::distinct(siteID, .keep_all = TRUE)
-
-# Add empty rows in obs with the siteID that are not in the sites dataframe
-sites_not_in_obs <- sites %>%
-  dplyr::filter(!siteID %in% obs$siteID) %>%
-  dplyr::select(siteID, latitude, longitude, altitude)
-
-# add loggerID and start date from deployments to sites_not_in_obs
-sites_not_in_obs <- sites_not_in_obs %>%
-  dplyr::left_join(deployments, by = "siteID")
-
-# Add  rows in obs with sites not in obs and NA values for the rest of the data frame
-
-if (nrow(obs) > 1) {
-  obs <- dplyr::full_join(obs, sites_not_in_obs)
-} else {
-  obs <- sites_not_in_obs
-}
-
-# DEFINE GLOBAL VARIABLES
-# ------------------------------------------------
-
-pool <-
-  pool::dbPool(
-    RMariaDB::MariaDB(),
-    user = 'wwcs',
-    password = db_password,
-    dbname = 'SitesHumans',
-    host = 'localhost'
-  )
-
-default_station <-
-  DBI::dbReadTable(pool, "Sites") %>%
-  dplyr::filter(siteID == dashboard_default_station) %>%
-  dplyr::select(c(siteID, latitude, longitude, type))
-
-# default_station <- c("CLIMDYU001", 38.5606, 68.8008, "WWCS")
+pool <- pool::dbPool(
+  RMariaDB::MariaDB(),
+  user     = "wwcs",
+  password = db_password,
+  dbname   = "SitesHumans",
+  host     = "localhost"
+)
 
 offset_obs_forecast <- 0
-view_obs_default <- 2
+view_obs_default    <- 2
+time_range_raster   <- seq(0, 90, by = 3)
+format              <- "%Y-%m-%d %H"
 
-# SET LANGUAGE TRANSLATION
-# ------------------------------------------------
 json.path <- file.path(ROOT_DIR, "WWCS/dashboard/www/translation.json")
-i18n <-
-  shiny.i18n::Translator$new(translation_json_path = json.path)
-
-i18n$set_translation_language('en')
+i18n      <- shiny.i18n::Translator$new(translation_json_path = json.path)
+i18n$set_translation_language("en")
 shiny.i18n::usei18n(i18n)
 
-# DEFINE DEFAULT TIME RANGES
-# ------------------------------------------------
-
-time_range_f <-
-  list("min" = emos$reftime[1], "max" = tail(emos$reftime, 1))
-
-# Check if both min and max are NULL
-if (is.null(time_range_f$min) && is.null(time_range_f$max)) {
-  current_date <- Sys.Date()
-  time_range_f <- list("min" = current_date, "max" = current_date)
-}
-
-time_range_o <-
-  list("min" = as.Date(Sys.Date() - lubridate::days(60)),
-       "max" = Sys.Date())
-
-start_date_f <-
-  as.Date(Sys.Date() - lubridate::days(offset_obs_forecast))
-start_date_o <-
-  as.Date(Sys.Date() - lubridate::days(view_obs_default))
-
-time_range_raster <- seq(0, 90, by = 3)
-format <- "%Y-%m-%d %H"
-
-# PREPARE STATION DATA
-# ------------------------------------------------
-
-if ("Temperature" %in% colnames(obs)) {
-  # If "Temperature" exists, proceed as planned
-  last_obs <- obs %>%
-    dplyr::group_by(siteID) %>%
-    dplyr::filter(!is.na(Temperature)) %>%
-    dplyr::summarize(last_obs = dplyr::last(Temperature), .groups = "drop")
-  
-  station_down <- obs %>%
-    dplyr::group_by(siteID) %>%
-    dplyr::arrange(time) %>%
-    dplyr::summarize(last_time = dplyr::last(time),
-                     last_obs = dplyr::last(Temperature)) %>%
-    dplyr::filter(last_time < (as.Date(Sys.Date())  - lubridate::days(1)) |
-                    is.na(last_obs))
-} else {
-  # If "Temperature" doesn't exist, return NA for each siteID
-  last_obs <- obs %>%
-    dplyr::distinct(siteID) %>%
-    dplyr::mutate(last_obs = NA)
-  
-  station_down <- last_obs %>%
-    dplyr::mutate(last_time = as.Date(Sys.Date()) - lubridate::days(1))
-  
-}
-
-if ("siteID" %in% colnames(emos)) {
-  station_emos <- dplyr::distinct(emos, siteID)
-} else {
-  station_emos <- data.frame()
-}
-
-if ("type" %in% colnames(obs)) {
-  station_data <- obs %>%
-    dplyr::group_by(siteID) %>%
-    dplyr::filter(dplyr::row_number() == dplyr::n()) %>%
-    dplyr::mutate(type = ifelse(is.na(type), "WWCS", type))
-} else {
-  station_data <- obs %>%
-    dplyr::group_by(siteID) %>%
-    dplyr::filter(dplyr::row_number() == dplyr::n())
-}
-
-rd <- which(station_data$siteID %in% station_emos$siteID)
-hd <-
-  which(
-    !station_data$siteID %in% station_emos$siteID &
-      !station_data$siteID %in% station_down$siteID
-  )
-dw <- which(station_data$siteID %in% station_down$siteID)
-
-tjhm_hd <- which(station_data$type[hd] == "TJHM")
-tjhm_rd <- which(station_data$type[rd] == "TJHM")
-
-icons_ready <- awesomeIcons(
-  markerColor = "red",
-  iconColor = "white",
-  squareMarker = F,
-  fontFamily = "Helvetica"
-)
-
-icons_hold <- awesomeIcons(
-  markerColor = "lightgray",
-  iconColor = "black",
-  squareMarker = F,
-  fontFamily = "Helvetica"
-)
-
-icons_down <- awesomeIcons(
-  icon = "bug",
-  library = "fa",
-  markerColor = "gray",
-  iconColor = "#FFFFFF"
-)
-
-icon_sel <- makeAwesomeIcon(#icon = "thermometer",
-  iconColor = "#FFFFFF", library = "fa")
-
-# GLOBAL PLOTTING VARIABLES
-# ------------------------------------------------
-
 raster_colors <- colorBin(rev(RColorBrewer::brewer.pal(11, "RdBu")), c(-35, 35), bins = 11)
+pdf(NULL)
 
-pdf(NULL) # Avoid creation of Rplots.pdf when converting ggplot to plotly
+colors <- setNames(
+  c("#c92118", "lightblue", "cadetblue", "orange", "darkgreen", "purple", "darkblue", "darkblue",
+    "#c92118", "lightblue", "cadetblue", "orange", "darkgreen", "purple", "darkblue", "darkblue"),
+  c("Temperature", "RH", "Pressure", "Solar", "Signal", "Battery", "Precipitation", "Evapotranspiration",
+    "Temperature_mean", "RH_mean", "Pressure_mean", "Solar_mean", "Signal_mean", "Battery_mean",
+    "Precipitation_mean", "Evapotranspiration_mean")
+)
 
-colors <-
-  setNames(
-    c(
-      "#c92118",
-      "lightblue",
-      "cadetblue" ,
-      "orange",
-      "darkgreen",
-      "purple",
-      "darkblue",
-      "darkblue",
-      "#c92118",
-      "lightblue",
-      "cadetblue" ,
-      "orange",
-      "darkgreen",
-      "purple",
-      "darkblue",
-      "darkblue"
-    ),
-    c(
-      "Temperature",
-      "RH",
-      "Pressure",
-      "Solar",
-      "Signal",
-      "Battery",
-      "Precipitation",
-      "Evapotranspiration",
-      "Temperature_mean",
-      "RH_mean",
-      "Pressure_mean",
-      "Solar_mean",
-      "Signal_mean",
-      "Battery_mean",
-      "Precipitation_mean",
-      "Evapotranspiration_mean"
-    )
-  )
-
-
-colors_marker <-
-  setNames(
-    c(
-      "red",
-      "blue",
-      "cadetblue" ,
-      "orange",
-      "darkgreen",
-      "purple",
-      "darkblue",
-      "darkblue"
-    ),
-    c(
-      "Temperature",
-      "RH",
-      "Pressure",
-      "Solar",
-      "Signal",
-      "Battery",
-      "Precipitation",
-      "Evapotranspiration"
-    )
-  )
+colors_marker <- setNames(
+  c("red", "blue", "cadetblue", "orange", "darkgreen", "purple", "darkblue", "darkblue"),
+  c("Temperature", "RH", "Pressure", "Solar", "Signal", "Battery", "Precipitation", "Evapotranspiration")
+)
 
 labels <- setNames(
   c("°C", "%", "mb", "mV", "db", "mV", "mm", "mm"),
-  c(
-    "Temperature",
-    "RH",
-    "Pressure",
-    "Solar",
-    "Signal",
-    "Battery",
-    "Precipitation",
-    "Evapotranspiration"
-  )
+  c("Temperature", "RH", "Pressure", "Solar", "Signal", "Battery", "Precipitation", "Evapotranspiration")
 )
 
-font <- list(size = 15, color = "white")
-
+font  <- list(size = 15, color = "white")
 label <- list(bordercolor = "transparent", font = font)
+
+icons_ready <- awesomeIcons(markerColor = "red",       iconColor = "white", squareMarker = FALSE, fontFamily = "Helvetica")
+icons_hold  <- awesomeIcons(markerColor = "lightgray", iconColor = "black", squareMarker = FALSE, fontFamily = "Helvetica")
+icons_down  <- awesomeIcons(icon = "bug", library = "fa", markerColor = "gray", iconColor = "#FFFFFF")
+icon_sel    <- makeAwesomeIcon(iconColor = "#FFFFFF", library = "fa")
+
+# ---- File paths ----
+.obs_file       <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst")
+.dmo_file       <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/dmo.fst")
+.emos_file      <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")
+.picto_file     <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes.fst")
+.raster0_file   <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_plot_0.tif")
+.rastermgd_file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_merged.nc")
+.daily_files    <- c(.dmo_file, .emos_file, .picto_file, .raster0_file, .rastermgd_file)
+
+# ---- sql_rv: SQL tables — reload every hour (no mtime for DB) ----
+load_sql <- function() {
+  sites <- sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
+    dplyr::distinct(siteID, .keep_all = TRUE) %>%
+    dplyr::filter(forecast == 1) %>%
+    as_tibble()
+
+  deployments <- sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
+    dplyr::distinct(siteID, .keep_all = TRUE)
+
+  default_station <- DBI::dbReadTable(pool, "Sites") %>%
+    dplyr::filter(siteID == dashboard_default_station) %>%
+    dplyr::select(c(siteID, latitude, longitude, type))
+
+  list(sites = sites, deployments = deployments, default_station = default_station)
+}
+
+sql_rv <- reactiveVal(load_sql())
+
+sql_refresh <- function() {
+  sql_rv(load_sql())
+  later::later(sql_refresh, 3600)
+}
+later::later(sql_refresh, 3600)
+
+# ---- obs_rv: obs.fst — check every 10 min, reload on mtime change ----
+.obs_mtime <- if (file.exists(.obs_file)) file.mtime(.obs_file) else as.POSIXct(NA)
+
+load_obs <- function() {
+  if (!file.exists(.obs_file)) return(data.frame())
+  fst::read_fst(.obs_file)
+}
+
+obs_rv <- reactiveVal(load_obs())
+
+obs_refresh <- function() {
+  current <- if (file.exists(.obs_file)) file.mtime(.obs_file) else as.POSIXct(NA)
+  if (!is.na(current) && (is.na(.obs_mtime) || current > .obs_mtime)) {
+    obs_rv(load_obs())
+    .obs_mtime <<- current
+  }
+  later::later(obs_refresh, 600)
+}
+later::later(obs_refresh, 600)
+
+# ---- daily_rv: dmo/emos/pictos/rasters — check every hour, reload on mtime change ----
+.daily_mtime <- {
+  mt <- file.mtime(.daily_files[file.exists(.daily_files)])
+  if (length(mt) == 0) as.POSIXct(NA) else max(mt)
+}
+
+load_daily <- function() {
+  dmo <- if (!file.exists(.dmo_file)) data.frame() else {
+    fst::read_fst(.dmo_file) %>%
+      dplyr::select(time, reftime, siteID, ECMWF, q05, q25, q75, q95)
+  }
+
+  emos <- if (!file.exists(.emos_file)) data.frame() else {
+    fst::read_fst(.emos_file) %>%
+      dplyr::select(time, reftime, siteID, WWCS, q05, q25, q75, q95, IFS_PR_mea, Observations)
+  }
+
+  pictos <- if (!file.exists(.picto_file)) data.frame() else {
+    fst::read_fst(.picto_file) %>%
+      dplyr::select(reftime, siteID, day, date)
+  }
+
+  ifsmap <- if (!file.exists(.raster0_file)) data.frame() else raster::raster(.raster0_file)
+
+  if (!file.exists(.rastermgd_file)) {
+    gemos_mea <- data.frame()
+    gemos_std <- data.frame()
+  } else {
+    gemos_mea <- raster::brick(.rastermgd_file, varname = "IFS_T_mea")
+    gemos_std <- raster::brick(.rastermgd_file, varname = "IFS_T_std")
+  }
+
+  time_range_f <- list("min" = emos$reftime[1], "max" = tail(emos$reftime, 1))
+  if (is.null(time_range_f$min) && is.null(time_range_f$max)) {
+    time_range_f <- list("min" = Sys.Date(), "max" = Sys.Date())
+  }
+
+  list(
+    dmo = dmo, emos = emos, pictos = pictos,
+    ifsmap = ifsmap, gemos_mea = gemos_mea, gemos_std = gemos_std,
+    time_range_f = time_range_f
+  )
+}
+
+daily_rv <- reactiveVal(load_daily())
+
+daily_refresh <- function() {
+  current <- {
+    mt <- file.mtime(.daily_files[file.exists(.daily_files)])
+    if (length(mt) == 0) as.POSIXct(NA) else max(mt)
+  }
+  if (!is.na(current) && (is.na(.daily_mtime) || current > .daily_mtime)) {
+    daily_rv(load_daily())
+    .daily_mtime <<- current
+  }
+  later::later(daily_refresh, 3600)
+}
+later::later(daily_refresh, 3600)
+
+# ---- Static time ranges ----
+# time_range_f is inside daily_rv(); expose a global copy for ui.R which reads it at parse time
+time_range_f <- isolate(daily_rv())$time_range_f
+time_range_o <- list(
+  "min" = as.Date(Sys.Date() - lubridate::days(60)),
+  "max" = Sys.Date()
+)
+start_date_f <- as.Date(Sys.Date() - lubridate::days(offset_obs_forecast))
+start_date_o <- as.Date(Sys.Date() - lubridate::days(view_obs_default))
