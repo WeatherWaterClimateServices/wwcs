@@ -5,7 +5,7 @@ Description=Irrigation Bot
 User=wwcs
 Group=wwcs
 WorkingDirectory=/home/wwcs/wwcs/WWCS/irrigation/telegramBot
-ExecStart=/home/wwcs/venv/bin/python bot.py
+ExecStart=/home/wwcs/wwcs/WWCS/irrigation/telegramBot/venv/bin/python bot.py
 Restart=always
 
 [Install]
