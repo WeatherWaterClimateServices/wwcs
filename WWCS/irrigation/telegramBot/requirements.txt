@@ -1,6 +1,0 @@
-aiohttp
-APScheduler
-asyncmy
-databases
-pyTelegramBotAPI
-python-dotenv
