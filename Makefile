@@ -1,8 +1,8 @@
 install:
-	python3 -m venv venv
-	./venv/bin/pip install -U pip
-	./venv/bin/pip install -r requirements.txt
+	python3 -m venv ../venv
+	../venv/bin/pip install -U pip
+	../venv/bin/pip install -r requirements.txt
 
 update:
-	./venv/bin/pip install -U pip
-	./venv/bin/pip install -r requirements.txt --upgrade --upgrade-strategy=eager
+	../venv/bin/pip install -U pip
+	../venv/bin/pip install -r requirements.txt --upgrade --upgrade-strategy=eager
