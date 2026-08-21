@@ -1,14 +1,3 @@
-# Virtual environment
-The telegram bot runs from its own virtual environment. To set it up, 
-```
-sudo su - wwcs
-cd /home/wwcs/wwcs/WWCS/irrigation/telegramBot/
-python3 -m venv venv
-source venv/bin/activate
-pip install -U pip
-pip install -r requirements.txt
-```
-
 # Environment variables
 
 A deployment of the irrigation bot is configured with a number of environemnet variables:
