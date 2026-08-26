@@ -1,5 +1,3 @@
-rm(list = ls())
-
 # Required Libraries
 # ------------------------------------------------
 
@@ -14,14 +12,9 @@ numOfCores <- detectCores()
 # Register all the cores
 registerDoParallel(numOfCores)
 
-# SET GLOBAL PARAMETERS
+# SET GLOBAL PARAMETERS - coming from .Rprofile and config.yaml
 # ------------------------------------------------
-
-setwd("/srv/shiny-server/dashboard/service")
-
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
 maxlead <- forecast_days * 24
-myworries <- "all"
 
 divide_maxlead <- function(x) {
   x / 10
@@ -37,17 +30,12 @@ dates <-
     by = 'days'
   ))
 
-ifs_dir <- "/srv/shiny-server/dashboard/ifsdata/"
-# ifs_time <- c(0, 3, 6, 9, 12, 15, 18, 21) BORIS here
+ifs_dir <- file.path(ROOT_DIR, "WWCS/dashboard/ifsdata/")
+## ifs_time <- c(0, 3, 6, 9, 12, 15, 18, 21) BORIS here
 
 # Conversion pictocodes to filename
-
-picto_lookup <-
-  readr::read_delim(
-    "/srv/shiny-server/dashboard/www/weather_icons/look_up_table.csv",
-    show_col_types = FALSE
-  )
-
+pictolookup_file <- file.path(ROOT_DIR, "WWCS/dashboard/www/weather_icons/look_up_table.csv")
+picto_lookup <- readr::read_delim(pictolookup_file, show_col_types = FALSE)
 
 # Parameters for Opacity Calculations
 aL = 1
@@ -194,11 +182,10 @@ pos4_temp <- function(POS4) {
 
 # READ STATION DATA FROM get_wwcs.R
 # ------------------------------------------------
+obs <- fst::read_fst(file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst"))
 
-obs <-
-  fst::read_fst("/srv/shiny-server/dashboard/appdata/obs.fst")
-
-emos <- fst::read_fst("/srv/shiny-server/dashboard/appdata/emos.fst") %>%
+emos.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")
+emos <- fst::read_fst(emos.file) %>%
   dplyr::select(WWCS, reftime, time, siteID, lead) %>%
   dplyr::as_tibble()
 
@@ -439,7 +426,8 @@ pictocodes_daynight <- pictocodes_6hourly %>%
   dplyr::inner_join(., picto_lookup)
 
 
-fst::write_fst(pictocodes, path = "/srv/shiny-server/dashboard/appdata/pictocodes.fst", compress = 0)
-fst::write_fst(pictocodes_daynight, path = "/srv/shiny-server/dashboard/appdata/pictocodes_daynight.fst", compress = 0)
-fst::write_fst(ifsprecip, path = "/srv/shiny-server/dashboard/appdata/ifsprecip.fst", compress = 0)
+setwd(file.path(ROOT_DIR, "WWCS/dashboard/appdata"))
+fst::write_fst(pictocodes, path = "pictocodes.fst", compress = 0)
+fst::write_fst(pictocodes_daynight, path = "pictocodes_daynight.fst", compress = 0)
+fst::write_fst(ifsprecip, path = "ifsprecip.fst", compress = 0)
 
