@@ -1,4 +1,4 @@
-plot_meteogram_raster <- function(xy){
+plot_meteogram_raster <- function(xy, gemos_mea, gemos_std){
 
     IFS_T_mea <- as.vector(raster::extract(gemos_mea, xy))
     IFS_T_std <- as.vector(raster::extract(gemos_std, xy))
