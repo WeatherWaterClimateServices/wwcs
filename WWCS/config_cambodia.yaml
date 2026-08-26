@@ -19,7 +19,7 @@ setlon: 105
 
 # Define default station name                                                      
 
-dashboard_default_station: "CAMBO01"
+dashboard_default_station: "CAMBO001"
 
 # Define GADM country code (https://gadm.org/)                                     
 

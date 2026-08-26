@@ -54,7 +54,7 @@ warning_default_station: "CACH_Narpay01"
 
 # Irrigation parameters
 
-irrigation_default_station: "CACH_Samarkand02" # Default station for irrigation
+irrigation_default_station: "CACH_Samarkand02_T2" # Default station for irrigation
 
 # Planting parameters
 
