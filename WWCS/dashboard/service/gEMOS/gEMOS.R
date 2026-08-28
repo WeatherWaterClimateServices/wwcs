@@ -25,12 +25,12 @@ station_id <- unique(obs$siteID)
 rm(obs)
 # READ GRID AND PREDICTOR DATA
 # ------------------------------------------------
-ppg.file <- file.path(ROOT_DIR, "WWCS/ews/service/gEMOS/preproc_grid.rds")
+ppg.file <- file.path(ROOT_DIR, "WWCS/dashboard/service/gEMOS/preproc_grid.rds")
 preproc_grid <-  readRDS(ppg.file) %>%
   dplyr::select(-c(poi)) %>%
   dplyr::distinct()
 
-preproc_train <- readRDS(file.path(ROOT_DIR, "WWCS/ews/service/gEMOS/preproc_train.rds"))
+preproc_train <- readRDS(file.path(ROOT_DIR, "WWCS/dashboard/service/gEMOS/preproc_train.rds"))
 
 poi <- preproc_grid %>% 
        dplyr::select(lon, lat)
@@ -75,7 +75,7 @@ file <- paste0(ifs_dir, "tj_area_", ymd(curr_date), ".nc")
 
 # Check if new forecast data is available already
 if (file.exists(file)) {
-    system(paste0("cdo remapbil,",ROOT_DIR,"/WWCS/ews/service/gEMOS/gemos_grid.txt ",
+    system(paste0("cdo remapbil,",ROOT_DIR,"/WWCS/dashboard/service/gEMOS/gemos_grid.txt ",
                   file, " ", filermp))
   
   for (i in 1:length(ifs_lead)) {
