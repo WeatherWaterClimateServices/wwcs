@@ -67,6 +67,7 @@ class Client:
             "models": "ecmwf_ifs025_ensemble_mean",
             "start_date": start_date,
             "end_date": end_date,
+            'elevation': 'nan',
             **self._auth(),
         }
         resp = self.session.get(self._url(), params=params)
@@ -86,6 +87,7 @@ class Client:
             "models": "ecmwf_ifs025_ensemble",
             "start_date": start_date,
             "end_date": end_date,
+            'elevation': 'nan',
             **self._auth(),
         }
         resp = self.session.get(self._url(), params=params)
