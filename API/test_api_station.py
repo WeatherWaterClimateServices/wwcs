@@ -306,7 +306,7 @@ def test_insert_fail(logger):
         assert comment == 'Incorrect JSON body'
 
 
-def test_insert_invalid_json_body(logger):
+def test_insert_empty_json_body(logger):
     with get_cursor() as cursor:
         n = count(cursor, 'Machines.MachineObs')
         m = count(cursor, 'Machines.MachineObsRejected')
@@ -317,11 +317,27 @@ def test_insert_invalid_json_body(logger):
     assert response.status_code == 200
     with get_cursor() as cursor:
         assert count(cursor, 'Machines.MachineObs') == n
+        # Empty bodies from old firmware are intentionally not stored, to avoid
+        # filling the rejected table with useless rows.
+        assert count(cursor, 'Machines.MachineObsRejected') == m
+
+
+def test_insert_invalid_json_body(logger):
+    with get_cursor() as cursor:
+        n = count(cursor, 'Machines.MachineObs')
+        m = count(cursor, 'Machines.MachineObsRejected')
+
+    response = httpx.post(
+        f'{URL}/insert', content=b'not json', headers={'Content-Type': 'application/json'}
+    )
+    assert response.status_code == 200
+    with get_cursor() as cursor:
+        assert count(cursor, 'Machines.MachineObs') == n
         assert count(cursor, 'Machines.MachineObsRejected') == m + 1
 
         domain, received, data, comment = get_last_reject(cursor)
         assert comment == 'Invalid JSON body'
-        assert data == ''
+        assert data == 'not json'
 
 
 @pytest.mark.parametrize("timestamp", [
