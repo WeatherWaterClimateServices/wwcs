@@ -892,6 +892,14 @@ bool send_data_to_server(const char* httpRequestData){
   const char* contentType = "application/json";
   bool success = false;
 
+  // Defensive: never POST an empty body. If serialization failed or the
+  // record buffer is empty, log it and return true so the record is discarded
+  // instead of being stored on flash and retried with the same empty payload.
+  if (httpRequestData == nullptr || strlen(httpRequestData) == 0) {
+    Serial.println("send_data_to_server: empty payload, discarding record.");
+    return true;
+  }
+
   https.connectionKeepAlive(); // L200 https://github.com/vshymanskyy/TinyGSM/blob/master/examples/HttpsClient/HttpsClient.ino
 
   Serial.printf("Trying post request -> %s\n", httpRequestData);
