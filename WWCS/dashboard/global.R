@@ -170,9 +170,13 @@ load_daily <- function() {
     gemos_std <- raster::brick(.rastermgd_file, varname = "IFS_T_std")
   }
 
-  time_range_f <- list("min" = emos$reftime[1], "max" = tail(emos$reftime, 1))
-  if (is.null(time_range_f$min) && is.null(time_range_f$max)) {
-    time_range_f <- list("min" = Sys.Date(), "max" = Sys.Date())
+  # range() instead of first/last element: does not assume the fst is sorted by
+  # reftime, and collapses the empty-file fallback into one branch.
+  time_range_f <- if (is.null(emos$reftime) || length(stats::na.omit(emos$reftime)) == 0) {
+    list("min" = Sys.Date(), "max" = Sys.Date())
+  } else {
+    rt <- range(emos$reftime, na.rm = TRUE)
+    list("min" = rt[1], "max" = rt[2])
   }
 
   list(
@@ -197,12 +201,26 @@ daily_refresh <- function() {
 }
 later::later(daily_refresh, 3600)
 
-# ---- Static time ranges ----
-# time_range_f is inside daily_rv(); expose a global copy for ui.R which reads it at parse time
-time_range_f <- isolate(daily_rv())$time_range_f
-time_range_o <- list(
-  "min" = as.Date(Sys.Date() - lubridate::days(60)),
-  "max" = Sys.Date()
-)
-start_date_f <- as.Date(Sys.Date() - lubridate::days(offset_obs_forecast))
-start_date_o <- as.Date(Sys.Date() - lubridate::days(view_obs_default))
+# ---- ui_context(): per-request snapshot of everything time-dependent ----
+ui_context <- function() {
+  today <- Sys.Date()
+  tr_f  <- isolate(daily_rv())$time_range_f
+
+  # Single base for the period_raster slider. Previously min/max/value mixed
+  # paste(x, "00:00:00") with arithmetic on x itself, which only agreed when
+  # reftime happened to be exactly midnight.
+  f_min_date  <- as.Date(tr_f$min)
+  f_max_date  <- as.Date(tr_f$max)
+  raster_base <- as.POSIXct(paste(f_max_date, "00:00:00"), tz = timezone_country)
+
+  list(
+    today        = today,
+    time_range_f = tr_f,
+    f_min_date   = f_min_date,
+    f_max_date   = f_max_date,
+    raster_base  = raster_base,
+    time_range_o = list("min" = today - 60, "max" = today),
+    start_date_f = today - offset_obs_forecast,
+    start_date_o = today - view_obs_default
+  )
+}

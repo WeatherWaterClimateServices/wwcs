@@ -25,83 +25,82 @@ tags$li(
 ))
 
 # ------------------------------- Dashboard Sidebar
+# ctx is the list returned by ui_context() (global.R), rebuilt on every page
+# request. 
 
-sidebar <- dashboardSidebar(
-  width = 350,
-  collapsed = TRUE,
-  sidebarMenu(),
-  sliderInput(
-    "period_f",
-    i18n$t("Forecast Time"),
-    min = as.Date(time_range_f$min),
-    max = as.Date(time_range_f$max),
-    value = start_date_f,
-    timeFormat = "%Y-%m-%d"
-  ),
-  sliderInput(
-    "period_o",
-    i18n$t("Observation Time"),
-    min = as.Date(time_range_o$min),
-    max = as.Date(time_range_o$max),
-    value = as.Date(c(start_date_o)),
-    timeFormat = "%Y-%m-%d"
-  ),
-  checkboxInput(
-    "ecmwf",
-    label = i18n$t("Show raw forecast"),
-    value = FALSE
-  ),
-  checkboxInput(
-    "admin",
-    label = i18n$t("Show administrative areas"),
-    value = FALSE
-  ),
-  checkboxInput(
-    "raster",
-    label = i18n$t("Show map forecast"),
-    value = TRUE
-  ),
-  sliderInput(
-    "period_raster",
-    i18n$t("Map Forecast Time"),
-    min = as.POSIXct(paste(time_range_f$max, "00:00:00"), tz = timezone_country),
-    max = as.POSIXct(paste(
-      time_range_f$max + lubridate::hours(tail(time_range_raster, 1))
-    ), tz = timezone_country),
-    value = as.POSIXct(paste(
-      time_range_f$max + lubridate::hours(time_range_raster[1])
-    ), tz = timezone_country),
-    timeFormat = "%Y-%m-%d %H-%M-%S",
-    timezone = timezone_country,
-    step = 21600 / 2,
-  ),
-  br(),
-  br(),
-  div(
-    style = "padding-left: 10px; padding-right: 10px;",
-    h4("Development Information"),
-    # Bullet points for additional information
-    tags$ul(
-      tags$li("Service development and operation:", tags$div(style = "flex: 0; display: flex; align-items: center;", 
-                                                                      tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
-                                                                             img(src = "logo_meteoswiss.png", height = "30px")))),
-      tags$li("Station management:", 
-              tags$a(style = "flex: 0; display: flex; align-items: center;", 
-                     # Optional Link to hydromet: e.g. href = "https://www.meteo.tj", target = "_blank",  # Opens link in a new tab
-                     img(src = "logo_hydromet.png", height = "30px")),
-              tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
-                                             img(src = "logo_caritas.png", height = "10px"))),
-      tags$li("Funding:", tags$div(style = "flex: 0; display: flex; align-items: center;",
-                                   tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
-                                          img(src = "logo_caritas.png", height = "10px")),
-                                   tags$a(href = "https://www.eda.admin.ch/deza/de/home.html", target = "_blank",  # Opens link in a new tab
-                                          img(src = "logo_sdc.png", height = "80px"))))
+sidebar <- function(ctx) {
+  dashboardSidebar(
+    width = 350,
+    collapsed = TRUE,
+    sidebarMenu(),
+    sliderInput(
+      "period_f",
+      i18n$t("Forecast Time"),
+      min = ctx$f_min_date,
+      max = ctx$f_max_date,
+      value = ctx$start_date_f,
+      timeFormat = "%Y-%m-%d"
+    ),
+    sliderInput(
+      "period_o",
+      i18n$t("Observation Time"),
+      min = as.Date(ctx$time_range_o$min),
+      max = as.Date(ctx$time_range_o$max),
+      value = as.Date(ctx$start_date_o),
+      timeFormat = "%Y-%m-%d"
+    ),
+    checkboxInput(
+      "ecmwf",
+      label = i18n$t("Show raw forecast"),
+      value = FALSE
+    ),
+    checkboxInput(
+      "admin",
+      label = i18n$t("Show administrative areas"),
+      value = FALSE
+    ),
+    checkboxInput(
+      "raster",
+      label = i18n$t("Show map forecast"),
+      value = TRUE
+    ),
+    sliderInput(
+      "period_raster",
+      i18n$t("Map Forecast Time"),
+      min = ctx$raster_base,
+      max = ctx$raster_base + lubridate::hours(tail(time_range_raster, 1)),
+      value = ctx$raster_base + lubridate::hours(time_range_raster[1]),
+      timeFormat = "%Y-%m-%d %H-%M-%S",
+      timezone = timezone_country,
+      step = 21600 / 2
+    ),
+    br(),
+    br(),
+    div(
+      style = "padding-left: 10px; padding-right: 10px;",
+      h4("Development Information"),
+      # Bullet points for additional information
+      tags$ul(
+        tags$li("Service development and operation:", tags$div(style = "flex: 0; display: flex; align-items: center;",
+                                                               tags$a(href = "https://www.meteoswiss.ch", target = "_blank",  # Opens link in a new tab
+                                                                      img(src = "logo_meteoswiss.png", height = "30px")))),
+        tags$li("Station management:",
+                tags$a(style = "flex: 0; display: flex; align-items: center;",
+                       # Optional Link to hydromet: e.g. href = "https://www.meteo.tj", target = "_blank",  # Opens link in a new tab
+                       img(src = "logo_hydromet.png", height = "30px")),
+                tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                       img(src = "logo_caritas.png", height = "10px"))),
+        tags$li("Funding:", tags$div(style = "flex: 0; display: flex; align-items: center;",
+                                     tags$a(href = "https://www.caritas.ch", target = "_blank",  # Opens link in a new tab
+                                            img(src = "logo_caritas.png", height = "10px")),
+                                     tags$a(href = "https://www.eda.admin.ch/deza/de/home.html", target = "_blank",  # Opens link in a new tab
+                                            img(src = "logo_sdc.png", height = "80px"))))
+      )
     )
   )
-)
+}
 
 # ------------------------------- Dashboard Body
-
 body <- dashboardBody(
   shinybrowser::detect(),
   shiny.i18n::usei18n(i18n),
@@ -151,7 +150,7 @@ text - align:center
             "Solar" = "Solar",
             "Signal" = "Signal",
             "Battery" = "Battery",
-            #"Precipitation" = "Precipitation",
+            "Precipitation" = "Precipitation",
             "Evapotranspiration" = "Evapotranspiration"
           ),
           selected = "Temperature"
@@ -172,25 +171,37 @@ text - align:center
   )
 )
 
-ui <- tagList(
-  # Add favicon
-  tags$head(
-    tags$link(rel = "shortcut icon", href = "dashboard_favicon.ico")
-  ),
-  
-  # Dashboard page layout
-  dashboardPage(
-    skin = "blue",
-    title = "WWCS - Dashboard",
-    header,
-    sidebar,
-    body
-  )
-)
+# ------------------------------- Page assembly
+build_page <- function(request) {
+  ctx <- ui_context()   # one snapshot per page request
 
-# Wrap your UI with secure_app
-if ("dashboard" %in% use_pass){
-  ui <- secure_app(ui)
-} else {
-  ui
+  tagList(
+    # Add favicon
+    tags$head(
+      tags$link(rel = "shortcut icon", href = "dashboard_favicon.ico")
+    ),
+
+    # Dashboard page layout
+    dashboardPage(
+      skin = "blue",
+      title = "WWCS - Dashboard",
+      header,
+      sidebar(ctx),
+      body
+    )
+  )
+}
+
+## secure_app() is called on concrete tags rather than on the function, which
+# works on every shinymanager version. Newer versions return function(request)
+# from secure_app(), older ones return tags, so unwrap whichever comes back.
+ui <- function(request) {
+  page <- build_page(request)
+
+  if (!("dashboard" %in% use_pass)) {
+    return(page)
+  }
+
+  secured <- secure_app(page)
+  if (is.function(secured)) secured(request) else secured
 }
