@@ -159,13 +159,13 @@ def get_domain(request):
     host = request.client.host  # Client's hostname or IP address
     try:
         hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(host)
-    except OSError:
+        return hostname
+    except (OSError, socket.herror):
         # In the server ip is ::ffff:127.0.0.1 and it fails with
-        # OSError: [Errno 97] Address family not supported by protocol
-        host = host.rsplit(':', 1)[-1]
-        hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(host)
-
-    return hostname
+        # OSError: [Errno 97] Address family not supported by protocol.
+        # With X-Forwarded-For the host is a real station IP and reverse
+        # DNS may also fail; fall back to the IP (strip IPv6 scope suffix).
+        return host.rsplit(':', 1)[-1]
 
 async def insert(session: AsyncSession, model, **kwargs):
     """Insert a new record with the given values.
