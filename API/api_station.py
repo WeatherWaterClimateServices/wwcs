@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import json
+import logging
 import os
 import socket
 import time
@@ -44,7 +45,21 @@ async def addData(request: Request):
     domain = get_domain(request)
 
     # json parsing
-    data = await request.json()
+    body = await request.body()
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        body_preview = body.decode("utf-8", errors="replace")[:2000]
+        logging.error(
+            "Invalid JSON body from %s at /insert: %r",
+            request.client.host if request.client else "unknown",
+            body_preview,
+        )
+        async with AsyncSession(engine) as session:
+            return await submitRejectedJSON(
+                session, "Invalid JSON body", body_preview, domain
+            )
+
     myjson = json.dumps(data)
     data = data.copy()
 
