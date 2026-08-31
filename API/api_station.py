@@ -121,6 +121,12 @@ async def addData(request: Request):
         try:
             await insert(session, MachineObs, received=sa.func.now(), **data)
 
+            logging.info(
+                "insert ok from %s loggerID %s",
+                request.headers.get("x-forwarded-for", request.client.host),
+                loggerID,
+            )
+
             # TODO Change to 201 once the stations are updated
             return "New record inserted"
         except sa.exc.IntegrityError as exc:
