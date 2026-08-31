@@ -859,6 +859,7 @@ bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_r
       if (modem.gprsConnect(APN, GPRS_USER, GPRS_PASS)){    // 2nd attempt
         return true;
       }
+      return false;
     } else {
       return false;
     }                                              // APN/GPRS connect did not work
