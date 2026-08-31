@@ -124,27 +124,6 @@ for (i in station_id) {
       dplyr::mutate(day = day(time)) %>%
       dplyr::left_join(dtr, by = c("reftime", "day")) %>%
       dplyr::select(-c(day))
-    
-    ## Add precipitation from extended parameter file BORIS here - commenting this all out
-    ## ----------------------------------------------    
-    ## if (file.exists(file_ext)) {
-    ##   nc <- tidync(file_ext)
-    ##   ifs_pr <- nc %>% 
-    ##     tidync::hyper_tibble() %>%
-    ##     dplyr::mutate(time = as.numeric(time)) %>%
-    ##     dplyr::rename(lead = time) %>%
-    ##     dplyr::mutate(
-    ##              reftime = lubridate::with_tz(as.POSIXct(reftime, tz = "UTC"), tz = timezone_country),
-    ##              time = as.POSIXct(reftime + as.difftime(as.numeric(lead), units = 'hours'),
-    ##                                tz = timezone_country),
-    ##              siteID = i,
-    ##              IFS_PR_mea = tp * 1000
-    ##            )
-      
-      
-    ##   ifs <- ifs %>%
-    ##     dplyr::left_join(ifs_pr, by = c("time", "siteID", "reftime", "lead"))
-    ## }
   }
   
   ## MERGE STATION AND IFS
@@ -152,7 +131,7 @@ for (i in station_id) {
     dplyr::left_join(station, by = c("time", "siteID")) %>%
     dplyr::bind_rows(dmo) %>%
     dplyr::arrange(reftime, lead, time)
-}
+} ## loop over stations
 
 # FIT EMOS AND STORE DATAFRAME
 # ------------------------------------------------

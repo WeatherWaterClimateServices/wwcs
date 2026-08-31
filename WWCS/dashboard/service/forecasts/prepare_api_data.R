@@ -28,7 +28,7 @@ pool_service <-
 emos <-
   fst::read_fst("/srv/shiny-server/dashboard/appdata/emos.fst")
 pictos <-
-  fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes.fst")
+  fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes_daytime.fst")
 
 forecasts <- emos %>%
   dplyr::mutate(date = as.Date(date(time))) %>%
@@ -41,7 +41,7 @@ forecasts <- emos %>%
   )
 
 icons <- pictos %>%
-  dplyr::mutate(icon = paste0(day, ".png")) %>%
+  dplyr::mutate(icon = paste0(icon, "d.png")) %>% ## expect for filename: {WMO-code}d.png
   dplyr::select(reftime, date, siteID, icon)  %>%
   dplyr::as_tibble()
 
@@ -61,8 +61,8 @@ readr::write_delim(forecasts, file = "/srv/shiny-server/dashboard/service/foreca
 # Expand API for day and night
 # --------------------------------
 
-icons_daynight <- fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes_daynight.fst") %>%
-  dplyr::mutate(icon = paste0(ifelse(daynight == "night", night, day), ".png")) %>%
+icons_daynight <- fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes_6hourly.fst") %>%
+  dplyr::mutate(icon = paste0(icon, ifelse(hour >= 6 & hour <=18, "d", "n"), ".png")) %>%
   dplyr::select(reftime, date, siteID, icon, timeofday)  %>%
   dplyr::as_tibble()
 
@@ -71,9 +71,8 @@ icons_daynight <- fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes_
 forecasts_daynight <- emos %>%
   dplyr::mutate(
     date = as.Date(date(time)),
-    timeofday = ifelse(hour(time) <= 6, 1, ifelse(hour(time) < 12, 2, ifelse(hour(
-      time
-    ) < 18, 3, 4))),
+    timeofday = ifelse(hour(time) <= 6, 1, ifelse(hour(time) < 12, 2,
+                ifelse(hour(time) < 18, 3, 4))),
     daynight = ifelse(timeofday == 1 |
                         timeofday == 4, "night", "day")
   ) %>%
