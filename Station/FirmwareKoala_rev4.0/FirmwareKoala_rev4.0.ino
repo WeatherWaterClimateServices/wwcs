@@ -425,13 +425,25 @@ void setup() {
   }
 
   // now we read what we have stored in the RTC and append the current record
-  deserializeJson(transmRecordsJSON, (const char*)storedJSON, sizeof(storedJSON)); // read from RTC
+  DeserializationError err = deserializeJson(transmRecordsJSON, (const char*)storedJSON, sizeof(storedJSON)); // read from RTC
+  if (err) {
+    Serial.printf("RTC JSON parse error: %s. Starting fresh.\n", err.c_str());
+    transmRecordsJSON.clear();
+    loopCounterTransm = 0;
+  }
+
   if (transmRecordsJSON.size() == loopCounterTransm){
     transmRecordsJSON[loopCounterTransm] = singleRecordJSON;            // append current record
     loopCounterTransm++;
   } else {
-    Serial.printf("Exiting. I am confused about what I found in the RTC memory (%d records, whereas the counter says %d).",
+    // TODO: loopCounterTransm is redundant with transmRecordsJSON.size() and
+    // could be removed in a future refactor. For now, recover from the mismatch
+    // by clearing RTC memory instead of getting stuck forever.
+    Serial.printf("RTC confusion: %d records vs counter %d. Clearing RTC.\n",
       transmRecordsJSON.size(), loopCounterTransm);
+    memset(storedJSON, '\0', sizeof(storedJSON));
+    transmRecordsJSON.clear();
+    loopCounterTransm = 0;
     return;
   }
 
