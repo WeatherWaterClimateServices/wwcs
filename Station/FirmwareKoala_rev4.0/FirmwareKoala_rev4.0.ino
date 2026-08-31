@@ -464,7 +464,11 @@ void setup() {
       	// loop through the transmRecordsJSON
       	for (int i=0; i < transmRecordsJSON.size(); i++){
       	  transmRecordsJSON[i]["signalStrength"] = signalStrength;
-      	  serializeJson(transmRecordsJSON[i], httpRequestData);                  // convert JSON to string for transmission
+          size_t len = serializeJson(transmRecordsJSON[i], httpRequestData);       // convert JSON to string for transmission
+          if (len == 0 || len >= sizeof(httpRequestData)) {
+            Serial.printf("serializeJson failed: len=%u, buf=%u\n", len, sizeof(httpRequestData));
+            continue;                                                              // skip bad record
+          }
       	  postSuccess = send_data_to_server(httpRequestData);
       	  if (!postSuccess){
       	    Serial.println("... fail. Storing measurements to flash, resetting modem and going to sleep.");
@@ -489,7 +493,11 @@ void setup() {
     if (!apnConnected || !serverConnected) {               // apnconnect or server connect did not work incl case of weak battery
       for (int i=0; i < transmRecordsJSON.size(); i++){       // store all records from RTC memory to flash
         transmRecordsJSON[i]["signalStrength"] = signalStrength;
-        serializeJson(transmRecordsJSON[i], httpRequestData);
+        size_t len = serializeJson(transmRecordsJSON[i], httpRequestData);
+        if (len == 0 || len >= sizeof(httpRequestData)) {
+          Serial.printf("serializeJson failed: len=%u, buf=%u\n", len, sizeof(httpRequestData));
+          continue;                                             // don't store garbage
+        }
         if (flashOK && RecordsInFlash < MAX_RECORDS){                     // don't store too many records... reading the file becomes slow.
           store_data_on_flash(httpRequestData);
         } else {
@@ -519,7 +527,10 @@ void setup() {
           // otherwise we store to RTC memory
     Serial.printf("This is loop %d / %d.\n", loopCounterTransm, NB_LOOPS_B4_TRANSM);
     Serial.println("Don't transmit this time - either wrong time, weak battery, or not enough in RTC.");
-    serializeJson(transmRecordsJSON, storedJSON);
+    size_t rtcLen = serializeJson(transmRecordsJSON, storedJSON);
+    if (rtcLen == 0 || rtcLen >= sizeof(storedJSON)) {
+      Serial.printf("serializeJson to RTC failed: len=%u, buf=%u\n", rtcLen, sizeof(storedJSON));
+    }
 
     Serial.print("Stopping http client...");
     https.stop();
