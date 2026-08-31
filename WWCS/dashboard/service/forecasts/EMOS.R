@@ -124,13 +124,14 @@ for (i in station_id) {
       dplyr::mutate(day = day(time)) %>%
       dplyr::left_join(dtr, by = c("reftime", "day")) %>%
       dplyr::select(-c(day))
-  }
+
   
-  ## MERGE STATION AND IFS
-  dmo <- ifs %>%
-    dplyr::left_join(station, by = c("time", "siteID")) %>%
-    dplyr::bind_rows(dmo) %>%
-    dplyr::arrange(reftime, lead, time)
+    ## MERGE STATION AND IFS
+    dmo <- ifs %>%
+      dplyr::left_join(station, by = c("time", "siteID")) %>%
+      dplyr::bind_rows(dmo) %>%
+      dplyr::arrange(reftime, lead, time)
+  } ## if ifs file exists
 } ## loop over stations
 
 # FIT EMOS AND STORE DATAFRAME

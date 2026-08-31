@@ -42,14 +42,16 @@ for (j in 1:4){
     dplyr::group_by(reftime, date, siteID) %>%
     dplyr::summarise(
              ## Method A: Maximum Severity (Open-Meteo operational standard)
-             icon = max(weather_code, na.rm = TRUE)
-             
+             icon = max(weather_code, na.rm = TRUE),
+             timeofday = j
              ## Method B: Statistical Mode (Prevailing condition fallback)
              # daily_wmo_mode = as.integer(names(sort(table(weather_code), decreasing = TRUE)[1]))
            ) %>%
     dplyr::ungroup() %>%
     dplyr::bind_rows(pictocodes_6hourly)
 }
+pictocodes_6hourly <- pictocodes_6hourly %>%
+    dplyr::arrange(siteID, reftime, date, timeofday) 
 
 setwd(file.path(ROOT_DIR, "WWCS/dashboard/appdata"))
 fst::write_fst(pictocodes_daytime, path = "pictocodes_daytime.fst", compress = 0)

@@ -61,14 +61,14 @@ readr::write_delim(forecasts, file = "/srv/shiny-server/dashboard/service/foreca
 # Expand API for day and night
 # --------------------------------
 
-icons_daynight <- fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes_6hourly.fst") %>%
+icons_6hourly <- fst::read_fst("/srv/shiny-server/dashboard/appdata/pictocodes_6hourly.fst") %>%
   dplyr::mutate(icon = paste0(icon, ifelse(hour >= 6 & hour <=18, "d", "n"), ".png")) %>%
   dplyr::select(reftime, date, siteID, icon, timeofday)  %>%
   dplyr::as_tibble()
 
 
 # Group by 0 am - 6 am, 7 am - 12 am, 1 pm - 6 pm, 7 pm - 12 pm
-forecasts_daynight <- emos %>%
+forecasts_6hourly <- emos %>%
   dplyr::mutate(
     date = as.Date(date(time)),
     timeofday = ifelse(hour(time) <= 6, 1, ifelse(hour(time) < 12, 2,
@@ -83,7 +83,7 @@ forecasts_daynight <- emos %>%
     Tmean = round(mean(WWCS), 2),
     .groups = "drop"
   ) %>%
-  dplyr::left_join(icons_daynight) %>%
+  dplyr::left_join(icons_6hourly) %>%
   dplyr::mutate(day = as.numeric(difftime(date, reftime, units = "days"))) %>%
   dplyr::mutate(date = as.Date(reftime)) %>%
   dplyr::select(-c("reftime")) %>%
@@ -91,12 +91,12 @@ forecasts_daynight <- emos %>%
   dplyr::filter(day < 6)
 
 
-readr::write_delim(forecasts_daynight, file = "/srv/shiny-server/dashboard/service/forecasts/forecasts_daynight_api.csv", delim = ",")
+readr::write_delim(forecasts_6hourly, file = "/srv/shiny-server/dashboard/service/forecasts/forecasts_6hourly_api.csv", delim = ",")
 
 forecasts <- forecasts %>%
   dplyr::mutate(timeofday = -1)
 
-forecasts_all <- rbind(forecasts, forecasts_daynight) %>%
+forecasts_all <- rbind(forecasts, forecasts_6hourly) %>%
   dplyr::arrange(siteID, date, day) 
 
 
