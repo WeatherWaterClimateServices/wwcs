@@ -305,6 +305,25 @@ def test_insert_fail(logger):
         domain, received, data, comment = get_last_reject(cursor)
         assert comment == 'Incorrect JSON body'
 
+
+def test_insert_invalid_json_body(logger):
+    with get_cursor() as cursor:
+        n = count(cursor, 'Machines.MachineObs')
+        m = count(cursor, 'Machines.MachineObsRejected')
+
+    response = httpx.post(
+        f'{URL}/insert', content=b'', headers={'Content-Type': 'application/json'}
+    )
+    assert response.status_code == 200
+    with get_cursor() as cursor:
+        assert count(cursor, 'Machines.MachineObs') == n
+        assert count(cursor, 'Machines.MachineObsRejected') == m + 1
+
+        domain, received, data, comment = get_last_reject(cursor)
+        assert comment == 'Invalid JSON body'
+        assert data == ''
+
+
 @pytest.mark.parametrize("timestamp", [
     '1960-01-01 00:00:00',
     '1970-01-01 00:00:00',
