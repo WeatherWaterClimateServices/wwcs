@@ -461,32 +461,32 @@ void setup() {
 
       serverConnected = connect_to_server();             // try to connect to the server
       if (serverConnected){
-      	// loop through the transmRecordsJSON
-      	for (int i=0; i < transmRecordsJSON.size(); i++){
-      	  transmRecordsJSON[i]["signalStrength"] = signalStrength;
+        // loop through the transmRecordsJSON
+        for (int i=0; i < transmRecordsJSON.size(); i++){
+          transmRecordsJSON[i]["signalStrength"] = signalStrength;
           size_t len = serializeJson(transmRecordsJSON[i], httpRequestData);       // convert JSON to string for transmission
           if (len == 0 || len >= sizeof(httpRequestData)) {
             Serial.printf("serializeJson failed: len=%u, buf=%u\n", len, sizeof(httpRequestData));
             continue;                                                              // skip bad record
           }
-      	  postSuccess = send_data_to_server(httpRequestData);
-      	  if (!postSuccess){
-      	    Serial.println("... fail. Storing measurements to flash, resetting modem and going to sleep.");
-      	    if (flashOK && RecordsInFlash < MAX_RECORDS){                     // don't store too many records... reading the file becomes slow.
-      	      store_data_on_flash(httpRequestData);
-      	    } else {
-      	      Serial.printf("Already >= %d records in flash. Current record not stored.\n", MAX_RECORDS);
-      	    }
-      	  }	
-      	}
+          postSuccess = send_data_to_server(httpRequestData);
+          if (!postSuccess){
+            Serial.println("... fail. Storing measurements to flash, resetting modem and going to sleep.");
+            if (flashOK && RecordsInFlash < MAX_RECORDS){                     // don't store too many records... reading the file becomes slow.
+              store_data_on_flash(httpRequestData);
+            } else {
+              Serial.printf("Already >= %d records in flash. Current record not stored.\n", MAX_RECORDS);
+            }
+          }
+        }
 
-      	// send further data from flash - if possible
-      	if (postSuccess){   // if submission sucessful
-      	  // check whether we have any leftover data and try to submit these (only if this post request successful)
-      	  if (flashOK && RecordsInFlash > 0){
-      	    transmit_stored_records(5);                    // submit up to 5 records from the flash
-      	  }
-      	} // end block - send further data from flash
+        // send further data from flash - if possible
+        if (postSuccess){   // if submission sucessful
+          // check whether we have any leftover data and try to submit these (only if this post request successful)
+          if (flashOK && RecordsInFlash > 0){
+            transmit_stored_records(5);                    // submit up to 5 records from the flash
+          }
+        } // end block - send further data from flash
       } // end block - connect to server
     } // end block - connect to apn - this is where we try to send to server
 
