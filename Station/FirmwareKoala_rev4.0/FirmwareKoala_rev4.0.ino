@@ -120,7 +120,6 @@ RTC_DATA_ATTR int sleepDelta = 0;                 // to capture deviation at wak
 RTC_DATA_ATTR unsigned long sleepSeconds = SENSOR_READ_EVERY_MINS * 60;   // this is the default value, valid if time update from network fails
 RTC_DATA_ATTR int loopCounterRestart = 0;         // count the loops and force ESP to restart every MAX_LOOPS loops
 RTC_DATA_ATTR char storedJSON[4096];              // here measurements are stored for submission every n loops
-RTC_DATA_ATTR int loopCounterTransm = 0;          // count the loops before transmission
 
 RTC_DATA_ATTR unsigned long lastScheduledWakeTime = 0;    // in seconds since 1970 (RTC clock); for scheduler timing
 RTC_DATA_ATTR int rainCounter = 0;
@@ -429,23 +428,16 @@ void setup() {
   if (err) {
     Serial.printf("RTC JSON parse error: %s. Starting fresh.\n", err.c_str());
     transmRecordsJSON.clear();
-    loopCounterTransm = 0;
   }
 
-  if (transmRecordsJSON.size() == loopCounterTransm){
-    transmRecordsJSON[loopCounterTransm] = singleRecordJSON;            // append current record
-    loopCounterTransm++;
-  } else {
-    // TODO: loopCounterTransm is redundant with transmRecordsJSON.size() and
-    // could be removed in a future refactor. For now, recover from the mismatch
-    // by clearing RTC memory instead of getting stuck forever.
-    Serial.printf("RTC confusion: %d records vs counter %d. Clearing RTC.\n",
-      transmRecordsJSON.size(), loopCounterTransm);
-    memset(storedJSON, '\0', sizeof(storedJSON));
+  // Ensure the document is an array before appending. This also recovers
+  // from RTC data that deserialized into something other than an array.
+  if (!transmRecordsJSON.is<JsonArray>()) {
     transmRecordsJSON.clear();
-    loopCounterTransm = 0;
-    return;
+    transmRecordsJSON.to<JsonArray>();
   }
+
+  transmRecordsJSON.add(singleRecordJSON);            // append current record
 
 
 //....................................................................................................
@@ -454,7 +446,7 @@ void setup() {
   if (!batteryStatus)
      blink_led(4, 200);                              // lightshow: battery low, don't try to init modem
 
-  if (loopCounterTransm >= NB_LOOPS_B4_TRANSM ||
+  if (transmRecordsJSON.size() >= NB_LOOPS_B4_TRANSM ||
        currentMinute % TRANSMIT_EVERY_MINS == 0){         // ready to transmit
     Serial.println("The time is ripe or the RTC is full, I attempt a transmission.");
     if (batteryStatus){                                    // enough power to discuss with modem
@@ -532,12 +524,11 @@ void setup() {
     Serial.print("Powering-off modem");
     modem_off(&modemTurnedOn);
 
-    // finally, clean RTC memory and reset counter
+    // finally, clean RTC memory
     memset(storedJSON, '\0', sizeof(storedJSON)); // remove records in RTC
-    loopCounterTransm = 0;
   } else {// end of transmission attempt(good time or full RTC memory)  --
           // otherwise we store to RTC memory
-    Serial.printf("This is loop %d / %d.\n", loopCounterTransm, NB_LOOPS_B4_TRANSM);
+    Serial.printf("This is loop %d / %d.\n", transmRecordsJSON.size(), NB_LOOPS_B4_TRANSM);
     Serial.println("Don't transmit this time - either wrong time, weak battery, or not enough in RTC.");
     size_t rtcLen = serializeJson(transmRecordsJSON, storedJSON);
     if (rtcLen == 0 || rtcLen >= sizeof(storedJSON)) {
