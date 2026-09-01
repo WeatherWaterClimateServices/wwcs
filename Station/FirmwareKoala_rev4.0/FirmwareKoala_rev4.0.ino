@@ -424,16 +424,9 @@ void setup() {
   }
 
   // now we read what we have stored in the RTC and append the current record
-  DeserializationError err = deserializeJson(transmRecordsJSON, (const char*)storedJSON, sizeof(storedJSON)); // read from RTC
-  if (err) {
-    Serial.printf("RTC JSON parse error: %s. Starting fresh.\n", err.c_str());
-    transmRecordsJSON.clear();
-  }
-
-  // Ensure the document is an array before appending. This also recovers
-  // from RTC data that deserialized into something other than an array.
-  if (!transmRecordsJSON.is<JsonArray>()) {
-    transmRecordsJSON.clear();
+  DeserializationError err = deserializeJson(transmRecordsJSON, (const char*)storedJSON, sizeof(storedJSON));
+  if (err || !transmRecordsJSON.is<JsonArray>()) {
+    Serial.println("RTC data invalid or not an array. Starting fresh.");
     transmRecordsJSON.to<JsonArray>();
   }
 
