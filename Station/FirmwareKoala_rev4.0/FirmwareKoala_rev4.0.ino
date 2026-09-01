@@ -425,25 +425,13 @@ void setup() {
   }
 
   // now we read what we have stored in the RTC and append the current record
-  DeserializationError err = deserializeJson(transmRecordsJSON, (const char*)storedJSON, sizeof(storedJSON)); // read from RTC
-  if (err) {
-    Serial.printf("RTC JSON parse error: %s. Starting fresh.\n", err.c_str());
-    transmRecordsJSON.clear();
-    loopCounterTransm = 0;
-  }
-
+  deserializeJson(transmRecordsJSON, (const char*)storedJSON, sizeof(storedJSON)); // read from RTC
   if (transmRecordsJSON.size() == loopCounterTransm){
     transmRecordsJSON[loopCounterTransm] = singleRecordJSON;            // append current record
     loopCounterTransm++;
   } else {
-    // TODO: loopCounterTransm is redundant with transmRecordsJSON.size() and
-    // could be removed in a future refactor. For now, recover from the mismatch
-    // by clearing RTC memory instead of getting stuck forever.
-    Serial.printf("RTC confusion: %d records vs counter %d. Clearing RTC.\n",
+    Serial.printf("Exiting. I am confused about what I found in the RTC memory (%d records, whereas the counter says %d).",
       transmRecordsJSON.size(), loopCounterTransm);
-    memset(storedJSON, '\0', sizeof(storedJSON));
-    transmRecordsJSON.clear();
-    loopCounterTransm = 0;
     return;
   }
 
@@ -473,43 +461,35 @@ void setup() {
 
       serverConnected = connect_to_server();             // try to connect to the server
       if (serverConnected){
-        // loop through the transmRecordsJSON
-        for (int i=0; i < transmRecordsJSON.size(); i++){
-          transmRecordsJSON[i]["signalStrength"] = signalStrength;
-          size_t len = serializeJson(transmRecordsJSON[i], httpRequestData);       // convert JSON to string for transmission
-          if (len == 0 || len >= sizeof(httpRequestData)) {
-            Serial.printf("serializeJson failed: len=%u, buf=%u\n", len, sizeof(httpRequestData));
-            continue;                                                              // skip bad record
-          }
-          postSuccess = send_data_to_server(httpRequestData);
-          if (!postSuccess){
-            Serial.println("... fail. Storing measurements to flash, resetting modem and going to sleep.");
-            if (flashOK && RecordsInFlash < MAX_RECORDS){                     // don't store too many records... reading the file becomes slow.
-              store_data_on_flash(httpRequestData);
-            } else {
-              Serial.printf("Already >= %d records in flash. Current record not stored.\n", MAX_RECORDS);
-            }
-          }
-        }
+      	// loop through the transmRecordsJSON
+      	for (int i=0; i < transmRecordsJSON.size(); i++){
+      	  transmRecordsJSON[i]["signalStrength"] = signalStrength;
+      	  serializeJson(transmRecordsJSON[i], httpRequestData);                  // convert JSON to string for transmission
+      	  postSuccess = send_data_to_server(httpRequestData);
+      	  if (!postSuccess){
+      	    Serial.println("... fail. Storing measurements to flash, resetting modem and going to sleep.");
+      	    if (flashOK && RecordsInFlash < MAX_RECORDS){                     // don't store too many records... reading the file becomes slow.
+      	      store_data_on_flash(httpRequestData);
+      	    } else {
+      	      Serial.printf("Already >= %d records in flash. Current record not stored.\n", MAX_RECORDS);
+      	    }
+      	  }	
+      	}
 
-        // send further data from flash - if possible
-        if (postSuccess){   // if submission sucessful
-          // check whether we have any leftover data and try to submit these (only if this post request successful)
-          if (flashOK && RecordsInFlash > 0){
-            transmit_stored_records(5);                    // submit up to 5 records from the flash
-          }
-        } // end block - send further data from flash
+      	// send further data from flash - if possible
+      	if (postSuccess){   // if submission sucessful
+      	  // check whether we have any leftover data and try to submit these (only if this post request successful)
+      	  if (flashOK && RecordsInFlash > 0){
+      	    transmit_stored_records(5);                    // submit up to 5 records from the flash
+      	  }
+      	} // end block - send further data from flash
       } // end block - connect to server
     } // end block - connect to apn - this is where we try to send to server
 
     if (!apnConnected || !serverConnected) {               // apnconnect or server connect did not work incl case of weak battery
       for (int i=0; i < transmRecordsJSON.size(); i++){       // store all records from RTC memory to flash
         transmRecordsJSON[i]["signalStrength"] = signalStrength;
-        size_t len = serializeJson(transmRecordsJSON[i], httpRequestData);
-        if (len == 0 || len >= sizeof(httpRequestData)) {
-          Serial.printf("serializeJson failed: len=%u, buf=%u\n", len, sizeof(httpRequestData));
-          continue;                                             // don't store garbage
-        }
+        serializeJson(transmRecordsJSON[i], httpRequestData);
         if (flashOK && RecordsInFlash < MAX_RECORDS){                     // don't store too many records... reading the file becomes slow.
           store_data_on_flash(httpRequestData);
         } else {
@@ -539,10 +519,7 @@ void setup() {
           // otherwise we store to RTC memory
     Serial.printf("This is loop %d / %d.\n", loopCounterTransm, NB_LOOPS_B4_TRANSM);
     Serial.println("Don't transmit this time - either wrong time, weak battery, or not enough in RTC.");
-    size_t rtcLen = serializeJson(transmRecordsJSON, storedJSON);
-    if (rtcLen == 0 || rtcLen >= sizeof(storedJSON)) {
-      Serial.printf("serializeJson to RTC failed: len=%u, buf=%u\n", rtcLen, sizeof(storedJSON));
-    }
+    serializeJson(transmRecordsJSON, storedJSON);
 
     Serial.print("Stopping http client...");
     https.stop();
@@ -859,7 +836,6 @@ bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_r
       if (modem.gprsConnect(APN, GPRS_USER, GPRS_PASS)){    // 2nd attempt
         return true;
       }
-      return false;
     } else {
       return false;
     }                                              // APN/GPRS connect did not work
@@ -904,14 +880,6 @@ bool send_data_to_server(const char* httpRequestData){
   // select content type according to API
   const char* contentType = "application/json";
   bool success = false;
-
-  // Defensive: never POST an empty body. If serialization failed or the
-  // record buffer is empty, log it and return true so the record is discarded
-  // instead of being stored on flash and retried with the same empty payload.
-  if (httpRequestData == nullptr || strlen(httpRequestData) == 0) {
-    Serial.println("send_data_to_server: empty payload, discarding record.");
-    return true;
-  }
 
   https.connectionKeepAlive(); // L200 https://github.com/vshymanskyy/TinyGSM/blob/master/examples/HttpsClient/HttpsClient.ino
 
