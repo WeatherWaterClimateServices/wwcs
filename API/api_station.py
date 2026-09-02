@@ -41,7 +41,12 @@ async def route_test():
 
 #main API script
 @app.post("/insert")
-async def addData(request: Request):
+async def addData(request: Request, response: Response):
+    # TODO Send proper 4xx status codes once all stations handle them correctly.
+    # Current firmware treats any non-2xx response as a temporary error and
+    # retries the frame, so we use fake 2xx codes (240, 241) for permanent
+    # client errors to make the station move on while keeping the codes distinct
+    # in the logs.
     domain = get_domain(request)
 
     # json parsing
@@ -55,16 +60,10 @@ async def addData(request: Request):
             request.client.host if request.client else "unknown",
             body_preview,
         )
-        # Empty bodies are common from stations running old firmware that
-        # occasionally send POSTs with no payload. They contain no useful
-        # debugging information, so don't store them in the rejected table.
-        # Non-empty malformed payloads are still stored.
-        if body_preview.strip():
-            async with AsyncSession(engine) as session:
-                return await submitRejectedJSON(
-                    session, "Invalid JSON body", body_preview, domain
-                )
-        return "Invalid JSON body"
+        async with AsyncSession(engine) as session:
+            return await submitRejectedJSON(
+                session, "Invalid JSON body", body_preview, domain, response, 240
+            )
 
     myjson = json.dumps(data)
     data = data.copy()
@@ -76,12 +75,12 @@ async def addData(request: Request):
             timestamp = data.get('timestamp')
             sign = data.pop('sign', None)
             if not (loggerID and timestamp and sign):
-                return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain)
+                return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain, response, 240)
 
             # Check timestamp
             now = datetime.datetime.now() + datetime.timedelta(minutes=1000)
             if not ('2010-01-01 00:00:01' < timestamp < str(now)):
-                return await submitRejectedJSON(session, "Invalid timestamp", myjson, domain)
+                return await submitRejectedJSON(session, "Invalid timestamp", myjson, domain, response, 240)
 
             # Get siteID
             result = await session.execute(
@@ -93,7 +92,7 @@ async def addData(request: Request):
 
             row = result.scalar()
             if row is None:
-                return await submitRejectedJSON(session, "Station ID not registered", myjson, domain)
+                return await submitRejectedJSON(session, "Station ID not registered", myjson, domain, response, 240)
 
             siteID = row.siteID
 
@@ -101,12 +100,12 @@ async def addData(request: Request):
             key = f"{siteID}; {loggerID}; {timestamp}"
             hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
             if hash != sign:
-                return await submitRejectedJSON(session, "Incorrect hash", myjson, domain)
+                return await submitRejectedJSON(session, "Incorrect hash", myjson, domain, response, 241)
 
         #catch error while parsing json
         except Exception:
             traceback.print_exc()
-            return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain)
+            return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain, response, 240)
 
         # Fix data to be inserted
         translation_map = [
@@ -127,21 +126,22 @@ async def addData(request: Request):
         try:
             await insert(session, MachineObs, received=sa.func.now(), **data)
 
-            # TODO Change to 201 once the stations are updated
+            response.status_code = status.HTTP_201_CREATED
             return "New record inserted"
         except sa.exc.IntegrityError as exc:
             errcode = exc.orig.args[0]
             if errcode == 1062:
+                response.status_code = 200
                 return "Duplicate data NOT inserted"
             else:
                 raise
         except Exception:
             traceback.print_exc()
-            return await submitRejectedJSON(session, "Hashcheck ok, but insertion failed.", myjson, domain)
+            response.status_code = 500
+            return "Hashcheck ok, but insertion failed."
 
 #insert rejected functions
-async def submitRejectedJSON(session, text, json, domain):
-    # XXX Should be 202 Accepted
+async def submitRejectedJSON(session, text, json, domain, response, status_code):
     await insert_t(session, t_MachineObsRejected,
        domain=domain,
        comment=text,
@@ -149,6 +149,7 @@ async def submitRejectedJSON(session, text, json, domain):
        data=json,
     )
 
+    response.status_code = status_code
     return text
 
 def get_domain(request):

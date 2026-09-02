@@ -217,7 +217,7 @@ def test_insert(logger):
         "signalStrength": 20,
     }
     response = httpx.post(f'{URL}/insert', json=json)
-    assert response.status_code == 200 # TODO Change to 201 next year
+    assert response.status_code == 201
     # Should be 'application/json'
     assert response.headers['content-type'] == 'application/json'
 
@@ -275,7 +275,7 @@ def test_insert_dup(logger):
       "signalStrength": 20
     }
     response = httpx.post(f'{URL}/insert', json=json)
-    assert response.status_code == 200 # TODO Change to 201 next year
+    assert response.status_code == 201
     # Should be 'application/json'
     assert response.headers['content-type'] == 'application/json'
 
@@ -297,7 +297,7 @@ def test_insert_fail(logger):
         m = count(cursor, 'Machines.MachineObsRejected')
 
     response = httpx.post(f'{URL}/insert', json={})
-    assert response.status_code == 200
+    assert response.status_code == 240
     with get_cursor() as cursor:
         assert count(cursor, 'Machines.MachineObs') == n
         assert count(cursor, 'Machines.MachineObsRejected') == m + 1
@@ -314,12 +314,10 @@ def test_insert_empty_json_body(logger):
     response = httpx.post(
         f'{URL}/insert', content=b'', headers={'Content-Type': 'application/json'}
     )
-    assert response.status_code == 200
+    assert response.status_code == 240
     with get_cursor() as cursor:
         assert count(cursor, 'Machines.MachineObs') == n
-        # Empty bodies from old firmware are intentionally not stored, to avoid
-        # filling the rejected table with useless rows.
-        assert count(cursor, 'Machines.MachineObsRejected') == m
+        assert count(cursor, 'Machines.MachineObsRejected') == m + 1
 
 
 def test_insert_invalid_json_body(logger):
@@ -330,7 +328,7 @@ def test_insert_invalid_json_body(logger):
     response = httpx.post(
         f'{URL}/insert', content=b'not json', headers={'Content-Type': 'application/json'}
     )
-    assert response.status_code == 200
+    assert response.status_code == 240
     with get_cursor() as cursor:
         assert count(cursor, 'Machines.MachineObs') == n
         assert count(cursor, 'Machines.MachineObsRejected') == m + 1
@@ -354,7 +352,7 @@ def test_insert_fail_timestamp(logger, timestamp):
 
     data = {'timestamp': timestamp, 'loggerID': loggerID, 'sign': 'fake-sign'}
     response = httpx.post(f'{URL}/insert', json=data)
-    assert response.status_code == 200
+    assert response.status_code == 240
     with get_cursor() as cursor:
         assert count(cursor, 'Machines.MachineObs') == n
         assert count(cursor, 'Machines.MachineObsRejected') == m + 1
