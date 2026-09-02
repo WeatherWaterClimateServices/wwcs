@@ -176,7 +176,7 @@ void setup() {
 
   float signalStrength = -999.99;                   // network signal strength, init with error value
   unsigned long millisAtConnection;                 // millis() when initiating network - to compute sleepSecs
-  bool postSuccess = false;                         // whether the http response was successful (2XX) or not  
+  bool postSuccess = false;                         // true when the server accepted (2XX) or permanently rejected (4XX) the record
   int remainingSleepSec = 0;                        // used to calculate remaining sleep if wakeup from tipping bucket
   unsigned long nowSec = 0;                         // used to store current epoch (sec since 1970, from RTC)
 
@@ -887,7 +887,6 @@ bool send_data_to_server(const char* httpRequestData){
   esp_task_wdt_reset();                              // reset wdt - a timeout here can add 1min
   // select content type according to API
   const char* contentType = "application/json";
-  bool success = false;
 
   // Defensive: never POST an empty body. If serialization failed or the
   // record buffer is empty, log it and return true so the record is discarded
@@ -903,14 +902,21 @@ bool send_data_to_server(const char* httpRequestData){
   https.post(RESOURCE, contentType, httpRequestData);
 
   int responseStatusCode = https.responseStatusCode();
-  success = (responseStatusCode >= 200 && responseStatusCode < 300);
-  if (success) {
-    Serial.println("Post request successful.");
-  }
   String response = https.responseBody();
   Serial.printf("Response code: %d; Response body: %s\n", responseStatusCode, response.c_str());
 
-  return(success);
+  // 2xx = accepted
+  if (responseStatusCode >= 200 && responseStatusCode < 300) {
+    return true;
+  }
+
+  // 4xx = permanently rejected by the server: discard record
+  if (responseStatusCode >= 400 && responseStatusCode < 500) {
+    return true;
+  }
+
+  // 5xx and transport errors are temporary, so keep the record and retry later.
+  return false;
 }
 
 /* --------------------------------------------------------------------------------------------------------------------------------
