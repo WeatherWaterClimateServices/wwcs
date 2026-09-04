@@ -21,7 +21,7 @@ pool_service <-
 # ------------------------------------------------
 emos.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")
 emos <- fst::read_fst(emos.file)
-picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes.fst")
+picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes_daytime.fst")
 pictos <- fst::read_fst(picto.file)
 
 forecasts <- emos %>%
@@ -57,7 +57,7 @@ readr::write_delim(forecasts, file = forecast.file, delim = ",")
 # --------------------------------
 picto_6h_file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes_6hourly.fst")
 icons_6hourly <- fst::read_fst(picto_6h_file) %>%
-  dplyr::mutate(icon = paste0(icon, ifelse(hour >= 6 & hour <=18, "d", "n"), ".png")) %>%
+  dplyr::mutate(icon = paste0(icon, ifelse(timeofday %in% 2:3, "d", "n"), ".png")) %>%
   dplyr::select(reftime, date, siteID, icon, timeofday)  %>%
   dplyr::as_tibble()
 

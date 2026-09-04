@@ -15,6 +15,7 @@ wwcs_domain = config$wwcs_domain
 use_pass = config$use_pass
 auth_users = config$auth_users
 servicepass = strsplit(Sys.getenv("SERVICE_PASSWORD"), ",")[[1]]
+ENV = Sys.getenv("ENV")
 
 minlat = config$minlat
 maxlat = config$maxlat
