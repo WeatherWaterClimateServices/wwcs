@@ -103,28 +103,24 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
     
     if (nrow(observations_data) > 0) {
       xlimits <- c(min(forecast_data$time), max(forecast_data$time))
-      
       xlimits_shadow <- c(min(forecast_data$time), max(observations_data$time))
-
+      
       pictos_list <- list()
-      ## xpos <- seq(0.02, 0.92, length.out = 10) ## BORIS here - replaced by date + 12h
       
-      image_path <-
-        "/srv/shiny-server/dashboard/www/weather_icons/png/"
-      
+      image_path <- file.path(ROOT_DIR, "WWCS/dashboard/www/weather_icons/")      
       
       if (nrow(pictos_data) > 0) {
         for (i in 1:nrow(pictos_data)) {
-          image_file <- paste0(image_path, pictos_data$day[i], ".png")
+          image_file <- paste0(image_path, pictos_data$icon[i], "d.png")
           txt <-
             RCurl::base64Encode(readBin(image_file, "raw", file.info(image_file)[1, "size"]), "txt")
           
           a <-
             list(
               source =  paste('data:image/png;base64', txt, sep = ','),
-              x = pictos_data$date[i] + hours(12), ## xpos[i], ## BORIS here
+              x = pictos_data$date[i] + hours(12), 
               y = 0.95,
-              xref = "x", ## "paper", ## BORIS here
+              xref = "x",
               yref = "paper",
               sizex = 24 * 3600 * 1000, ## im ms, 1 day
               sizey = 0.1

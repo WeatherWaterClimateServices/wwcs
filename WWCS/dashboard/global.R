@@ -57,12 +57,12 @@ if (!file.exists(emos.file)) {
                    Observations)
 }
 
-picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes.fst")
+picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes_daytime.fst")
 if (!file.exists(picto.file)) {
   pictos <- data.frame()
 } else {
     pictos <- fst::read_fst(picto.file) %>%
-        dplyr::select(reftime, siteID, day, date)
+        dplyr::select(reftime, siteID, icon, date)
 }
 
 # Read administrative areas
