@@ -58,25 +58,41 @@ class Client:
     def _auth(self):
         return {"apikey": self.api_key} if self.api_key else {}
 
-    def ensemble_mean_df(self, lat: float, lon: float, start_date: str, end_date: str, hourly: list) -> pd.DataFrame:
-        """Fetch variables from the ensemble mean API. Returns one column per requested variable."""
+    def ensemble_mean_df(self, lat, lon, start_date: str, end_date: str, hourly: list) -> pd.DataFrame:
+        """Fetch variables from the ensemble mean API. Returns one column per requested variable.
+
+        `lat` and `lon` may be scalars or sequences of coordinates. The returned
+        DataFrame always has columns `time`, `latitude`, `longitude` plus one per
+        requested `hourly` variable; multi-location calls yield more rows.
+        """
+        lats = [lat] if np.isscalar(lat) else list(lat)
+        lons = [lon] if np.isscalar(lon) else list(lon)
         params = {
-            "latitude": lat,
-            "longitude": lon,
+            "latitude": ",".join(map(str, lats)),
+            "longitude": ",".join(map(str, lons)),
             "hourly": ",".join(hourly),
             "models": "ecmwf_ifs025_ensemble_mean",
             "start_date": start_date,
             "end_date": end_date,
-            'elevation': 'nan',
+            "elevation": ",".join(["nan"] * len(lats)),
             **self._auth(),
         }
         resp = self.session.get(self._url(), params=params)
         resp.raise_for_status()
-        h = resp.json()["hourly"]
-        data = {"time": pd.to_datetime(h["time"])}
-        for var in hourly:
-            data[var] = np.array(h[var], dtype=np.float32)
-        return pd.DataFrame(data)
+        payload = resp.json()
+        responses = payload if isinstance(payload, list) else [payload]
+        dfs = []
+        for r in responses:
+            h = r["hourly"]
+            data = {
+                "time": pd.to_datetime(h["time"]),
+                "latitude": r["latitude"],
+                "longitude": r["longitude"],
+            }
+            for var in hourly:
+                data[var] = np.array(h[var], dtype=np.float32)
+            dfs.append(pd.DataFrame(data))
+        return pd.concat(dfs, ignore_index=True)
 
     def precipitation_ensemble_df(self, lat: float, lon: float, start_date: str, end_date: str) -> pd.DataFrame:
         """Fetch full precipitation ensemble, returning one column per ensemble member."""
