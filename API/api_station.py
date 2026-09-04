@@ -77,11 +77,6 @@ async def addData(request: Request, response: Response):
             if not (loggerID and timestamp and sign):
                 return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain, response, 240)
 
-            # Check timestamp
-            now = datetime.datetime.now() + datetime.timedelta(minutes=1000)
-            if not ('2010-01-01 00:00:01' < timestamp < str(now)):
-                return await submitRejectedJSON(session, "Invalid timestamp", myjson, domain, response, 240)
-
             # Get siteID
             result = await session.execute(
                 sa.select(MachineAtSite)
@@ -101,6 +96,11 @@ async def addData(request: Request, response: Response):
             hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
             if hash != sign:
                 return await submitRejectedJSON(session, "Incorrect hash", myjson, domain, response, 241)
+
+            # Check timestamp
+            now = datetime.datetime.now() + datetime.timedelta(minutes=1000)
+            if not ('2010-01-01 00:00:01' < timestamp < str(now)):
+                return await submitRejectedJSON(session, "Invalid timestamp", myjson, domain, response, 240)
 
         #catch error while parsing json
         except Exception:
