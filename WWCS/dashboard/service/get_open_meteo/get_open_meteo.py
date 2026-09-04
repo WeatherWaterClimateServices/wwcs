@@ -67,8 +67,8 @@ def dataframe_to_netcdf(df: pd.DataFrame, filename: str, ref_date: date, lat: fl
     # tp: ensemble mean precipitation
     v = nc.createVariable('tp', 'f4', ('time', 'lat', 'lon'), fill_value=np.nan)
     v.long_name = 'Total precipitation'
-    v.units = 'mm'
-    v[:, 0, 0] = df['precipitation'].values
+    v.units = 'm'
+    v[:, 0, 0] = df['precipitation'].values / 1000 # convert mm to m
 
     nc.latitude = lat
     nc.longitude = lon
