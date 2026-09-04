@@ -55,14 +55,9 @@ async def addData(request: Request, response: Response):
         data = json.loads(body)
     except json.JSONDecodeError:
         body_preview = body.decode("utf-8", errors="replace")[:2000]
-        logging.error(
-            "Invalid JSON body from %s at /insert: %r",
-            request.client.host if request.client else "unknown",
-            body_preview,
-        )
         async with AsyncSession(engine) as session:
             return await submitRejectedJSON(
-                session, "Invalid JSON body", body_preview, domain, response, 240
+                session, "Invalid JSON body", body_preview, domain, request, response, 240
             )
 
     myjson = json.dumps(data)
@@ -75,7 +70,7 @@ async def addData(request: Request, response: Response):
             timestamp = data.get('timestamp')
             sign = data.pop('sign', None)
             if not (loggerID and timestamp and sign):
-                return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain, response, 240)
+                return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain, request, response, 240)
 
             # Get siteID
             result = await session.execute(
@@ -87,7 +82,7 @@ async def addData(request: Request, response: Response):
 
             row = result.scalar()
             if row is None:
-                return await submitRejectedJSON(session, "Station ID not registered", myjson, domain, response, 240)
+                return await submitRejectedJSON(session, "Station ID not registered", myjson, domain, request, response, 240)
 
             siteID = row.siteID
 
@@ -95,17 +90,17 @@ async def addData(request: Request, response: Response):
             key = f"{siteID}; {loggerID}; {timestamp}"
             hash = hashlib.sha256(key.encode('utf-8')).hexdigest()
             if hash != sign:
-                return await submitRejectedJSON(session, "Incorrect hash", myjson, domain, response, 241)
+                return await submitRejectedJSON(session, "Incorrect hash", myjson, domain, request, response, 241)
 
             # Check timestamp
             now = datetime.datetime.now() + datetime.timedelta(minutes=1000)
             if not ('2010-01-01 00:00:01' < timestamp < str(now)):
-                return await submitRejectedJSON(session, "Invalid timestamp", myjson, domain, response, 240)
+                return await submitRejectedJSON(session, "Invalid timestamp", myjson, domain, request, response, 240)
 
         #catch error while parsing json
         except Exception:
             traceback.print_exc()
-            return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain, response, 240)
+            return await submitRejectedJSON(session, "Incorrect JSON body", myjson, domain, request, response, 240)
 
         # Fix data to be inserted
         translation_map = [
@@ -141,7 +136,11 @@ async def addData(request: Request, response: Response):
             return "Hashcheck ok, but insertion failed."
 
 #insert rejected functions
-async def submitRejectedJSON(session, text, json, domain, response, status_code):
+async def submitRejectedJSON(session, text, json, domain, request, response, status_code):
+    logging.warning(
+        "%s from %s at /insert: %r",
+        text, request.client.host if request.client else "unknown", json,
+    )
     await insert_t(session, t_MachineObsRejected,
        domain=domain,
        comment=text,
