@@ -1,3 +1,4 @@
+import time
 import datetime
 import re
 from typing import List, Tuple
@@ -81,7 +82,6 @@ def main():
                 pass
 
     # Define grid and dates
-    dates = list(pd.date_range(today - datetime.timedelta(days=3), today))
     lats = np.arange(np.floor(minlat * 4) / 4, np.ceil(maxlat * 4) / 4, .25)
     lons = np.arange(np.floor(minlon * 4) / 4, np.ceil(maxlon * 4) / 4, .25)
 
@@ -93,80 +93,79 @@ def main():
     lon_to_j = {float(lon): j for j, lon in enumerate(lons)}
 
     # Main loop
-    for date in dates:
-        date_string = date.strftime("%Y-%m-%d")
-        fout = client.DATA_PATH / f"tj_area_{date_string}.nc"
-        if fout.exists():
-            print(f"Skipping {fout}, already exists")
-            continue
-
-        df0 = download_chunk(*first_chunk, date, forecast_days)
-        times = df0['time'].unique()
-        ds = xr.Dataset(
-            data_vars={
-                "IFS_T_mea": (
-                    ("time", "lat", "lon"),
-                    np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
-                ),
-                "IFS_T_std": (
-                    ("time", "lat", "lon"),
-                    np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
-                ),
-            },
-            coords={"time": times, "lat": lats, "lon": lons},
-        )
-
-        # Process in chunks
-        chunks = chunk_points(lats, lons)
-
-        for chunk_lats, chunk_lons in chunks:
-            print(f"Downloading chunk: {len(chunk_lats)} points")
-            df_chunk = download_chunk(chunk_lats, chunk_lons, date, forecast_days)
-
-            # Assign results to grid
-            for (lat, lon), group in df_chunk.groupby(['latitude', 'longitude']):
-                i = lat_to_i[float(lat)]
-                j = lon_to_j[float(lon)]
-                ds["IFS_T_mea"][:, i, j] = group['temperature_2m_mean'].values
-                ds["IFS_T_std"][:, i, j] = group['temperature_2m_std'].values
-
-        # CF attributes
-        ds.attrs = {
-            "Conventions": "CF-1.6",
-            "institution": "European Centre for Medium-Range Weather Forecasts",
-            "history": f"Open-Meteo retrieval for area on {date}",
-        }
-        ds["lat"].attrs.update({
-            "standard_name": "latitude",
-            "long_name": "latitude",
-            "units": "degrees_north",
-            "axis": "Y",
-        })
-        ds["lon"].attrs.update({
-            "standard_name": "longitude",
-            "long_name": "longitude",
-            "units": "degrees_east",
-            "axis": "X",
-        })
-        ds["IFS_T_mea"].attrs.update({
-            "long_name": "2 metre temperature",
-            "units": "K",
-            "code": 167,
-            "table": 128,
-        })
-        ds["IFS_T_std"].attrs.update({
-            "long_name": "2 metre temperature",
-            "units": "K",
-            "code": 167,
-            "table": 128,
-        })
-        ds["time"].attrs.update({"axis": "T", "standard_name": "time"})
-
-        ds.to_netcdf(fout, engine="netcdf4", unlimited_dims=["time"])
-        print(f"Created NetCDF: {fout}")
-
+    date_string = today.strftime("%Y-%m-%d")
+    fout = client.DATA_PATH / f"tj_area_{date_string}.nc"
+    if fout.exists():
+        print(f"Skipping {fout}, already exists")
+        return
+    
+    df0 = download_chunk(*first_chunk, today, forecast_days)
+    times = df0['time'].unique()
+    ds = xr.Dataset(
+        data_vars={
+            "IFS_T_mea": (
+            ("time", "lat", "lon"),
+                np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
+            ),
+            "IFS_T_std": (
+                ("time", "lat", "lon"),
+                np.full((len(times), len(lats), len(lons)), np.nan, dtype="float32"),
+            ),
+        },
+        coords={"time": times, "lat": lats, "lon": lons},
+    )
+    
+    # Process in chunks
+    chunks = chunk_points(lats, lons)
+    
+    for chunk_lats, chunk_lons in chunks:
+        print(f"Downloading chunk: {len(chunk_lats)} points")
+        df_chunk = download_chunk(chunk_lats, chunk_lons, today, forecast_days)
+        time.sleep(15) # BORIS here
+        # Assign results to grid
+        for (lat, lon), group in df_chunk.groupby(['latitude', 'longitude']):
+            i = lat_to_i[float(lat)]
+            j = lon_to_j[float(lon)]
+            ds["IFS_T_mea"][:, i, j] = group['temperature_2m_mean'].values
+            ds["IFS_T_std"][:, i, j] = group['temperature_2m_std'].values
+            
+            # CF attributes
+            ds.attrs = {
+                "Conventions": "CF-1.6",
+                "institution": "European Centre for Medium-Range Weather Forecasts",
+                "history": f"Open-Meteo retrieval for area on {today}",
+            }
+            ds["lat"].attrs.update({
+                "standard_name": "latitude",
+                "long_name": "latitude",
+                "units": "degrees_north",
+                "axis": "Y",
+            })
+            ds["lon"].attrs.update({
+                "standard_name": "longitude",
+                "long_name": "longitude",
+                "units": "degrees_east",
+                "axis": "X",
+            })
+            ds["IFS_T_mea"].attrs.update({
+                "long_name": "2 metre temperature",
+                "units": "K",
+                "code": 167,
+                "table": 128,
+            })
+            ds["IFS_T_std"].attrs.update({
+                "long_name": "2 metre temperature",
+                "units": "K",
+                "code": 167,
+                "table": 128,
+            })
+            ds["time"].attrs.update({"axis": "T", "standard_name": "time"})
+            
+    ds.to_netcdf(fout, engine="netcdf4", unlimited_dims=["time"])
+    print(f"Created NetCDF: {fout}")
+            
     print("Open-Meteo IFS for the temperature grid - retrieval complete.")
-
-
+            
+            
 if __name__ == '__main__':
     main()
