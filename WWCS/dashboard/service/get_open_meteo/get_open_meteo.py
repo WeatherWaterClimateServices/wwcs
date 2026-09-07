@@ -98,8 +98,8 @@ if __name__ == '__main__':
 
         for site_id, lat, lon in sites:
             # TODO Remove this test
-            if site_id != 'ZAF001':
-                continue
+            # if site_id != 'ZAF001':
+            #    continue
             filename = outdir / f"ifs_{site_id}_{start_str}.nc"
             if filename.exists():
                 print(f"Skipping {filename}, already exists")
