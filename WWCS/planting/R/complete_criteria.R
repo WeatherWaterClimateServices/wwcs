@@ -1,4 +1,4 @@
-complete_criteria <- function(criteria, ptns_sf) {
+complete_criteria <- function(criteria, pnts_sf) {
   
   criteria <- criteria %>%
     dplyr::bind_rows(
@@ -52,10 +52,10 @@ complete_criteria <- function(criteria, ptns_sf) {
     dplyr::select(-c(area)) %>%
     arrange(district) %>%
     unique()
-  
-  # Write missing districts to criteria.csv file replacing existing
-  
+  ## Write missing districts to criteria.csv file replacing existing
   write_csv(criteria,
-            "/srv/shiny-server/planting/appdata/criteria_planting.csv")
-  
+            file.path(ROOT_DIR, "WWCS/planting/appdata/criteria_planting.csv"))
+
+  ## return
+  criteria  
 }

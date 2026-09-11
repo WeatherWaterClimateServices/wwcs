@@ -8,8 +8,21 @@ set -o pipefail
 
 echo "=== CRON JOB ==="
 
-cd /srv/shiny-server/planting/service/
+# cd to the directory of this script
+my_dir="$(dirname "$(readlink -f "$0")")"
+cd $my_dir
+pwd
 
-echo "=== CALCULATE IRRIGATION ADVICE ==="
+# Ensure the cronout folder exists
+mkdir -p cronout
 
-R CMD BATCH --no-save soilprediction.R soilprediction.out
+# Ensure the appdata folder exists
+mkdir -p ../appdata
+
+echo "=== CALCULATE PLANTING ADVICE ==="
+# cd to the wwcs/WWCS (usually ~/wwcs/WWCS), where .Rprofile lives
+cd ../..
+pwd
+
+
+R CMD BATCH --no-save ${my_dir}/soilprediction.R ${my_dir}/cronout/planting.out

@@ -9,51 +9,42 @@ library(sf)
 library(lubridate)
 library(crch)
 
-rm(list = ls())
-
-setwd("/srv/shiny-server/planting/")
-options(shiny.sanitize.errors = FALSE)
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-source('/home/wwcs/wwcs/WWCS/planting/R/complete_criteria.R')
+## read in the criteria-completing function
+source(file.path(ROOT_DIR, "WWCS/planting/R/complete_criteria.R"))
 
 # READ AND ALLOCATE DATA
 # ----------------------
 
 curr_date <- Sys.Date() 
 
-criteria <-
-  read_csv("/srv/shiny-server/planting/appdata/criteria_planting.csv")
 
 # Read administrative areas
-
-bd <-
-  sf::st_read(
-    paste0(
-      "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
-      gadm0,
-      "_2.shp"
-    ),
-    as_tibble = TRUE
+bd <- sf::st_read(
+  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_2.shp"),
+  as_tibble = TRUE
   ) %>%
   dplyr::rename(district = GID_2, name = NAME_2) %>%
   dplyr::select(c(district, name, geometry))
 
 # Read stations which have the value 1 in the planting column in the Sites table
-
 sites <- sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
   dplyr::filter(planting == 1)  %>%
   dplyr::select(c(siteID, latitude, longitude, district))
 
-
-pnts_sf <-
-  st_as_sf(sites,
-           coords = c('longitude', 'latitude'),
-           crs = st_crs(bd))
+pnts_sf <- st_as_sf(sites, coords = c('longitude', 'latitude'),
+                    crs = st_crs(bd))
 
 pnts_sf <- pnts_sf %>% mutate(intersection = as.integer(st_intersects(geometry, bd)),
                               area = if_else(is.na(intersection), '', bd$name[intersection]))
 
-complete_criteria(criteria, pnts_sf)
+## if additional districts come forward, equip them with criteria (fully Taj-specific)
+criteria.file <- file.path(ROOT_DIR, "WWCS/planting/appdata/criteria_planting.csv")
+if (file.exists(criteria.file)){
+  criteria <- read_csv(criteria.file)
+} else {
+  criteria <- data.frame()
+}
+criteria <- complete_criteria(criteria, pnts_sf)
 
 sites <- sites %>%
   left_join(pnts_sf)
@@ -149,12 +140,11 @@ for (i in 1:nstat) {
 alldata <- alldata %>%
   dplyr::filter(day < curr_date)
 
-fst::write_fst(alldata, path = "/srv/shiny-server/planting/appdata/soildata.fst", compress = 0)
-
+alldata.path <- file.path(ROOT_DIR, "WWCS/planting/appdata/soildata.fst")
+fst::write_fst(alldata, path = alldata.path, compress = 0)
 
 # PREDICT SOIL TEMPERATURE BASED ON FORECASTED TEMPERATURE SUMS
 # ------------------------------------------------------------------
-
 emos_formula   <-
   as.character("Temperature ~ IFS_T_sum + lastobs")
 
@@ -163,7 +153,7 @@ emos <- data.frame()
 emos_merged <- data.frame()
 
 emosmod <-
-  fst::read_fst("/srv/shiny-server/dashboard/appdata/emos.fst") %>%
+  fst::read_fst(file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")) %>%
   dplyr::as_tibble()
 
 crps <- array(NA, soil_fcst_days)
@@ -255,7 +245,8 @@ for (i in 1:nstat) {
   
 }
 
-fst::write_fst(emos_merged, path = "/srv/shiny-server/planting/appdata/emosdata.fst", compress = 0)
+emosout.path <- file.path(ROOT_DIR, "WWCS/planting/appdata/emosdata.fst")
+fst::write_fst(emos_merged, path = emosout.path, compress = 0)
 
 # ---------------------------------------
 # WRITE SERVICE DATA INTO THE SERVICE DATABASE

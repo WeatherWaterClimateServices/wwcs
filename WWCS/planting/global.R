@@ -11,19 +11,23 @@ library(readr)
 library(sf)
 library(lubridate)
 
-rm(list = ls())
-
-setwd("/srv/shiny-server/planting/")
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
+# ---- Auth & credentials ----
+ROOT_DIR <- normalizePath(getwd(), mustWork = TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, "WWCS/.Rprofile"))
 options(shiny.sanitize.errors = FALSE)
 
 # READ AND ALLOCATE DATA
 # -------------------
 
 soildata <-
-  fst::read_fst("/srv/shiny-server/planting/appdata/soildata.fst")
+  fst::read_fst(paste0(ROOT_DIR, "/WWCS/planting/appdata/soildata.fst"))
 emosdata <-
-  fst::read_fst("/srv/shiny-server/planting/appdata/emosdata.fst")
+  fst::read_fst(paste0(ROOT_DIR, "/WWCS/planting/appdata/emosdata.fst"))
 
 
 time_range_min <- min(emosdata$reftime)
@@ -38,19 +42,20 @@ start_date_o <- time_obs_max - days(30)
 sites <- soildata %>% distinct(siteID, .keep_all = TRUE)
 
 
-# Read administrative areas
-bd <- sf::st_read(paste0("/srv/shiny-server/dashboard/appdata/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
+## Read administrative areas
+bd <- sf::st_read(
+  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_2.shp"),
+  as_tibble = TRUE
+) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
+if (gadm0 == "TJK") bd$district[14] <- "Rudaki2"
 
-if (gadm0 == "TJK") {
-  bd$district[14] = "Rudaki2"  
-}
+mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 
-mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
 
 criteria <-
-  read_csv("/srv/shiny-server/planting/appdata/criteria_planting.csv")
+  read_csv(file.path(ROOT_DIR, "WWCS/planting/appdata/criteria_planting.csv"))
 
 
 # DEFINE DEFAULT TIME RANGES
@@ -61,9 +66,8 @@ seldate <- as.Date("2023-05-15")
 
 # SET LANGUAGE TRANSLATION
 # ------------------------------------------------
-
-i18n <-
-  shiny.i18n::Translator$new(translation_json_path = 'www/translation.json')
+json.path <- file.path(ROOT_DIR, "WWCS/planting/www/translation.json")
+i18n      <- shiny.i18n::Translator$new(translation_json_path = json.path)
 i18n$set_translation_language('en')
 shiny.i18n::usei18n(i18n)
 
