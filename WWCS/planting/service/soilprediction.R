@@ -266,7 +266,7 @@ pool_service <-
     RMariaDB::MariaDB(),
     user = 'wwcs',
     password = db_password,
-    dbname = 'WWCServices',
+    dbname = ifelse(ENV=="PROD", "WWCServices", "WWCServices_DEV"),
     host = 'localhost'
   )
 

@@ -48,7 +48,7 @@ pool_service <-
     RMariaDB::MariaDB(),
     user = 'wwcs',
     password = db_password,
-    dbname = 'WWCServices',
+    dbname = ifelse(ENV=="PROD", "WWCServices", "WWCServices_DEV"),
     host = 'localhost'
   )
 
@@ -565,58 +565,58 @@ for (i in 1:nrow(ews_station)) {
 # Send automatic SMS through telerivet
 # ------------------------------------------------
 
-phone_numbers <- c("+992938706696", "+992888800509", "+992947777770", "+992901109332")
-default_message <- "[Date] [Level] chance for [Heat/Cold]"
-warn_days <- 3
-warn_type <- "frost"
-siteID <- "DYU02"
-warn_thres <- "Cold2"
+## phone_numbers <- c("+992938706696", "+992888800509", "+992947777770", "+992901109332")
+## default_message <- "[Date] [Level] chance for [Heat/Cold]"
+## warn_days <- 3
+## warn_type <- "frost"
+## siteID <- "DYU02"
+## warn_thres <- "Cold2"
 
-warning <-
-  sqlQuery(query = paste0("select * from Coldwave where Name = '", siteID, "' and reftime = CURDATE()"), dbname = "WWCServices")
+## warning <-
+##   sqlQuery(query = paste0("select * from Coldwave where Name = '", siteID, "' and reftime = CURDATE()"), dbname = "WWCServices")
 
-warning_verbose <- warning %>% 
-  dplyr::mutate_all(stringr::str_replace_all, "green", "low") %>%
-  dplyr::mutate_all(stringr::str_replace_all, "yellow", "moderate")  %>%
-  dplyr::mutate_all(stringr::str_replace_all, "red", "high") %>%
-  dplyr::select(warn_thres) %>%
-  unlist()
-
-
-format_date <- function(date) {
-  format(date, "%A %d/%m/%Y")
-}
+## warning_verbose <- warning %>% 
+##   dplyr::mutate_all(stringr::str_replace_all, "green", "low") %>%
+##   dplyr::mutate_all(stringr::str_replace_all, "yellow", "moderate")  %>%
+##   dplyr::mutate_all(stringr::str_replace_all, "red", "high") %>%
+##   dplyr::select(warn_thres) %>%
+##   unlist()
 
 
-message <- paste(format_date(Sys.Date()), warning_verbose[1],"chance for frost in Dushanbe +",
-                 format_date(Sys.Date() + 1), warning_verbose[2], "chance for frost in Dushanbe +",
-                 format_date(Sys.Date() + 2), warning_verbose[3], "chance for frost in Dushanbe")
+## format_date <- function(date) {
+##   format(date, "%A %d/%m/%Y")
+## }
 
-API <- "wWuZK_npGbYyvqQLO7vzZNNfwvz9oaHYBNXg"
-project_id <- "PJa0f94bd02787dbfe"
 
-send_sms <- function(phone_number, message) {
-  print(phone_number)
+## message <- paste(format_date(Sys.Date()), warning_verbose[1],"chance for frost in Dushanbe +",
+##                  format_date(Sys.Date() + 1), warning_verbose[2], "chance for frost in Dushanbe +",
+##                  format_date(Sys.Date() + 2), warning_verbose[3], "chance for frost in Dushanbe")
 
-  cmd <- paste0(
-      'curl -s -u ',
-      API,
-      ': ',
-      '"https://api.telerivet.com/v1/projects/',
-      project_id,
-      '/messages/send\" -H "Content-Type: application/json" -d ',
-      '\'{"content": "',
-      message,
-      '",',
-      '"to_number": "',
-      phone_number,
-      '"}\''
-    )
+## API <- "wWuZK_npGbYyvqQLO7vzZNNfwvz9oaHYBNXg"
+## project_id <- "PJa0f94bd02787dbfe"
+
+## send_sms <- function(phone_number, message) {
+##   print(phone_number)
+
+##   cmd <- paste0(
+##       'curl -s -u ',
+##       API,
+##       ': ',
+##       '"https://api.telerivet.com/v1/projects/',
+##       project_id,
+##       '/messages/send\" -H "Content-Type: application/json" -d ',
+##       '\'{"content": "',
+##       message,
+##       '",',
+##       '"to_number": "',
+##       phone_number,
+##       '"}\''
+##     )
   
-  system(cmd)
+##   system(cmd)
   
-}
+## }
 
-for (i in phone_numbers) {
-  # send_sms(i, message)
-}
+## for (i in phone_numbers) {
+##   # send_sms(i, message)
+## }
