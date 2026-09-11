@@ -9,11 +9,15 @@ library(pool)
 library(dplyr)
 library(RMySQL)
 
-rm(list = ls())
-
-setwd("/srv/shiny-server/ews/")
+# ---- Auth & credentials ----
+ROOT_DIR <- normalizePath(getwd(), mustWork = TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, "WWCS/.Rprofile"))
 options(shiny.sanitize.errors = FALSE)
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
 
 # READ AND ALLOCATE DATA
 # -------------------
@@ -37,15 +41,15 @@ pool_service <-
   )
 
 # Read administrative areas
-bd <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
+bd <- sf::st_read(
+  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_2.shp"),
+  as_tibble = TRUE
+) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
+if (gadm0 == "TJK") bd$district[14] <- "Rudaki2"
 
-if (gadm0 == "TJK") {
-  bd$district[14] = "Rudaki2"  
-}
-
-mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
+mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 
 sites <- dbReadTable(pool, "Sites") %>%
          dplyr::filter(heatwave == 1 | coldwave == 1) %>%
@@ -64,13 +68,13 @@ warning_data <- dplyr::full_join(cold, heat) %>%
 ews_district  <- warning_data %>%
                  dplyr::filter(Type == "District") %>%
                  dplyr::rename(district = Name) %>% 
-                 dplyr::left_join(bd) 
+                 dplyr::inner_join(bd) 
 
 
 ews_station  <- warning_data %>%
                 dplyr::filter(Type == "Station") %>%
                 dplyr::rename(siteID = Name) %>%
-                left_join(sites) %>%
+                inner_join(sites) %>%
                 dplyr::rename(lat = latitude, lon = longitude)
 
 humans <- dbReadTable(pool, "Humans") %>%
@@ -109,8 +113,8 @@ ews_station_index <- ews_station %>%
 
 # SET LANGUAGE TRANSLATION
 # ------------------------------------------------
-
-i18n <- shiny.i18n::Translator$new(translation_json_path = 'www/translation.json')
+json.path <- file.path(ROOT_DIR, "WWCS/ews/www/translation.json")
+i18n      <- shiny.i18n::Translator$new(translation_json_path = json.path)
 i18n$set_translation_language('en')
 shiny.i18n::usei18n(i18n)
 
