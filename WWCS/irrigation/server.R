@@ -320,10 +320,8 @@ server <- function(input, output, session) {
         ),
         intern = TRUE
       )
-    
-    source(
-      "/home/wwcs/wwcs/WWCS/irrigation/service/irrigation_calculation.R"
-    )
+
+    source(file.path(ROOT_DIR, "WWCS/irrigation/service/irrigation_calculation.R"))
     
     irrigation_data <- reactive({
       
