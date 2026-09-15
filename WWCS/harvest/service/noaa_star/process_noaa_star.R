@@ -7,11 +7,8 @@ library(jsonlite)
 library(raster)
 library(dplyr)
 
-rm(list = ls())
-
-# READ STATION DATA FROM WWCS.TJ
-# ------------------------------------------------
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
+# SET GLOBAL PARAMETERS - coming from .Rprofile and config.yaml
+# -------------------------------------------------------------
 
 sites <-
   sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
@@ -31,7 +28,7 @@ closest <- function(xv, sv) {
   min(which(abs(xv - sv) == min(abs(xv - sv))))
 }
 
-bd_gadm <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_0.shp"))
+bd_gadm <- sf::st_read(paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_0.shp"))
 
 ind <- array(NA, dim = c(length(sites$longitude), 2))
 
@@ -55,9 +52,9 @@ ind_bounds <-
 
 # READ NOAA DATA AND INTERPOLATE TO STATION
 # ------------------------------------------------
-
-if (file.exists('/srv/shiny-server/harvest/appdata/noaa.fst')) {
-  noaa <- fst::read_fst("/srv/shiny-server/harvest/appdata/noaa.fst")
+noaa.file <- file.path(ROOT_DIR, "WWCS/harvest/appdata/noaa.fst")
+if (file.exists(noaa.file)) {
+  noaa <- fst::read_fst(noaa.file)
   last_entry <- tail(noaa$time, 1)
   noaa <- noaa %>%
     filter(time != last_entry)
@@ -68,7 +65,8 @@ if (file.exists('/srv/shiny-server/harvest/appdata/noaa.fst')) {
 }
 
 flist <-
-  list.files(path = "/srv/shiny-server/harvest/appdata/noaa_star", full.names = TRUE) %>%
+  list.files(path = file.path(ROOT_DIR, "WWCS/harvest/appdata/noaa_star"),
+             full.names = TRUE) %>%
   as_tibble() %>%
   na.omit() %>%
   dplyr::rename(filename = value) %>%
@@ -145,7 +143,7 @@ for (i in 1:length(datelist)) {
       raster::writeRaster(
         noaa_raster,
         paste0(
-          "/srv/shiny-server/harvest/appdata/noaa_raster/raster_",
+          ROOT_DIR, "/WWCS/harvest/appdata/noaa_raster/raster_",
           datelist[i] ,
           "-",
           timesteps[j],
@@ -165,5 +163,5 @@ noaa_hourly <- noaa %>%
   group_by(siteID, time = floor_date(time, unit = "hour")) %>%
   summarise(Precipitation = sum(Precipitation))
 
-fst::write_fst(noaa_hourly, path = "/srv/shiny-server/harvest/appdata/noaa.fst", compress = 0)
+fst::write_fst(noaa_hourly, path = noaa.file, compress = 0)
 

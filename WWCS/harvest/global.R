@@ -11,32 +11,38 @@ library(sf)
 library(lubridate)
 library(RMySQL)
 
-rm(list = ls())
-
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
+# ---- Auth & credentials ----
+ROOT_DIR <- normalizePath(getwd(), mustWork = TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, "WWCS/.Rprofile"))
 options(shiny.sanitize.errors = FALSE)
-setwd("/srv/shiny-server/harvest/")
 
 # READ AND ALLOCATE DATA
 # -------------------
-
-if (!file.exists("/srv/shiny-server/harvest/appdata/noaa.fst")) {
+noaa.file <- file.path(ROOT_DIR, "WWCS/harvest/appdata/noaa.fst")
+if (!file.exists(noaa.file)) {
   noaadata <- data.frame()
 } else {
-  noaadata <- fst::read_fst("/srv/shiny-server/harvest/appdata/noaa.fst") %>%
+  noaadata <- fst::read_fst(noaa.file) %>%
     dplyr::as_tibble()
 }
 
-if (!file.exists("/srv/shiny-server/dashboard/appdata/dmo.fst")) {
+dmo.file       <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/dmo.fst")
+if (!file.exists(dmo.file)) {
   dmo <- data.frame()
 } else {
-  dmo <- fst::read_fst("/srv/shiny-server/dashboard/appdata/dmo.fst")
+  dmo <- fst::read_fst(dmo.file)
 }
 
-if (!file.exists("/srv/shiny-server/dashboard/appdata/obs.fst")) {
+obs.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst")
+if (!file.exists(obs.file)) {
   obs <- data.frame()
 } else {
-  obs <- fst::read_fst("/srv/shiny-server/dashboard/appdata/obs.fst") %>%
+  obs <- fst::read_fst(obs.file) %>%
   group_by(siteID, time = floor_date(time, unit = "hour")) %>%
     summarise(Precipitation = sum(Precipitation))
 }
@@ -58,15 +64,15 @@ sites <- sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
   dplyr::select(c(siteID, latitude, longitude, district))
 
 # Read administrative areas
-bd <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
+bd <- sf::st_read(
+  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_2.shp"),
+  as_tibble = TRUE
+) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
+if (gadm0 == "TJK") bd$district[14] <- "Rudaki2"
 
-if (gadm0 == "TJK") {
-  bd$district[14] = "Rudaki2"  
-}
-
-mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
+mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 
 pool_service <-
   pool::dbPool(
@@ -95,9 +101,8 @@ seldate <- Sys.Date() - days(1)
 
 # SET LANGUAGE TRANSLATION
 # ------------------------------------------------
-
-i18n <-
-  shiny.i18n::Translator$new(translation_json_path = '/srv/shiny-server/harvest/www/translation.json')
+json.path <- file.path(ROOT_DIR, "WWCS/harvest/www/translation.json")
+i18n      <- shiny.i18n::Translator$new(translation_json_path = json.path)
 i18n$set_translation_language('en')
 shiny.i18n::usei18n(i18n)
 

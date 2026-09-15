@@ -1,4 +1,3 @@
-#!bnxsr/bin/env python
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
@@ -7,13 +6,15 @@ import fnmatch
 
 # Define global variables
 # --------------------------------
+from common import ROOT_DIR
 
-outdir = "/srv/shiny-server/harvest/appdata/noaa_star/"
+outdir = ROOT_DIR / "WWCS" / "harvest" / "appdata" / "noaa_star"
 
 if not os.path.exists(outdir):
    os.makedirs(outdir)
 
 os.chdir(outdir)
+print(os.getcwd())
 
 # Retrieve NOAA STAR Data 
 # --------------------------------

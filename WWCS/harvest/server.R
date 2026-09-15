@@ -65,7 +65,7 @@ server <- function(input, output, session) {
       date_map <- as.Date(input$range)
       hour_map <- lubridate::hour(input$range)
       
-      raster_file <- paste0("/srv/shiny-server/harvest/appdata/noaa_raster/raster_", date_map, "-", hour_map,".tif")
+      raster_file <- paste0(ROOT_DIR, "/WWCS/harvest/appdata/noaa_raster/raster_", date_map, "-", hour_map,".tif")
       if (file.exists(raster_file)) {
         noaamap <- raster::raster(raster_file)
         
