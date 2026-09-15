@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from common import USERNAME, PASSWORD
+from common import USERNAME, PASSWORD, ROOT_DIR
 
 
 # Database connection settings
@@ -426,7 +426,7 @@ async def get_map_data(request: Request, response: Response):
     sellon = request.query_params.get('lon')
     print(sellat)
     print(sellon)
-    da = xr.open_dataset('/srv/shiny-server/dashboard/appdata/gemos_raster/raster_merged.nc')
+    da = xr.open_dataset(ROOT_DIR / 'WWCS/dashboard/appdata/gemos_raster/raster_merged.nc')
     ds = da.sel(lon=sellon, lat=sellat, method="nearest")
     filtered_data = ds[["IFS_T_mea"]].round(1).rename({"IFS_T_mea": "Tmean"}).to_dict()["data_vars"]
 
