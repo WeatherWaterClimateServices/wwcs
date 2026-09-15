@@ -3,7 +3,14 @@ library(shinyBS)
 library(shinyLP)
 library(shinythemes)
 
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
+# Load the credentials - to come from .Rprofile and config.yaml
+ROOT_DIR <- normalizePath(getwd(), mustWork=TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
 
 # Define UI for application
 shinyUI(# Include a fliudPage above the navbar to incorporate a icon in the header

@@ -1,5 +1,4 @@
-setwd("/srv/shiny-server/server-status")
-RData <- "sysLoad.rds"
+RData <- file.path(ROOT_DIR, "WWCS/status/sysLoad.rds")
 
 if (!file.exists(RData)) {
   Dat <- NULL
@@ -9,6 +8,7 @@ if (!file.exists(RData)) {
 
 I <- 0
 
+setwd(file.path(ROOT_DIR, "WWCS/status"))
 repeat {
   system("top -n 1 -b -u shiny > top.log")
   dat <- readLines("top.log")
@@ -60,6 +60,7 @@ repeat {
   }
   Sys.sleep(5)
   I <- I + 5
+  print(paste(I, "/ 60"))
   if (I >= 60) {
     break
   }

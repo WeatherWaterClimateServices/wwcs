@@ -32,21 +32,14 @@ credentials <- data.frame(
 
 # Read administrative areas
 bd <- sf::st_read(
-  paste0(
-    "/home/wwcs/wwcs/WWCS/boundaries/gadm41_",
-    gadm0,
-    "_2.shp"
-  ),
+  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_2.shp"),
   as_tibble = TRUE
 ) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
+if (gadm0 == "TJK") bd$district[14] <- "Rudaki2"
 
-if (gadm0 == "TJK") {
-  bd$district[14] = "Rudaki2"
-}
-
-mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
+mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 
 # Fetch and join all station data from the database
 fetch_mapdata <- function() {

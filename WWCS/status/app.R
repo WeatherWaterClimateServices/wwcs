@@ -4,7 +4,13 @@ library(lubridate)
 library(highcharter)
 library(jsonlite)
 
-setwd("/srv/shiny-server/server-status")
+ROOT_DIR <- normalizePath(getwd(), mustWork=TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+
 ui <- fluidPage(
   titlePanel('Shiny Server Monitor'),
   highchartOutput('user_chart_today')
@@ -13,7 +19,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   filter_user_data_today <- reactive({
-    Dat <- readRDS('sysLoad.rds')
+    Dat <- readRDS(file.path(ROOT_DIR, "WWCS/status/sysLoad.rds"))
     
     Dat %>%
       mutate(hour = as.POSIXct(trunc(Time, 'mins'))) %>%

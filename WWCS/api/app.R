@@ -9,18 +9,25 @@ library(lubridate)
 
 # PREPARE GLOBAL PARAMETERS
 # ------------------------------------------------
-
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
-mask <- readRDS("/home/wwcs/wwcs/WWCS/boundaries/mask.rds")
+# Load the credentials - to come from .Rprofile and config.yaml
+ROOT_DIR <- normalizePath(getwd(), mustWork=TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, 'WWCS/.Rprofile'))
 
 # Read administrative areas
-bd <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_2.shp"), as_tibble = TRUE) %>%
+bd <- sf::st_read(
+  paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_2.shp"),
+  as_tibble = TRUE
+) %>%
   dplyr::rename(district = NAME_2) %>%
   dplyr::select(c(district, geometry))
+if (gadm0 == "TJK") bd$district[14] <- "Rudaki2"
 
-if (gadm0 == "TJK") {
-  bd$district[14] = "Rudaki2"  
-}
+mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 
 # PREPARE UI
 # ------------------------------------------------
