@@ -424,8 +424,8 @@ async def get_map_data(request: Request, response: Response):
     filtered_data = []
     sellat = request.query_params.get('lat')
     sellon = request.query_params.get('lon')
-    print(sellat)
-    print(sellon)
+    if not sellat or not sellon:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="lat and lon are required")
     da = xr.open_dataset(ROOT_DIR / 'WWCS/dashboard/appdata/gemos_raster/raster_merged.nc')
     ds = da.sel(lon=sellon, lat=sellat, method="nearest")
     filtered_data = ds[["IFS_T_mea"]].round(1).rename({"IFS_T_mea": "Tmean"}).to_dict()["data_vars"]
