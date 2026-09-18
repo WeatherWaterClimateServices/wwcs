@@ -48,16 +48,21 @@ pool_service <-
     host = 'localhost'
   )
 
-# Get the default location from data base
-
-default_station <-
-  dbReadTable(pool, "Sites") %>%
-  filter(siteID == irrigation_default_station) %>%
-  dplyr::select(c(siteID, latitude, longitude))
-
 sites_map_ui <- dbReadTable(pool, "Sites")  %>%
     filter(irrigation == 1) %>%
     dplyr::select(c(siteID))
+
+# Get the default location from data base
+if(irrigation_default_station %in% sites_map_ui$siteID){
+  default_station <- DBI::dbReadTable(pool, "Sites") %>%
+    dplyr::filter(siteID == irrigation_default_station) %>%
+    dplyr::select(c(siteID, latitude, longitude))
+} else {
+  default_station <- DBI::dbReadTable(pool, "Sites") %>%
+    head(1) %>%
+    dplyr::select(c(siteID, latitude, longitude))  
+}
+print(default_station)
 
 # Check if it empty, otherwise use the default_station
 

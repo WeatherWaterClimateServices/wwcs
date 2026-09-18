@@ -50,9 +50,9 @@ plot_water_balance <- function(irrigation_data, id) {
         displaylogo = FALSE
       ) %>%
       plotly::layout(
+        title = list(text = id, font = list(size=15)),
         autosize = T,
-        hoverlabel = label,
-        title = font
+        hoverlabel = label
       )
     
   } else {
