@@ -154,7 +154,8 @@ plot_meteogram_precip <- function(id, range, seltime) {
       nrow(obs_pr) == 0 ) {
     p <-  plotly::plotly_empty(type = "scatter", mode = "markers") %>%
       plotly::config(displayModeBar = FALSE) %>%
-      plotly::layout(title = list(text = "No data available", yref = "paper", y = 0.5))
+      plotly::layout(title = list(text = paste("No data available,", id),
+                                  yref = "paper", y = 0.5))
   } else {
     p <- p %>%
       layout(

@@ -1,4 +1,4 @@
-library(shiny)
+  library(shiny)
 library(shinydashboard)
 library(tidyr)
 library(leaflet)
@@ -62,7 +62,9 @@ start_date_f <- time_ifs_max - days(1)
 sites <- sqlQuery(query = "select * from Sites", dbname = "SitesHumans") %>%
   dplyr::filter(harvest == 1)  %>%
   dplyr::select(c(siteID, latitude, longitude, district))
-
+if(!(harvest_default_station %in% sites$siteID))
+  harvest_default_station <- sites$siteID[1]
+print(harvest_default_station)
 # Read administrative areas
 bd <- sf::st_read(
   paste0(ROOT_DIR, "/WWCS/boundaries/gadm41_", gadm0, "_2.shp"),

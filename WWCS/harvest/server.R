@@ -159,8 +159,6 @@ server <- function(input, output, session) {
       na.omit() %>%
       dplyr::distinct()
     
-    print(levels)
-    
     if (nrow(levels) == 0) {
       text <- paste0("Station ", selected$id, " has no frost information aivalable")
       color <- "red"
