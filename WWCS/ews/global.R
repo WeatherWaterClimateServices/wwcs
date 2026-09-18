@@ -54,6 +54,8 @@ mask <- readRDS(file.path(ROOT_DIR, "WWCS/boundaries/mask.rds"))
 sites <- dbReadTable(pool, "Sites") %>%
          dplyr::filter(heatwave == 1 | coldwave == 1) %>%
          dplyr::select(siteID, latitude, longitude) 
+if(!(warning_default_station %in% sites$siteID))
+  warning_default_station <- sites$siteID[1]
           
 
 cold <- dbReadTable(pool_service, "Coldwave") %>%
