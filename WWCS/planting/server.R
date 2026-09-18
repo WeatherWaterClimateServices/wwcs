@@ -1,7 +1,12 @@
 server <- function(input, output, session) {
   selected <- reactiveValues(id = planting_default_station)
   
-  district <- reactiveValues(id = "Muminobod")
+  district <-
+    reactiveValues(id = sites %>%
+                     dplyr::filter(siteID == planting_default_station) %>%
+                     dplyr::select(district) %>%
+                     unlist())
+
   
   
   # ------------------------------- Leaflet Map

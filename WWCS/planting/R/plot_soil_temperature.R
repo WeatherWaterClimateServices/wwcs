@@ -43,9 +43,6 @@ plot_soil_temperature <- function(soildata, id, low, high, period, range) {
   }
   
   # Check if any in_range is true then use green, red otherwise
-  
-  print(plotdata)
-  
   if (nrow(plotdata) > 0) {
     p <- plot_ly() %>%
       add_lines(

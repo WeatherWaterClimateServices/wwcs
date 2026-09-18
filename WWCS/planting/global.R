@@ -40,7 +40,8 @@ time_obs_max <- max(soildata$day)
 start_date_o <- time_obs_max - days(30)
 
 sites <- soildata %>% distinct(siteID, .keep_all = TRUE)
-
+if(!(planting_default_station %in% sites$siteID))
+  planting_default_station <- sites$siteID[1]
 
 ## Read administrative areas
 bd <- sf::st_read(
