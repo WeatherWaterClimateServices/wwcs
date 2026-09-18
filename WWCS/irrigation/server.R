@@ -24,14 +24,15 @@ server <- function(input, output, session) {
       dplyr::filter(irrigation == 1) %>%
       dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
     
-    dbReadTable(pool, "Sites")   %>%
-      dplyr::filter(irrigation == 1) %>%
-      dplyr::select(fieldproperties) %>%
-      unlist() %>%
-      spread_all %>%
-      dplyr::bind_cols(sites) %>%
-      dplyr::as_tibble() %>%
-      dplyr::select(c(
+    tryCatch({
+      df <- dbReadTable(pool, "Sites")   %>%
+        dplyr::filter(irrigation == 1) %>%
+        dplyr::select(fieldproperties) %>%
+        unlist() %>%
+        spread_all %>%
+        dplyr::bind_cols(sites) %>%
+        dplyr::as_tibble() %>%
+        dplyr::select(c(
         siteID,
         siteName,
         altitude,
@@ -50,8 +51,26 @@ server <- function(input, output, session) {
         measurement_device,
         humanID
       ))
+      
+      required <- c("Station", "FC", "WP", "IE", "WA", "MAD", "PHIc",
+                    "StartDate", "Crop", "area", "type",
+                    "measurement_device", "humanID")
+      
+      incomplete <- df %>%
+        dplyr::filter(dplyr::if_any(dplyr::all_of(required), is.na))
+      
+      if (nrow(incomplete) > 0) {
+        stop("Missing field properties for site(s): ",
+             paste(incomplete$siteID, collapse = ", "))
+      }
+      
+      df
+      },
+      error = function(e) {
+        message("irrigation_df failed: ", conditionMessage(e))  # console / log
+        e                                                       # return the error itself
+      })
   })
-  
   
   irrigation_data <- reactive({
     input$submit_data
@@ -186,6 +205,9 @@ server <- function(input, output, session) {
   
   output$table <- DT::renderDataTable({
     table <- irrigation_df()
+    if (inherits(table, "error")) {
+      validate(paste("Could not load irrigation table:", conditionMessage(table)))
+    }
     DT::datatable(table,  options = list(pageLength = 20))
   })
   
@@ -422,11 +444,11 @@ server <- function(input, output, session) {
   observeEvent(input$submit_edit, priority = 20, {
     sites <- dbReadTable(pool, "Sites")  %>%
       dplyr::as_tibble() %>%
-      dplyr::filter(type == "WWCS") %>%
+      dplyr::filter(irrigation == 1) %>%
       dplyr::select(c(siteID, siteName, altitude, latitude, longitude, irrigation))
     
     SQL_df <- dbReadTable(pool, "Sites")   %>%
-      dplyr::filter(type == "WWCS") %>%
+      dplyr::filter(irrigation == 1) %>%
       dplyr::select(fieldproperties) %>%
       unlist() %>%
       spread_all %>%
