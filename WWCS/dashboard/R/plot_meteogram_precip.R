@@ -333,7 +333,7 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
         plotly::config(displayModeBar = FALSE) %>%
         plotly::layout(
           title = list(
-            text = "Station currently not operating\n Станция в настоящее время не работает",
+            text = paste(id, "Station currently not operating"),
             yref = "paper",
             y = 0.5
           )
@@ -343,7 +343,8 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
     p <-  plotly::plotly_empty(type = "scatter", mode = "markers") %>%
       plotly::config(displayModeBar = FALSE) %>%
       plotly::layout(
-        title = list(text = "Observational record too short for forecast calibration\n Данные наблюдений слишком коротки для калибровки прогнозов", yref = "paper", y = 0.5)
+                title = list(text = paste(id, "Observational record too short for forecast calibration"),
+                             yref = "paper", y = 0.5)
       )
     
   }

@@ -68,7 +68,7 @@ plot_soil_moisture <- function(irrigation_data, id) {
     p <-  plotly::plotly_empty(type = "scatter", mode = "markers") %>%
       plotly::config(displayModeBar = FALSE) %>%
       plotly::layout(
-        title = list(text = "No records for this location available\n Записи для этого места отсутствуют",
+        title = list(text = paste(id, "No records for this location available"),
                      yref = "paper",
                      y = 0.5)
       )

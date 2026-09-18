@@ -77,14 +77,27 @@ plot_observations <- function(obs, id, period, var) {
           yaxis = list(tickfont = list(size = 10)),
           showlegend = FALSE
         )
-      
-      p
-      
     } else {
-      plot.new()
-      
+      p <-  plotly::plotly_empty(type = "scatter", mode = "markers") %>%
+        plotly::config(displayModeBar = FALSE) %>%
+        plotly::layout(
+                  title = list(
+            text = paste(id, "Station currently not operating"),
+            yref = "paper",
+            y = 0.5
+          )
+        )
     }
   } else {
-    plot.new()
+    p <-  plotly::plotly_empty(type = "scatter", mode = "markers") %>%
+      plotly::config(displayModeBar = FALSE) %>%
+      plotly::layout(
+                title = list(
+                  text = paste(id, "Station currently not operating"),
+                  yref = "paper",
+                  y = 0.5
+                )
+              )
   }
+  p
 }

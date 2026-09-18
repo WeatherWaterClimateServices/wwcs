@@ -103,7 +103,8 @@ plot_soil_temperature <- function(soildata, id, low, high, period, range) {
     p <-  plotly::plotly_empty(type = "scatter", mode = "markers") %>%
       plotly::config(displayModeBar = FALSE) %>%
       plotly::layout(
-        title = list(text = "No records for this location available\n Записи для этого места отсутствуют", yref = "paper", y = 0.5)
+                title = list(text = paste("No records for this location,", id),
+                             yref = "paper", y = 0.5)
       )
   }
   
