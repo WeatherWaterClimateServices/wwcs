@@ -284,6 +284,7 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
 
       p <- plotly::layout(
         p,
+        title = id,
         shapes = list(
           vline(xlimits_shadow[2]),
           list(

@@ -103,9 +103,15 @@ load_sql <- function() {
   deployments <- sqlQuery(query = "select * from MachineAtSite", dbname = "Machines") %>%
     dplyr::distinct(siteID, .keep_all = TRUE)
 
-  default_station <- DBI::dbReadTable(pool, "Sites") %>%
-    dplyr::filter(siteID == dashboard_default_station) %>%
-    dplyr::select(c(siteID, latitude, longitude, type))
+  if(dashboard_default_station %in% sites$siteID){
+    default_station <- DBI::dbReadTable(pool, "Sites") %>%
+      dplyr::filter(siteID == dashboard_default_station) %>%
+      dplyr::select(c(siteID, latitude, longitude, type))
+  } else {
+    default_station <- DBI::dbReadTable(pool, "Sites") %>%
+      head(1) %>%
+      dplyr::select(c(siteID, latitude, longitude))
+  }
 
   list(sites = sites, deployments = deployments, default_station = default_station)
 }
