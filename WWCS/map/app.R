@@ -581,7 +581,6 @@ server <- function(input, output, session) {
         valueBoxOutput("id"),
         valueBoxOutput("name"),
         valueBoxOutput("alt"),
-        valueBoxOutput("logger"),
         valueBoxOutput("sdate"),
         valueBoxOutput("lat"),
         valueBoxOutput("lng")
@@ -618,10 +617,6 @@ server <- function(input, output, session) {
     valueBox(paste0(selected$altitude, " m"), paste('Altitude'), color = "teal")
   })
 
-  output$logger <- renderValueBox({
-    valueBox(paste0(selected$logger), paste('loggerID'), color = "teal")
-  })
-
   output$sdate <- renderValueBox({
     valueBox(paste0(selected$startdate), paste('Start Date'), color = "teal")
   })
@@ -655,9 +650,8 @@ server <- function(input, output, session) {
   output$table <- DT::renderDataTable({
     req(!is.null(station_data$data))
     table <- station_data$data %>%
-      dplyr::select(c(1:14)) %>%
+      dplyr::select(-c("loggerID", "received")) %>%
       dplyr::select(tidyselect::where(~ sum(!is.na(.x)) > 0))
-
     DT::datatable(table)
   })
 
@@ -667,7 +661,10 @@ server <- function(input, output, session) {
       paste('data-', Sys.Date(), '.csv', sep = '')
     },
     content = function(file) {
-      write.csv(station_data$data, file)
+      table <- station_data$data %>%
+        dplyr::select(-c("loggerID", "received")) %>%
+        dplyr::select(tidyselect::where(~ sum(!is.na(.x)) > 0))
+      write.csv(table, file)
     }
   )
 

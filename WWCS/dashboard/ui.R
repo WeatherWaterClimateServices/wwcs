@@ -162,7 +162,6 @@ text - align:center
         i18n$t("Station"),
         valueBoxOutput("id"),
         valueBoxOutput("alt"),
-        valueBoxOutput("logger"),
         valueBoxOutput("sdate"),
         valueBoxOutput("lat"),
         valueBoxOutput("lng")

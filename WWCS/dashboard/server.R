@@ -432,12 +432,6 @@ server <- function(input, output, session) {
     valueBox(paste0(sd$station_data$altitude[id], " m"), paste(i18n$t("Altitude")), color = "teal")
   })
 
-  output$logger <- renderValueBox({
-    sd <- station_derived()
-    id <- which(sd$station_data$siteID == selected_station$id)
-    valueBox(paste0(sd$station_data$loggerID[id]), paste(i18n$t("Logger ID")), color = "teal")
-  })
-
   output$sdate <- renderValueBox({
     sd <- station_derived()
     id <- which(sd$station_data$siteID == selected_station$id)

@@ -96,11 +96,10 @@ async def get_observation(stationID, start=None, end=None):
     # Convert rows to a list of dictionaries with correct types
     result = [
         {
-            "loggerID": row.loggerID,
+            "stationID": row.stationID,
             "p": None if row.p is None else float(row.p),
             "pr": None if row.pr is None else float(row.pr),
             "rh": None if row.rh is None else float(row.rh),
-            "stationID": row.stationID,
             "ta": None if row.ta is None else float(row.ta),
             "timestamp": convert_timestamp(str(row.timestamp)),
             "ts10cm": None if row.ts10cm is None else float(row.ts10cm)
