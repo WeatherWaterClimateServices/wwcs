@@ -2,7 +2,6 @@ import datetime
 import hashlib
 import json
 import logging
-import os
 import socket
 import time
 import traceback
@@ -12,15 +11,14 @@ from fastapi import FastAPI, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 import sqlalchemy as sa
 
-from common import USERNAME, PASSWORD
+from common import DATABASE_URL_MACHINES, ENV
 from models.Machines import MachineAtSite, MachineObs, t_MachineObsRejected, Metadata
 
 
 # Database connection settings
 # With one worker we may use 20+30 concurrent connections
-DATABASE_URL = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/Machines'
 engine = create_async_engine(
-    DATABASE_URL,
+    DATABASE_URL_MACHINES,
     pool_size=20,           # Default is 5
     max_overflow=30,        # Default is 10
     pool_timeout=30,        # Default is 30
@@ -29,7 +27,6 @@ engine = create_async_engine(
 )
 
 
-ENV = os.environ.get('ENV')
 root_path = "/post" if ENV else None
 app = FastAPI(root_path=root_path)
 

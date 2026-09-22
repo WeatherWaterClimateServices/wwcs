@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api_wwcs import app
-from common import USERNAME, PASSWORD
+from common import DATABASE_URL_SERVICES, ENV, SERVICES_SCHEMA, USERNAME, PASSWORD
 
 siteID = "test-site-wwcs"
 loggerID = "test-logger-wwcs"
@@ -156,3 +156,24 @@ class TestSmartmetDateParams(TestObservationsDateParams):
 class TestEcmwfDateParams(TestObservationsDateParams):
     endpoint = "/ecmwf/"
     id_param = "siteID"
+
+
+class TestEnvSwitch:
+    def test_services_schema_follows_env(self):
+        expected = "WWCServices" if ENV == "PROD" else "WWCServices_DEV"
+        assert SERVICES_SCHEMA == expected
+        assert DATABASE_URL_SERVICES.endswith(f"/{expected}")
+
+
+class TestParamValidation:
+    @pytest.mark.parametrize("endpoint", ["/planting", "/harvest"])
+    def test_missing_date_returns_400(self, client, endpoint):
+        r = client.get(f"{endpoint}?stationID=nonexistent")
+        assert r.status_code == 400
+        assert "stationID and date are required" in r.json()["detail"]
+
+    @pytest.mark.parametrize("endpoint", ["/planting", "/harvest"])
+    def test_valid_params_empty_result(self, client, endpoint):
+        r = client.get(f"{endpoint}?stationID=nonexistent&date=2024-01-01")
+        assert r.status_code == 200
+        assert r.json() == []

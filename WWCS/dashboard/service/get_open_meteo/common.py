@@ -27,3 +27,11 @@ dotenv.load_dotenv(ROOT_DIR / '.env')
 
 USERNAME = os.environ.get('DB_USERNAME', 'wwcs')
 PASSWORD = os.environ.get('DB_PASSWORD')
+
+# Environment switch: mirrors the R side (ENV=="PROD" -> WWCServices, otherwise WWCServices_DEV)
+ENV = os.environ.get('ENV')
+SERVICES_SCHEMA = 'WWCServices' if ENV == 'PROD' else 'WWCServices_DEV'
+
+# Database connection settings
+DATABASE_URL_MACHINES = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/Machines'
+DATABASE_URL_SERVICES = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/{SERVICES_SCHEMA}'

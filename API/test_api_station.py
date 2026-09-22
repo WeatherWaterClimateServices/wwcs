@@ -350,7 +350,9 @@ def test_insert_fail_timestamp(logger, timestamp):
         n = count(cursor, 'Machines.MachineObs')
         m = count(cursor, 'Machines.MachineObsRejected')
 
-    data = {'timestamp': timestamp, 'loggerID': loggerID, 'sign': 'fake-sign'}
+    key = f"{siteID}; {loggerID}; {timestamp}"
+    sign = hashlib.sha256(key.encode('utf-8')).hexdigest()
+    data = {'timestamp': timestamp, 'loggerID': loggerID, 'sign': sign}
     response = httpx.post(f'{URL}/insert', json=data)
     assert response.status_code == 240
     with get_cursor() as cursor:

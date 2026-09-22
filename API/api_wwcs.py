@@ -1,6 +1,5 @@
 import contextlib
 import datetime
-import os
 import traceback
 import xarray as xr
 
@@ -11,17 +10,13 @@ from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from common import USERNAME, PASSWORD, ROOT_DIR
+from common import DATABASE_URL_MACHINES, DATABASE_URL_SERVICES, ENV, ROOT_DIR, SERVICES_SCHEMA
 
 
 # Database connection settings
-DATABASE_URL_MACHINES = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/Machines'
 database_machines = Database(DATABASE_URL_MACHINES)
-
-DATABASE_URL_SERVICES = f'mysql+asyncmy://{USERNAME}:{PASSWORD}@localhost:3306/WWCServices'
 database_services = Database(DATABASE_URL_SERVICES)
 
-ENV = os.environ.get('ENV')
 root_path = "./" if ENV else None
 
 
@@ -125,7 +120,7 @@ async def get_obs(response: Response, stationID: str, start: str | None = None, 
 
 @app.get("/areas/{area}/{date}")
 async def get_obs_by_area(response: Response, area: str, date: str):
-    query = """
+    query = f"""
         SELECT
             :area as area_name,
             CASE
@@ -143,7 +138,7 @@ async def get_obs_by_area(response: Response, area: str, date: str):
             wf.day,
             COUNT(DISTINCT s.siteID) as stations_count,
             MIN(wf.icon) as icon
-        FROM WWCServices.Forecasts wf
+        FROM {SERVICES_SCHEMA}.Forecasts wf
         JOIN SitesHumans.Sites s ON s.siteID = wf.siteID
         WHERE (:area = s.region OR :area = s.district OR :area = s.jamoat OR :area = s.village)
           AND wf.date = :date
@@ -559,8 +554,8 @@ async def get_data_warning_planting(request: Request, response: Response):
     date = request.query_params.get('date')
     stationID = request.query_params.get('stationID')
 
-    if not id or not date or not type:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name, date and type are required")
+    if not stationID or not date:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="stationID and date are required")
 
     query = """
         SELECT *
@@ -583,11 +578,11 @@ async def get_data_warning_planting(request: Request, response: Response):
 
 @app.get("/planting/jamoat/{area}/{date}")
 async def get_planting_by_area(response: Response, area: str, date: str):
-    query = """
+    query = f"""
         SELECT  :area as area_name,
             'jamoat' as area_type,
             p.*, s.district, s.jamoat, s.region
-        FROM WWCServices.Planting p
+        FROM {SERVICES_SCHEMA}.Planting p
         JOIN SitesHumans.Sites s ON s.siteID = p.siteID
         WHERE s.jamoat = :area
         AND p.date = :date
@@ -610,8 +605,8 @@ async def get_data_warning_harvest(request: Request, response: Response):
     date = request.query_params.get('date')
     stationID = request.query_params.get('stationID')
 
-    if not id or not date or not type:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name, date and type are required")
+    if not stationID or not date:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="stationID and date are required")
 
     query = """
         SELECT *
