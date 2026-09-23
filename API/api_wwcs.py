@@ -635,17 +635,14 @@ def convert_timestamp(original_timestamp: str) -> str:
 
 # ── Air Quality ──────────────────────────────────────────────────────────────
 
-STATION_IDS = [
-    '70:b8:f6:02:ad:80',  # KULOB006_ECO  Kulyab
-    '70:b8:f6:02:9c:38',  # DYU007_ECO    Park Ayni
-    '70:b8:f6:02:9e:a0',  # DYU01_ECO     CaCH Dushanbe
-    '70:b8:f6:02:aa:30',  # DYU006_ECO    Hydromet office
-    '70:b8:f6:02:a9:68',  # DYU012_ECO    Physicotechnical Institute
-    '70:b8:f6:02:9d:5c',  # DYU008_ECO    School No77
-    '70:b8:f6:01:cc:04',  # VAH001_ECO    Vahdat Centre
-    '70:b8:f6:01:cc:00',  # HIS003_ECO    Hissor Centre
-    '70:b8:f6:02:a9:6c',  # DYU010_ECO    Presidential Lyceum Dushanbe
-]
+# Air quality sites are identified by the "_ECO" suffix of their siteID
+# (e.g. DYU008_ECO). "!" is used as the LIKE escape character so that the
+# underscore is matched literally instead of acting as a single-char wildcard.
+AIRQ_SITE_PATTERN = '%!_ECO'
+
+# Upper bound for /airquality/history, to keep a single request from pulling
+# the whole table.
+MAX_HISTORY_HOURS = 168
 
 
 def _aqi_from_pm25(pm25: float) -> int:
@@ -665,45 +662,58 @@ def _aqi_from_pm25(pm25: float) -> int:
 
 @app.get("/airquality/stations")
 async def get_airquality_stations(response: Response):
-    # Named params avoid colon-in-MAC conflicting with :param syntax
-    placeholders = ", ".join(f":id{i}" for i in range(len(STATION_IDS)))
-    values = {f"id{i}": sid for i, sid in enumerate(STATION_IDS)}
-
-    query = f"""
-        SELECT mo.loggerID, mo.`timestamp`, mo.PM25, mo.PM10,
+    """Latest observation of every air quality site, with its metadata."""
+    # v_machineobs resolves the site a logger was deployed at, so the loggerID
+    # itself never leaves the database.
+    query = """
+        SELECT mo.siteID AS stationID,
+               sh.siteName, sh.latitude, sh.longitude, sh.altitude,
+               mo.`timestamp`, mo.PM25, mo.PM10,
                mo.ta AS temperature, mo.rh AS humidity,
                mo.wind_speed, mo.wind_dir
-        FROM Machines.MachineObs mo
+        FROM v_machineobs mo
+        JOIN SitesHumans.Sites sh ON sh.siteID = mo.siteID
         INNER JOIN (
-            SELECT loggerID, MAX(`timestamp`) AS latest_ts
-            FROM Machines.MachineObs
-            WHERE loggerID IN ({placeholders})
-            GROUP BY loggerID
-        ) latest ON mo.loggerID = latest.loggerID
-               AND mo.`timestamp` = latest.latest_ts
+            SELECT siteID, MAX(`timestamp`) AS latest_ts
+            FROM v_machineobs
+            WHERE siteID LIKE :pattern ESCAPE '!'
+            GROUP BY siteID
+        ) latest ON latest.siteID = mo.siteID
+               AND latest.latest_ts = mo.`timestamp`
+        WHERE mo.siteID LIKE :pattern ESCAPE '!'
+        ORDER BY sh.siteName
     """
-    rows = await database_machines.fetch_all(query=query, values=values)
+    rows = await database_machines.fetch_all(query=query, values={"pattern": AIRQ_SITE_PATTERN})
     result = []
     for row in rows:
         r = dict(row)
-        r['aqi'] = _aqi_from_pm25(r.get('PM25') or 0)
+        pm25 = r.get('PM25')
+        r['aqi'] = None if pm25 is None else _aqi_from_pm25(pm25)
         result.append(r)
     response.headers['Access-Control-Allow-Origin'] = '*'
     return result
 
 
 @app.get("/airquality/history")
-async def get_airquality_history(response: Response, hours: int = 24):
-    placeholders = ", ".join(f":id{i}" for i in range(len(STATION_IDS)))
-    values = {f"id{i}": sid for i, sid in enumerate(STATION_IDS)}
+async def get_airquality_history(response: Response, hours: int = 24, stationID: str | None = None):
+    """PM2.5 / PM10 time series of the air quality sites over the last `hours` hours."""
+    if hours < 1 or hours > MAX_HISTORY_HOURS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"hours must be between 1 and {MAX_HISTORY_HOURS}")
 
-    # hours is FastAPI-validated int — safe to interpolate directly
+    values = {"pattern": AIRQ_SITE_PATTERN, "hours": hours}
+    site_condition = ""
+    if stationID is not None:
+        site_condition = "AND mo.siteID = :stationID"
+        values["stationID"] = stationID
+
     query = f"""
-        SELECT mo.loggerID, mo.`timestamp`, mo.PM25, mo.PM10
-        FROM Machines.MachineObs mo
-        WHERE mo.loggerID IN ({placeholders})
-          AND mo.`timestamp` >= NOW() - INTERVAL {hours} HOUR
-        ORDER BY mo.loggerID, mo.`timestamp` ASC
+        SELECT mo.siteID AS stationID, mo.`timestamp`, mo.PM25, mo.PM10
+        FROM v_machineobs mo
+        WHERE mo.siteID LIKE :pattern ESCAPE '!'
+          {site_condition}
+          AND mo.`timestamp` >= NOW() - INTERVAL :hours HOUR
+        ORDER BY mo.siteID, mo.`timestamp` ASC
     """
     rows = await database_machines.fetch_all(query=query, values=values)
     response.headers['Access-Control-Allow-Origin'] = '*'
