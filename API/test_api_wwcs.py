@@ -201,10 +201,11 @@ def airq_cleanup():
 
 def insert_airq_observation(timestamp, pm25=None, pm10=None):
     with get_cursor(commit=True) as cursor:
+        # `received` has no default on every deployment, so set it explicitly
         cursor.execute(
-            "INSERT INTO Machines.MachineObs (loggerID, timestamp, PM25, PM10, ta, rh) "
-            "VALUES (%s, %s, %s, %s, %s, %s)",
-            [airq_loggerID, timestamp, pm25, pm10, 25.0, 40.0],
+            "INSERT INTO Machines.MachineObs (loggerID, timestamp, received, PM25, PM10, ta, rh) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            [airq_loggerID, timestamp, timestamp, pm25, pm10, 25.0, 40.0],
         )
 
 
