@@ -783,12 +783,16 @@ bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_r
   if (wakeup_reason == ESP_SLEEP_WAKEUP_UNDEFINED) {
     // Power-on or hardware reset - clean the modem state
     Serial.println("Power-on/reset detected - set pdp context explicitly.");    
-     
-    // Set PDP context with all parameters
+    // 1. Force automatic operator selection — clears any stale country-specific operator
+    modem.sendAT("+COPS=0");
+    modem.waitResponse(30000L);
+    esp_task_wdt_reset();
+    
+    // 2. Set PDP context with all parameters
     modem.sendAT("+CGDCONT=1,\"IP\",\"" + String(APN) + "\",\"0.0.0.0\",0,0,0,0");
     modem.waitResponse(3000L);
 
-    // Configure CAT-M bands (critical!)
+    // 3. Configure CAT-M bands
     if (NETWORK_MODE != 13){
       modem.sendAT("+CBANDCFG=\"CAT-M\",1,2,3,4,5,8,12,13,18,19,20,26,28,39");
       modem.waitResponse(10000L);  
