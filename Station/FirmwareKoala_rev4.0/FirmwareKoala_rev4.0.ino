@@ -456,7 +456,7 @@ void setup() {
       signalStrength = modem.getSignalQuality();       // network signal strength
       Serial.printf("Signal quality: %f\n", signalStrength);
 
-      serverConnected = connect_to_server();             // try to connect to the server
+      serverConnected = connect_to_server(&signalStrength);     // try to connect to the server
       if (serverConnected){
         // loop through the transmRecordsJSON
         for (int i=0; i < transmRecordsJSON.size(); i++){
@@ -863,7 +863,7 @@ bool connect_to_network(float* signalStrength, esp_sleep_wakeup_cause_t wakeup_r
  * input :        void
  * output :       bool success connect to server
  * ------------------------------------------------------------------------------------------------------------------------------*/
-bool connect_to_server(){
+bool connect_to_server(float* signalStrength){
   esp_task_wdt_reset();                              // reset wdt - a timeout here can add 1min
   bool success=false;
   long now_secs = rtc.getEpoch();                           // set current time for SSL
@@ -876,6 +876,7 @@ bool connect_to_server(){
     Serial.printf("Connected to %s\n", SERVER);
     success=true;
   } else {
+    *signalStrength = -888.0;                       // error code - server connect failed
     Serial.printf("Connection to %s failed.\n", SERVER);
   }
   return(success);
