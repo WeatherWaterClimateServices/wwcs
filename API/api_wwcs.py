@@ -635,10 +635,11 @@ def convert_timestamp(original_timestamp: str) -> str:
 
 # ── Air Quality ──────────────────────────────────────────────────────────────
 
-# Air quality sites are identified by the "_ECO" suffix of their siteID
-# (e.g. DYU008_ECO). "!" is used as the LIKE escape character so that the
-# underscore is matched literally instead of acting as a single-char wildcard.
-AIRQ_SITE_PATTERN = '%!_ECO'
+# Air quality stations are recognised by their data, not by their name: a site
+# of type WWCS that delivered a PM2.5 value within the window below is one.
+# Using the window rather than only the very last observation keeps a station
+# in the portal — shown as offline — while it is silent or its PM sensor fails.
+AIRQ_LOOKBACK_DAYS = 7
 
 # Upper bound for /airquality/history, to keep a single request from pulling
 # the whole table.
@@ -660,61 +661,162 @@ def _aqi_from_pm25(pm25: float) -> int:
     return 500
 
 
+async def _airquality_deployments():
+    """The air quality stations, as {siteID: {metadata, loggerIDs, latest_pm_ts}}.
+
+    Resolved in two indexed steps: the loggers currently deployed at WWCS sites,
+    then the ones among them that delivered PM2.5 within AIRQ_LOOKBACK_DAYS.
+    The loggerID is only used to reach the observations, it is never returned.
+    """
+    deployments = await database_machines.fetch_all(query="""
+        SELECT mas.siteID, mas.loggerID,
+               sh.siteName, sh.latitude, sh.longitude, sh.altitude
+        FROM Machines.MachineAtSite mas
+        JOIN SitesHumans.Sites sh ON sh.siteID = mas.siteID
+        WHERE sh.type = 'WWCS'
+          AND NOW() BETWEEN mas.startDate AND mas.endDate
+    """)
+    if not deployments:
+        return {}
+
+    logger_values = {f"lg{i}": row.loggerID for i, row in enumerate(deployments)}
+    placeholders = ", ".join(f":{name}" for name in logger_values)
+
+    # Range scan per logger on idx_logger_timestamp (loggerID, timestamp).
+    recent_pm = await database_machines.fetch_all(
+        query=f"""
+            SELECT loggerID, MAX(`timestamp`) AS latest_pm_ts
+            FROM Machines.MachineObs
+            WHERE loggerID IN ({placeholders})
+              AND `timestamp` >= NOW() - INTERVAL :days DAY
+              AND PM25 IS NOT NULL
+            GROUP BY loggerID
+        """,
+        values={**logger_values, "days": AIRQ_LOOKBACK_DAYS},
+    )
+    latest_by_logger = {row.loggerID: row.latest_pm_ts for row in recent_pm}
+    if not latest_by_logger:
+        return {}
+
+    stations: dict = {}
+    for row in deployments:
+        latest_pm_ts = latest_by_logger.get(row.loggerID)
+        if latest_pm_ts is None:
+            continue
+
+        station = stations.setdefault(row.siteID, {
+            "stationID": row.siteID,
+            "siteName": row.siteName,
+            "latitude": row.latitude,
+            "longitude": row.longitude,
+            "altitude": row.altitude,
+            "loggerIDs": [],
+            "latest_pm_ts": latest_pm_ts,
+            "latest_logger": row.loggerID,
+        })
+        station["loggerIDs"].append(row.loggerID)
+        # a site can carry more than one logger; keep the freshest PM reading
+        if latest_pm_ts > station["latest_pm_ts"]:
+            station["latest_pm_ts"] = latest_pm_ts
+            station["latest_logger"] = row.loggerID
+
+    return stations
+
+
 @app.get("/airquality/stations")
 async def get_airquality_stations(response: Response):
-    """Latest observation of every air quality site, with its metadata."""
-    # v_machineobs resolves the site a logger was deployed at, so the loggerID
-    # itself never leaves the database.
-    query = """
-        SELECT mo.siteID AS stationID,
-               sh.siteName, sh.latitude, sh.longitude, sh.altitude,
-               mo.`timestamp`, mo.PM25, mo.PM10,
-               mo.ta AS temperature, mo.rh AS humidity,
-               mo.wind_speed, mo.wind_dir
-        FROM v_machineobs mo
-        JOIN SitesHumans.Sites sh ON sh.siteID = mo.siteID
-        INNER JOIN (
-            SELECT siteID, MAX(`timestamp`) AS latest_ts
-            FROM v_machineobs
-            WHERE siteID LIKE :pattern ESCAPE '!'
-            GROUP BY siteID
-        ) latest ON latest.siteID = mo.siteID
-               AND latest.latest_ts = mo.`timestamp`
-        WHERE mo.siteID LIKE :pattern ESCAPE '!'
-        ORDER BY sh.siteName
-    """
-    rows = await database_machines.fetch_all(query=query, values={"pattern": AIRQ_SITE_PATTERN})
-    result = []
-    for row in rows:
-        r = dict(row)
-        pm25 = r.get('PM25')
-        r['aqi'] = None if pm25 is None else _aqi_from_pm25(pm25)
-        result.append(r)
+    """Latest PM2.5 observation of every air quality station, with its metadata."""
     response.headers['Access-Control-Allow-Origin'] = '*'
+
+    stations = await _airquality_deployments()
+    if not stations:
+        return []
+
+    # Primary key lookups: one row per station.
+    pair_values: dict = {}
+    pairs = []
+    for i, station in enumerate(stations.values()):
+        pair_values[f"lg{i}"] = station["latest_logger"]
+        pair_values[f"ts{i}"] = station["latest_pm_ts"]
+        pairs.append(f"(:lg{i}, :ts{i})")
+
+    observations = await database_machines.fetch_all(
+        query=f"""
+            SELECT loggerID, `timestamp`, PM25, PM10,
+                   ta AS temperature, rh AS humidity, wind_speed, wind_dir
+            FROM Machines.MachineObs
+            WHERE (loggerID, `timestamp`) IN ({", ".join(pairs)})
+        """,
+        values=pair_values,
+    )
+    obs_by_logger = {row.loggerID: row for row in observations}
+
+    result = []
+    for station in stations.values():
+        obs = obs_by_logger.get(station["latest_logger"])
+        if obs is None:
+            continue
+
+        result.append({
+            "stationID": station["stationID"],
+            "siteName": station["siteName"],
+            "latitude": station["latitude"],
+            "longitude": station["longitude"],
+            "altitude": station["altitude"],
+            "timestamp": obs.timestamp,
+            "PM25": obs.PM25,
+            "PM10": obs.PM10,
+            "temperature": obs.temperature,
+            "humidity": obs.humidity,
+            "wind_speed": obs.wind_speed,
+            "wind_dir": obs.wind_dir,
+            "aqi": None if obs.PM25 is None else _aqi_from_pm25(obs.PM25),
+        })
+
+    result.sort(key=lambda r: (r["siteName"] or "", r["stationID"]))
     return result
 
 
 @app.get("/airquality/history")
 async def get_airquality_history(response: Response, hours: int = 24, stationID: str | None = None):
-    """PM2.5 / PM10 time series of the air quality sites over the last `hours` hours."""
+    """PM2.5 / PM10 time series of the air quality stations over the last `hours` hours."""
     if hours < 1 or hours > MAX_HISTORY_HOURS:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"hours must be between 1 and {MAX_HISTORY_HOURS}")
 
-    values = {"pattern": AIRQ_SITE_PATTERN, "hours": hours}
-    site_condition = ""
-    if stationID is not None:
-        site_condition = "AND mo.siteID = :stationID"
-        values["stationID"] = stationID
-
-    query = f"""
-        SELECT mo.siteID AS stationID, mo.`timestamp`, mo.PM25, mo.PM10
-        FROM v_machineobs mo
-        WHERE mo.siteID LIKE :pattern ESCAPE '!'
-          {site_condition}
-          AND mo.`timestamp` >= NOW() - INTERVAL :hours HOUR
-        ORDER BY mo.siteID, mo.`timestamp` ASC
-    """
-    rows = await database_machines.fetch_all(query=query, values=values)
     response.headers['Access-Control-Allow-Origin'] = '*'
-    return [dict(row) for row in rows]
+
+    stations = await _airquality_deployments()
+    if stationID is not None:
+        stations = {k: v for k, v in stations.items() if k == stationID}
+    if not stations:
+        return []
+
+    site_by_logger = {
+        loggerID: station["stationID"]
+        for station in stations.values()
+        for loggerID in station["loggerIDs"]
+    }
+    logger_values = {f"lg{i}": lg for i, lg in enumerate(site_by_logger)}
+    placeholders = ", ".join(f":{name}" for name in logger_values)
+
+    rows = await database_machines.fetch_all(
+        query=f"""
+            SELECT loggerID, `timestamp`, PM25, PM10
+            FROM Machines.MachineObs
+            WHERE loggerID IN ({placeholders})
+              AND `timestamp` >= NOW() - INTERVAL :hours HOUR
+            ORDER BY loggerID, `timestamp` ASC
+        """,
+        values={**logger_values, "hours": hours},
+    )
+
+    return [
+        {
+            "stationID": site_by_logger[row.loggerID],
+            "timestamp": row.timestamp,
+            "PM25": row.PM25,
+            "PM10": row.PM10,
+        }
+        for row in rows
+    ]

@@ -182,53 +182,64 @@ class TestParamValidation:
 
 # ── Air Quality ──────────────────────────────────────────────────────────────
 
-airq_siteID = "TEST001_ECO"
+# A site that reports PM2.5, one that reports only weather, and a PM2.5 site of
+# another type: only the first one is an air quality station.
+airq_siteID = "test-site-airq"
 airq_loggerID = "test-logger-airq"
+plain_siteID = "test-site-plain"
+plain_loggerID = "test-logger-plain"
+other_type_siteID = "test-site-hydromet"
+other_type_loggerID = "test-logger-hydromet"
+
+ALL_AIRQ_SITES = [airq_siteID, plain_siteID, other_type_siteID]
+ALL_AIRQ_LOGGERS = [airq_loggerID, plain_loggerID, other_type_loggerID]
 
 
 def airq_cleanup():
     with get_cursor(commit=True) as cursor:
+        for logger in ALL_AIRQ_LOGGERS:
+            cursor.execute("DELETE FROM Machines.MachineObs WHERE loggerID = %s", [logger])
+            cursor.execute("DELETE FROM Machines.MachineAtSite WHERE loggerID = %s", [logger])
+        for site in ALL_AIRQ_SITES:
+            cursor.execute("DELETE FROM SitesHumans.Sites WHERE siteID = %s", [site])
+
+
+def create_site(siteID, loggerID, name, site_type="WWCS"):
+    with get_cursor(commit=True) as cursor:
         cursor.execute(
-            "DELETE FROM Machines.MachineObs WHERE loggerID = %s", [airq_loggerID]
+            "INSERT INTO SitesHumans.Sites (siteID, siteName, latitude, longitude, altitude, type) "
+            "VALUES (%s, %s, %s, %s, %s, %s)",
+            [siteID, name, 38.5, 68.8, 800.0, site_type],
         )
         cursor.execute(
-            "DELETE FROM Machines.MachineAtSite WHERE loggerID = %s", [airq_loggerID]
-        )
-        cursor.execute(
-            "DELETE FROM SitesHumans.Sites WHERE siteID = %s", [airq_siteID]
+            "INSERT INTO Machines.MachineAtSite (siteID, loggerID, startDate, endDate) "
+            "VALUES (%s, %s, %s, %s)",
+            [siteID, loggerID, "2000-01-01 00:00:00", "2100-01-01 00:00:00"],
         )
 
 
-def insert_airq_observation(timestamp, pm25=None, pm10=None):
+def insert_obs(loggerID, timestamp, pm25=None, pm10=None):
     with get_cursor(commit=True) as cursor:
         # `received` has no default on every deployment, so set it explicitly
         cursor.execute(
             "INSERT INTO Machines.MachineObs (loggerID, timestamp, received, PM25, PM10, ta, rh) "
             "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            [airq_loggerID, timestamp, timestamp, pm25, pm10, 25.0, 40.0],
+            [loggerID, timestamp, timestamp, pm25, pm10, 25.0, 40.0],
         )
 
 
 @pytest.fixture
 def airq_data():
     airq_cleanup()
-    with get_cursor(commit=True) as cursor:
-        cursor.execute(
-            "INSERT INTO SitesHumans.Sites (siteID, siteName, latitude, longitude, altitude, type) "
-            "VALUES (%s, %s, %s, %s, %s, %s)",
-            [airq_siteID, "Test Air Quality Site", 38.5, 68.8, 800.0, "WWCS"],
-        )
-        cursor.execute(
-            "INSERT INTO Machines.MachineAtSite (siteID, loggerID, startDate, endDate) "
-            "VALUES (%s, %s, %s, %s)",
-            [airq_siteID, airq_loggerID, "2000-01-01 00:00:00", "2100-01-01 00:00:00"],
-        )
+    create_site(airq_siteID, airq_loggerID, "Test Air Quality Site")
+    create_site(plain_siteID, plain_loggerID, "Test Weather Only Site")
+    create_site(other_type_siteID, other_type_loggerID, "Test Hydromet Site", site_type="TJHM")
     yield
     airq_cleanup()
 
 
-def minutes_ago(minutes):
-    return (datetime.datetime.now() - datetime.timedelta(minutes=minutes)).strftime(
+def ago(**kwargs):
+    return (datetime.datetime.now() - datetime.timedelta(**kwargs)).strftime(
         "%Y-%m-%d %H:%M:%S"
     )
 
@@ -240,8 +251,8 @@ def find_station(payload, station_id):
 class TestAirQualityStations:
     endpoint = "/airquality/stations"
 
-    def test_returns_site_metadata_and_no_loggerid(self, client, airq_data):
-        insert_airq_observation(minutes_ago(5), pm25=20.0, pm10=40.0)
+    def test_station_with_pm25_is_returned_with_its_metadata(self, client, airq_data):
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=20.0, pm10=40.0)
 
         r = client.get(self.endpoint)
         assert r.status_code == 200
@@ -255,41 +266,63 @@ class TestAirQualityStations:
         assert station["PM25"] == pytest.approx(20.0)
         assert station["PM10"] == pytest.approx(40.0)
 
-    def test_returns_only_latest_observation(self, client, airq_data):
-        insert_airq_observation(minutes_ago(60), pm25=10.0)
-        insert_airq_observation(minutes_ago(5), pm25=30.0)
+    def test_site_without_pm25_is_not_a_station(self, client, airq_data):
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=20.0)
+        insert_obs(plain_loggerID, ago(minutes=5))
 
-        r = client.get(self.endpoint)
-        assert r.status_code == 200
-        rows = [row for row in r.json() if row["stationID"] == airq_siteID]
-        assert len(rows) == 1
-        assert rows[0]["PM25"] == pytest.approx(30.0)
+        payload = client.get(self.endpoint).json()
+        assert find_station(payload, airq_siteID) is not None
+        assert find_station(payload, plain_siteID) is None
+
+    def test_other_site_types_are_excluded(self, client, airq_data):
+        insert_obs(other_type_loggerID, ago(minutes=5), pm25=20.0)
+
+        assert find_station(client.get(self.endpoint).json(), other_type_siteID) is None
+
+    def test_returns_the_latest_pm25_observation(self, client, airq_data):
+        insert_obs(airq_loggerID, ago(hours=3), pm25=10.0)
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=30.0)
+
+        station = find_station(client.get(self.endpoint).json(), airq_siteID)
+        assert station["PM25"] == pytest.approx(30.0)
+
+    def test_silent_station_stays_listed(self, client, airq_data):
+        # no data for two days: the station is still an air quality station,
+        # and the old timestamp lets the portal show it as offline
+        insert_obs(airq_loggerID, ago(days=2), pm25=15.0)
+
+        station = find_station(client.get(self.endpoint).json(), airq_siteID)
+        assert station is not None
+        assert station["PM25"] == pytest.approx(15.0)
+        assert station["timestamp"].startswith(ago(days=2)[:10])
+
+    def test_broken_pm_sensor_keeps_the_station_with_its_last_reading(self, client, airq_data):
+        # logger still reports, but without PM2.5 since three days
+        insert_obs(airq_loggerID, ago(days=3), pm25=18.0, pm10=36.0)
+        insert_obs(airq_loggerID, ago(minutes=5))
+
+        station = find_station(client.get(self.endpoint).json(), airq_siteID)
+        assert station is not None
+        assert station["PM25"] == pytest.approx(18.0)
+
+    def test_station_drops_out_after_the_lookback_window(self, client, airq_data):
+        from api_wwcs import AIRQ_LOOKBACK_DAYS
+
+        insert_obs(airq_loggerID, ago(days=AIRQ_LOOKBACK_DAYS + 1), pm25=15.0)
+
+        assert find_station(client.get(self.endpoint).json(), airq_siteID) is None
 
     def test_aqi_is_computed_from_pm25(self, client, airq_data):
-        insert_airq_observation(minutes_ago(5), pm25=12.0)
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=12.0)
 
-        station = find_station(client.get(self.endpoint).json(), airq_siteID)
-        assert station["aqi"] == 50
-
-    def test_aqi_is_null_without_pm25(self, client, airq_data):
-        insert_airq_observation(minutes_ago(5), pm25=None, pm10=40.0)
-
-        station = find_station(client.get(self.endpoint).json(), airq_siteID)
-        assert station["aqi"] is None
-
-    def test_non_eco_sites_are_excluded(self, client, test_data):
-        insert_observation(minutes_ago(5))
-
-        r = client.get(self.endpoint)
-        assert r.status_code == 200
-        assert find_station(r.json(), siteID) is None
+        assert find_station(client.get(self.endpoint).json(), airq_siteID)["aqi"] == 50
 
 
 class TestAirQualityHistory:
     endpoint = "/airquality/history"
 
     def test_returns_stationid_and_no_loggerid(self, client, airq_data):
-        insert_airq_observation(minutes_ago(5), pm25=20.0, pm10=40.0)
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=20.0, pm10=40.0)
 
         r = client.get(self.endpoint)
         assert r.status_code == 200
@@ -298,9 +331,26 @@ class TestAirQualityHistory:
         assert "loggerID" not in rows[0]
         assert rows[0]["PM25"] == pytest.approx(20.0)
 
+    def test_sites_without_pm25_are_excluded(self, client, airq_data):
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=20.0)
+        insert_obs(plain_loggerID, ago(minutes=5))
+
+        rows = client.get(self.endpoint).json()
+        assert {row["stationID"] for row in rows} == {airq_siteID}
+
+    def test_covers_readings_without_pm25_of_an_air_quality_station(self, client, airq_data):
+        # the station qualifies through its PM2.5 reading; the PM-less reading
+        # in between still belongs to its series
+        insert_obs(airq_loggerID, ago(hours=2), pm25=20.0)
+        insert_obs(airq_loggerID, ago(minutes=5))
+
+        rows = [r for r in client.get(self.endpoint).json() if r["stationID"] == airq_siteID]
+        assert len(rows) == 2
+        assert rows[-1]["PM25"] is None
+
     def test_hours_limits_the_window(self, client, airq_data):
-        insert_airq_observation(minutes_ago(5), pm25=20.0)
-        insert_airq_observation(minutes_ago(300), pm25=10.0)
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=20.0)
+        insert_obs(airq_loggerID, ago(hours=5), pm25=10.0)
 
         rows = [
             row
@@ -311,22 +361,18 @@ class TestAirQualityHistory:
         assert rows[0]["PM25"] == pytest.approx(20.0)
 
     def test_filters_by_station(self, client, airq_data):
-        insert_airq_observation(minutes_ago(5), pm25=20.0)
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=20.0)
 
         r = client.get(f"{self.endpoint}?stationID={airq_siteID}")
         assert r.status_code == 200
         assert {row["stationID"] for row in r.json()} == {airq_siteID}
 
     def test_unknown_station_returns_empty(self, client, airq_data):
+        insert_obs(airq_loggerID, ago(minutes=5), pm25=20.0)
+
         r = client.get(f"{self.endpoint}?stationID=nonexistent")
         assert r.status_code == 200
         assert r.json() == []
-
-    def test_non_eco_sites_are_excluded(self, client, test_data):
-        insert_observation(minutes_ago(5))
-
-        rows = client.get(self.endpoint).json()
-        assert find_station(rows, siteID) is None
 
     @pytest.mark.parametrize("hours", [0, -1, 169, 100000])
     def test_out_of_range_hours_rejected(self, client, hours):
