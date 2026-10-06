@@ -9,6 +9,7 @@ Continuously monitor the data coming in (or not coming in) from the stations. In
   - -555 modem hard reset failed
   - -666 network connect failed
   - -777 APN connect failed
+  - -888 server connect failed (on firmware versions after 2026/10)
     
 # Routine maintenance
 Every 3 months: Clean solar panel, radiation shield and sensors. Check cabling for signs of damage and possible moisture intrusion.
