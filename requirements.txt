@@ -4,7 +4,7 @@ databases~=0.9
 fastapi~=0.116
 python-dotenv~=1.1
 gunicorn~=26.0
-SQLAlchemy~=2.0
+SQLAlchemy[asyncio]~=2.0
 uvicorn~=0.35
 xarray~=2026.7.0
 
