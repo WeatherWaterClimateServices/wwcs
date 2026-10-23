@@ -119,7 +119,7 @@ void setup() {
 
   float signalStrength = -999.0;                   // network signal strength, init with error value
   unsigned long millisAtConnection;                 // millis() when initiating network - to compute sleepSecs
-  bool postSuccess = false;                         // whether the http response was successful (2XX) or not
+  bool postSuccess = false;                         // true when the server accepted (2XX) or permanently rejected (4XX) the record
   int sleepSeconds = SLEEP_MINUTES * 60;            // this is the default value, valid if time update from network fails
 
   bool apnConnected = false;                        // bool: wether we connected to APN
@@ -506,31 +506,41 @@ bool connect_to_network(float* signalStrength){
 bool send_data_to_server(const char* httpRequestData){
   // select content type according to API
   const char* contentType = JSON_PY_API ? "application/json" : "application/x-www-form-urlencoded";
-  bool success = false;
 
   clients.setInsecure();                                   // accept unverified ssl encryption
 
-  if (clients.connect(SERVER, PORT)){                         // if server is in reach
-    Serial.printf("Connected to %s\n", SERVER);
-    HttpClient https(clients, SERVER, PORT);                  // init https client
-    https.connectionKeepAlive(); // L200 https://github.com/vshymanskyy/TinyGSM/blob/master/examples/HttpsClient/HttpsClient.ino
-
-    Serial.printf("Trying post request -> %s\n", httpRequestData);
-    https.post(RESOURCE, contentType, httpRequestData);
-
-    int responseStatusCode = https.responseStatusCode();
-    success = (responseStatusCode >= 200 && responseStatusCode < 300);
-    if (success) {
-      Serial.println("Post request successful.");
-    }
-    String response = https.responseBody();
-    Serial.printf("Response code: %d; Response body: %s\n", responseStatusCode, response.c_str());
-    https.stop();
-  } else {
+  if (!clients.connect(SERVER, PORT)){                         // if server is in reach
     Serial.printf("Connection to %s failed.\n", SERVER);
+    return false;
   }
-  return(success);
+
+  Serial.printf("Connected to %s\n", SERVER);
+  HttpClient https(clients, SERVER, PORT);                  // init https client
+  https.connectionKeepAlive(); // L200 https://github.com/vshymanskyy/TinyGSM/blob/master/examples/HttpsClient/HttpsClient.ino
+
+  Serial.printf("Trying post request -> %s\n", httpRequestData);
+  https.post(RESOURCE, contentType, httpRequestData);
+
+  int responseStatusCode = https.responseStatusCode();
+  String response = https.responseBody();
+  Serial.printf("Response code: %d; Response body: %s\n", responseStatusCode, response.c_str());
+
+  https.stop();
+
+  // 2xx = accepted
+  if (responseStatusCode >= 200 && responseStatusCode < 300) {
+    return true;
+  }
+
+  // 4xx = permanently rejected by the server: discard record
+  if (responseStatusCode >= 400 && responseStatusCode < 500) {
+    return true;
+  }
+
+  // 5xx and transport errors are temporary, so keep the record and retry later.
+  return false;
 }
+
 /* --------------------------------------------------------------------------------------------------------------------------------
  * name :         bme_measurement
  * description :  do two measure, check plausibility
