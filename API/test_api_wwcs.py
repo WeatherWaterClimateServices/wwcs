@@ -286,19 +286,18 @@ class TestAirQualityStations:
         station = find_station(client.get(self.endpoint).json(), airq_siteID)
         assert station["PM25"] == pytest.approx(30.0)
 
-    def test_silent_station_stays_listed(self, client, airq_data):
-        # no data for two days: the station is still an air quality station,
-        # and the old timestamp lets the portal show it as offline
-        insert_obs(airq_loggerID, ago(days=2), pm25=15.0)
+    def test_short_outage_keeps_the_station_listed(self, client, airq_data):
+        # silent for a few hours: still an air quality station, and the old
+        # timestamp lets the portal show it as offline
+        insert_obs(airq_loggerID, ago(hours=6), pm25=15.0)
 
         station = find_station(client.get(self.endpoint).json(), airq_siteID)
         assert station is not None
         assert station["PM25"] == pytest.approx(15.0)
-        assert station["timestamp"].startswith(ago(days=2)[:10])
 
-    def test_broken_pm_sensor_keeps_the_station_with_its_last_reading(self, client, airq_data):
-        # logger still reports, but without PM2.5 since three days
-        insert_obs(airq_loggerID, ago(days=3), pm25=18.0, pm10=36.0)
+    def test_broken_pm_sensor_keeps_the_station_within_the_window(self, client, airq_data):
+        # logger still reports, but without PM2.5 since a few hours
+        insert_obs(airq_loggerID, ago(hours=4), pm25=18.0, pm10=36.0)
         insert_obs(airq_loggerID, ago(minutes=5))
 
         station = find_station(client.get(self.endpoint).json(), airq_siteID)
@@ -306,9 +305,18 @@ class TestAirQualityStations:
         assert station["PM25"] == pytest.approx(18.0)
 
     def test_station_drops_out_after_the_lookback_window(self, client, airq_data):
-        from api_wwcs import AIRQ_LOOKBACK_DAYS
+        from api_wwcs import AIRQ_LOOKBACK_HOURS
 
-        insert_obs(airq_loggerID, ago(days=AIRQ_LOOKBACK_DAYS + 1), pm25=15.0)
+        insert_obs(airq_loggerID, ago(hours=AIRQ_LOOKBACK_HOURS + 1), pm25=15.0)
+
+        assert find_station(client.get(self.endpoint).json(), airq_siteID) is None
+
+    def test_stale_station_drops_out_although_its_logger_reports(self, client, airq_data):
+        # the case this rule is for: the PM sensor saturated days ago and the
+        # logger went silent, so its last reading must not be shown as current
+        from api_wwcs import AIRQ_LOOKBACK_HOURS
+
+        insert_obs(airq_loggerID, ago(hours=AIRQ_LOOKBACK_HOURS + 6), pm25=561.0, pm10=604.0)
 
         assert find_station(client.get(self.endpoint).json(), airq_siteID) is None
 

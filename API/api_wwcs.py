@@ -637,9 +637,11 @@ def convert_timestamp(original_timestamp: str) -> str:
 
 # Air quality stations are recognised by their data, not by their name: a site
 # of type WWCS that delivered a PM2.5 value within the window below is one.
-# Using the window rather than only the very last observation keeps a station
-# in the portal — shown as offline — while it is silent or its PM sensor fails.
-AIRQ_LOOKBACK_DAYS = 7
+# The stations report every ten minutes, so the window is wide enough to keep a
+# station listed — shown as offline — through a short outage, and short enough
+# to drop one that went silent or whose PM sensor broke: a day-old measurement
+# must not be presented as the air quality of right now.
+AIRQ_LOOKBACK_HOURS = 24
 
 # Upper bound for /airquality/history, to keep a single request from pulling
 # the whole table.
@@ -665,7 +667,7 @@ async def _airquality_deployments():
     """The air quality stations, as {siteID: {metadata, loggerIDs, latest_pm_ts}}.
 
     Resolved in two indexed steps: the loggers currently deployed at WWCS sites,
-    then the ones among them that delivered PM2.5 within AIRQ_LOOKBACK_DAYS.
+    then the ones among them that delivered PM2.5 within AIRQ_LOOKBACK_HOURS.
     The loggerID is only used to reach the observations, it is never returned.
     """
     deployments = await database_machines.fetch_all(query="""
@@ -688,11 +690,11 @@ async def _airquality_deployments():
             SELECT loggerID, MAX(`timestamp`) AS latest_pm_ts
             FROM Machines.MachineObs
             WHERE loggerID IN ({placeholders})
-              AND `timestamp` >= NOW() - INTERVAL :days DAY
+              AND `timestamp` >= NOW() - INTERVAL :hours HOUR
               AND PM25 IS NOT NULL
             GROUP BY loggerID
         """,
-        values={**logger_values, "days": AIRQ_LOOKBACK_DAYS},
+        values={**logger_values, "hours": AIRQ_LOOKBACK_HOURS},
     )
     latest_by_logger = {row.loggerID: row.latest_pm_ts for row in recent_pm}
     if not latest_by_logger:
