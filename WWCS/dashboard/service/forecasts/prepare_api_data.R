@@ -21,7 +21,7 @@ pool_service <-
 # ------------------------------------------------
 emos.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")
 emos <- fst::read_fst(emos.file)
-picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes.fst")
+picto.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes_daytime.fst")
 pictos <- fst::read_fst(picto.file)
 
 forecasts <- emos %>%
@@ -36,7 +36,7 @@ forecasts <- emos %>%
   )
 
 icons <- pictos %>%
-  dplyr::mutate(icon = paste0(day, ".png")) %>%
+  dplyr::mutate(icon = paste0(icon, "d.png")) %>% ## expect for filename: {WMO-code}d.png
   dplyr::select(reftime, date, siteID, icon)  %>%
   dplyr::as_tibble()
 
@@ -55,20 +55,19 @@ readr::write_delim(forecasts, file = forecast.file, delim = ",")
 # --------------------------------
 # Expand API for day and night
 # --------------------------------
-picto_dn.file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes_daynight.fst")
-icons_daynight <- fst::read_fst(picto_dn.file) %>%
-  dplyr::mutate(icon = paste0(ifelse(daynight == "night", night, day), ".png")) %>%
+picto_6h_file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes_6hourly.fst")
+icons_6hourly <- fst::read_fst(picto_6h_file) %>%
+  dplyr::mutate(icon = paste0(icon, ifelse(timeofday %in% 2:3, "d", "n"), ".png")) %>%
   dplyr::select(reftime, date, siteID, icon, timeofday)  %>%
   dplyr::as_tibble()
 
 
 # Group by 0 am - 6 am, 7 am - 12 am, 1 pm - 6 pm, 7 pm - 12 pm
-forecasts_daynight <- emos %>%
+forecasts_6hourly <- emos %>%
   dplyr::mutate(
     date = as.Date(date(time)),
-    timeofday = ifelse(hour(time) <= 6, 1, ifelse(hour(time) < 12, 2, ifelse(hour(
-      time
-    ) < 18, 3, 4))),
+    timeofday = ifelse(hour(time) <= 6, 1, ifelse(hour(time) < 12, 2,
+                ifelse(hour(time) < 18, 3, 4))),
     daynight = ifelse(timeofday == 1 |
                         timeofday == 4, "night", "day")
   ) %>%
@@ -80,20 +79,20 @@ forecasts_daynight <- emos %>%
     Precip = round(sum(IFS_PR_mea), 1),
     .groups = "drop"
   ) %>%
-  dplyr::left_join(icons_daynight) %>%
+  dplyr::left_join(icons_6hourly) %>%
   dplyr::mutate(day = as.numeric(difftime(date, reftime, units = "days"))) %>%
   dplyr::mutate(date = as.Date(reftime)) %>%
   dplyr::select(-c("reftime")) %>%
   dplyr::arrange(siteID, date, day, timeofday) %>%
   dplyr::filter(day < 6)
 
-forecast_dn.file <- file.path(ROOT_DIR, "WWCS/dashboard/service/forecasts/forecasts_daynight_api.csv")
-readr::write_delim(forecasts_daynight, file = forecast_dn.file, delim = ",")
+forecast_6h.file <- file.path(ROOT_DIR, "WWCS/dashboard/service/forecasts/forecasts_6hourly_api.csv")
+readr::write_delim(forecasts_6hourly, file = forecast_6h.file, delim = ",")
 
 forecasts <- forecasts %>%
   dplyr::mutate(timeofday = -1)
 
-forecasts_all <- rbind(forecasts, forecasts_daynight) %>%
+forecasts_all <- rbind(forecasts, forecasts_6hourly) %>%
   dplyr::arrange(siteID, date, day) 
 
 

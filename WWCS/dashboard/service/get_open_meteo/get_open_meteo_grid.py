@@ -5,7 +5,6 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 import xarray as xr
-from openmeteo_sdk.Variable import Variable
 
 import client
 
@@ -34,35 +33,22 @@ def chunk_points(lats: np.ndarray, lons: np.ndarray) -> List[Tuple[List[float], 
 def download_chunk(latitudes: List[float], longitudes: List[float],
                    start_date: datetime.date, forecast_days: int) -> pd.DataFrame:
     """
-    Download ensemble data for multiple points in one API call.
+    Download ensemble mean/spread for multiple points in one API call.
     Returns DataFrame with columns: time, latitude, longitude, temperature_2m_mean, temperature_2m_std
     """
     forecast_delta = datetime.timedelta(days=forecast_days - 1)
     end_date = start_date + forecast_delta
 
-    params = {
-        "latitude": latitudes,
-        "longitude": longitudes,
-        "hourly": ["temperature_2m"],
-        "models": "ecmwf_ifs025",
-        "start_date": start_date.strftime('%Y-%m-%d'),
-        "end_date": end_date.strftime('%Y-%m-%d'),
-        "elevation": ["nan"] * len(latitudes),
-    }
-
-    aggrs = {
-        'temperature_2m': {
-            'variable': Variable.temperature,
-            'filter': lambda v: v.Altitude() == 2,
-            'aggregations': [
-                ('mean', lambda x: np.mean(x, axis=0).astype("float32") + 273.15),
-                ('std', lambda x: np.std(x, axis=0).astype("float32")),
-            ]
-        }
-    }
-
-    # ensemble_df handles single response with multiple locations
-    return om_client.ensemble_df(params, aggrs)
+    df = om_client.ensemble_mean_df(
+        latitudes,
+        longitudes,
+        start_date.strftime('%Y-%m-%d'),
+        end_date.strftime('%Y-%m-%d'),
+        ["temperature_2m", "temperature_2m_spread"],
+    )
+    df["temperature_2m_mean"] = (df["temperature_2m"] + 273.15).astype("float32")
+    df["temperature_2m_std"] = df["temperature_2m_spread"]
+    return df
 
 
 def main():

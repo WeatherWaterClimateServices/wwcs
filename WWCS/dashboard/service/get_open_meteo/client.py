@@ -4,7 +4,6 @@ import mysql.connector
 import numpy as np
 import pandas as pd
 import yaml
-#from openmeteo_sdk.Variable import Variable
 
 import openmeteo_requests
 import requests_cache
@@ -40,15 +39,81 @@ def get_sites():
             cursor.execute("SELECT siteID, latitude, longitude FROM Sites WHERE forecast=1")
             return cursor.fetchall()
 
+_BASE_URL = "https://ensemble-api.open-meteo.com/v1/ensemble"
+_CUSTOMER_BASE_URL = "https://customer-ensemble-api.open-meteo.com/v1/ensemble"
+
+
 class Client:
 
     def __init__(self):
         cache_session = requests_cache.CachedSession('.cache', expire_after=3600, backend='memory')
         retry_session = retry_requests.retry(cache_session, retries=5, backoff_factor=0.2)
+        self.session = retry_session
         self.client = openmeteo_requests.Client(session=retry_session)
-
-        # Commercial API with key or free public API
         self.api_key = os.getenv('OPENMETEO_API_KEY')
+
+    def _url(self):
+        return _CUSTOMER_BASE_URL if self.api_key else _BASE_URL
+
+    def _auth(self):
+        return {"apikey": self.api_key} if self.api_key else {}
+
+    def ensemble_mean_df(self, lat, lon, start_date: str, end_date: str, hourly: list) -> pd.DataFrame:
+        """Fetch variables from the ensemble mean API. Returns one column per requested variable.
+
+        `lat` and `lon` may be scalars or sequences of coordinates. The returned
+        DataFrame always has columns `time`, `latitude`, `longitude` plus one per
+        requested `hourly` variable; multi-location calls yield more rows.
+        """
+        lats = [lat] if np.isscalar(lat) else list(lat)
+        lons = [lon] if np.isscalar(lon) else list(lon)
+        params = {
+            "latitude": ",".join(map(str, lats)),
+            "longitude": ",".join(map(str, lons)),
+            "hourly": ",".join(hourly),
+            "models": "ecmwf_ifs025_ensemble_mean",
+            "start_date": start_date,
+            "end_date": end_date,
+            "elevation": ",".join(["nan"] * len(lats)),
+            **self._auth(),
+        }
+        resp = self.session.get(self._url(), params=params)
+        resp.raise_for_status()
+        payload = resp.json()
+        responses = payload if isinstance(payload, list) else [payload]
+        dfs = []
+        for r in responses:
+            h = r["hourly"]
+            data = {
+                "time": pd.to_datetime(h["time"]),
+                "latitude": r["latitude"],
+                "longitude": r["longitude"],
+            }
+            for var in hourly:
+                data[var] = np.array(h[var], dtype=np.float32)
+            dfs.append(pd.DataFrame(data))
+        return pd.concat(dfs, ignore_index=True)
+
+    def precipitation_ensemble_df(self, lat: float, lon: float, start_date: str, end_date: str) -> pd.DataFrame:
+        """Fetch full precipitation ensemble, returning one column per ensemble member."""
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "hourly": "precipitation",
+            "models": "ecmwf_ifs025_ensemble",
+            "start_date": start_date,
+            "end_date": end_date,
+            'elevation': 'nan',
+            **self._auth(),
+        }
+        resp = self.session.get(self._url(), params=params)
+        resp.raise_for_status()
+        hourly = resp.json()["hourly"]
+        member_keys = sorted(k for k in hourly if k.startswith("precipitation_member"))
+        data = {"time": pd.to_datetime(hourly["time"])}
+        for k in member_keys:
+            data[k] = np.array(hourly[k], dtype=np.float32)
+        return pd.DataFrame(data)
 
     def _ensemble_response_to_dataframe(
         self,
