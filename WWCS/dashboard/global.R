@@ -88,7 +88,7 @@ icon_sel    <- makeAwesomeIcon(iconColor = "#FFFFFF", library = "fa")
 .obs_file       <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/obs.fst")
 .dmo_file       <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/dmo.fst")
 .emos_file      <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/emos.fst")
-.picto_file     <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes.fst")
+.picto_file     <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/pictocodes_daytime.fst")
 .raster0_file   <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_plot_0.tif")
 .rastermgd_file <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/gemos_raster/raster_merged.nc")
 .daily_files    <- c(.dmo_file, .emos_file, .picto_file, .raster0_file, .rastermgd_file)
@@ -163,7 +163,7 @@ load_daily <- function() {
 
   pictos <- if (!file.exists(.picto_file)) data.frame() else {
     fst::read_fst(.picto_file) %>%
-      dplyr::select(reftime, siteID, day, date)
+      dplyr::select(reftime, siteID, icon, date)
   }
 
   ifsmap <- if (!file.exists(.raster0_file)) data.frame() else raster::raster(.raster0_file)
