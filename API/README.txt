@@ -1,7 +1,6 @@
 # api.py
 
-Manages incoming data from stations (only the newer stations, older ones are
-still using the .php scripts).
+Manages incoming data from stations.
 
 Listens port 5000.
 

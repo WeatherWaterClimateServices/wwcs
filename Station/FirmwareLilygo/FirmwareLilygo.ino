@@ -18,8 +18,7 @@ const char GSM_PIN[] = "";                    // dummy GSM PIN
 const int SLEEP_MINUTES = 10;                 // time between measurements
 const char GPRS_USER[] = "";                  // GPRS credential
 const char GPRS_PASS[] = "";                  // GPRS credential
-const bool JSON_PY_API = true;                // select whether transmission uses the json/python api or the previous php api
-const char RESOURCE[] = "/post/insert";       // resource path, for example: /post-data.php
+const char RESOURCE[] = "/post/insert";       // resource path
 const int  PORT = 443;
 const int MAX_LOOPS = 500;
 const int MAX_RECORDS = 300;
@@ -127,7 +126,6 @@ void setup() {
 
   char hashedKey[64];                               // hashed payloag from SHA256 as a string for the JSON
   DynamicJsonDocument JSONData(2048);               // to store data for transmission as JSON
-  int len;                                          // helper variable to store the length of something
 
 //....................................................................................................
 /* indicate start of code and WDT running */
@@ -222,35 +220,23 @@ void setup() {
 
 //....................................................................................................
 /* Prepare data to be publish */
-  if (JSON_PY_API){                      // if we do json/py, we start populating a JSON doc
-    snprintf(SHA256PayLoad, sizeof(SHA256PayLoad), "%s; %s; %s", SITE_ID, loggerID, timeStamp);
-    hashing(SHA256PayLoad, hashedKey);
-    // Serial.printf("%s | %s\n", SHA256PayLoad, hashedKey);
-    // now populate JSON doc
-    JSONData["sign"] = hashedKey;
-    JSONData["timestamp"] = timeStamp;
-    JSONData["ta"] = shtAirTemp;
-    JSONData["rh"] = shtAirHumi;
-    JSONData["p"] = bmePres;
-    JSONData["ts10cm"] = shtSoilTemp;
-    JSONData["logger_ta"] = bmeTemp;
-    JSONData["logger_rh"] = bmeHumi;
-    JSONData["U_Battery"] = batV;
-    JSONData["U_Solar"] = solarV;
-    JSONData["loggerID"] = loggerID;
-    JSONData["git_version"] = GIT_VERSION;
-  } else {                               // if we do php, we use a traditional String.
-    len = sprintf(httpRequestData, "timestamp=%s", timeStamp);
-    len += sprintf(httpRequestData + len, "&ta=%f", shtAirTemp);
-    len += sprintf(httpRequestData + len, "&rh=%f", shtAirHumi);
-    len += sprintf(httpRequestData + len, "&p=%f", bmePres);
-    len += sprintf(httpRequestData + len, "&logger_ta=%f", bmeTemp);
-    len += sprintf(httpRequestData + len, "&logger_rh=%f", bmeHumi);
-    len += sprintf(httpRequestData + len, "&U_Battery=%u", batV);
-    len += sprintf(httpRequestData + len, "&U_Solar=%u", solarV);
-    len += sprintf(httpRequestData + len, "&loggerID=%s", loggerID);
-    len += sprintf(httpRequestData + len, "&git_version=%s", GIT_VERSION);
-  }
+  // populate a JSON doc with the measurements and sign it
+  snprintf(SHA256PayLoad, sizeof(SHA256PayLoad), "%s; %s; %s", SITE_ID, loggerID, timeStamp);
+  hashing(SHA256PayLoad, hashedKey);
+  // Serial.printf("%s | %s\n", SHA256PayLoad, hashedKey);
+  // now populate JSON doc
+  JSONData["sign"] = hashedKey;
+  JSONData["timestamp"] = timeStamp;
+  JSONData["ta"] = shtAirTemp;
+  JSONData["rh"] = shtAirHumi;
+  JSONData["p"] = bmePres;
+  JSONData["ts10cm"] = shtSoilTemp;
+  JSONData["logger_ta"] = bmeTemp;
+  JSONData["logger_rh"] = bmeHumi;
+  JSONData["U_Battery"] = batV;
+  JSONData["U_Solar"] = solarV;
+  JSONData["loggerID"] = loggerID;
+  JSONData["git_version"] = GIT_VERSION;
 //....................................................................................................
 /* try to publish to network, publish old values, or store new one in database if no comm */
   Serial.println("If battery allows, attempt transmission.");
@@ -260,15 +246,11 @@ void setup() {
       Serial.println("... OK");
       set_rtc_to_network_datetime();                // get and set current date / time to RTC
 
-      // network signal strength; append to httpRequestData (via JSON or String)
+      // network signal strength; append to httpRequestData as JSON
       signalStrength = modem.getSignalQuality();
       Serial.printf("Signal quality: %f\n", signalStrength);
-      if (JSON_PY_API){
-        JSONData["signalStrength"] = signalStrength;
-        serializeJson(JSONData, httpRequestData);                  // convert JSON to string for transmission
-      } else {
-        len += sprintf(httpRequestData + len, "&signalStrength=%f", signalStrength);
-      }
+      JSONData["signalStrength"] = signalStrength;
+      serializeJson(JSONData, httpRequestData);                    // convert JSON to string for transmission
 
       // send data
       postSuccess = send_data_to_server(httpRequestData);
@@ -279,13 +261,9 @@ void setup() {
         }
       }
     } else {                                       // apnconnect did not work...
-      // append error code in SignalStrength (via JSON or String)
-      if (JSON_PY_API){
-        JSONData["signalStrength"] = signalStrength;
-        serializeJson(JSONData, httpRequestData);
-      } else {
-        len += sprintf(httpRequestData + len, "&signalStrength=%f", signalStrength);
-      }
+      // append error code in SignalStrength as JSON
+      JSONData["signalStrength"] = signalStrength;
+      serializeJson(JSONData, httpRequestData);
     }
   } else {
     blink_led(4, 200);                              // lightshow: battery low, don't try to init modem
@@ -504,8 +482,7 @@ bool connect_to_network(float* signalStrength){
  * output :       void
  * ------------------------------------------------------------------------------------------------------------------------------*/
 bool send_data_to_server(const char* httpRequestData){
-  // select content type according to API
-  const char* contentType = JSON_PY_API ? "application/json" : "application/x-www-form-urlencoded";
+  const char* contentType = "application/json";
 
   clients.setInsecure();                                   // accept unverified ssl encryption
 

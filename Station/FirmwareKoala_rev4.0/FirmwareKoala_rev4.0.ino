@@ -22,7 +22,7 @@ const int TRANSMIT_EVERY_MINS = 10;           // time between transmissions
 
 const char GPRS_USER[] = "";                  // GPRS credential
 const char GPRS_PASS[] = "";                  // GPRS credential
-const char RESOURCE[] = "/post/insert";       // resource path, for example: /post-data.php
+const char RESOURCE[] = "/post/insert";       // resource path
 const int  PORT = 443;
 const int MAX_LOOPS = 500;
 const int MAX_RECORDS = 300;
