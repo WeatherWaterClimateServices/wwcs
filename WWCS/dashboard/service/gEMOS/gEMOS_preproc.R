@@ -1,5 +1,3 @@
-rm(list = ls())
-
 # Required Libraries
 # ------------------------------------------------
 
@@ -15,8 +13,18 @@ options(pillar.sigfig = 7)
 
 # READ STATION SITES FOR TRAINING
 # --------------------------------
+ROOT_DIR <- normalizePath(getwd(), mustWork = TRUE)
+while (!file.exists(file.path(ROOT_DIR, ".git"))) {
+  parent <- dirname(ROOT_DIR)
+  if (parent == ROOT_DIR) break
+  ROOT_DIR <- parent
+}
+source(file.path(ROOT_DIR, "WWCS/.Rprofile"))
+boundary_dir <- file.path(ROOT_DIR, "WWCS/boundaries")
 
-source('/home/wwcs/wwcs/WWCS/.Rprofile')
+## create directory if needed
+topotile_dir <- file.path(ROOT_DIR, "WWCS/dashboard/appdata/topotiles/")
+dir.create(topotile_dir, recursive=TRUE)
 
 train_points <-
   sqlQuery(query = "select * from Sites WHERE forecast=1", dbname = "SitesHumans") %>%
@@ -28,7 +36,7 @@ train_points <-
 # CREATE SPATIAL GRID FOR SPATIAL MODEL
 # --------------------------------
 
-gadm <- sf::st_read(paste0("/home/wwcs/wwcs/WWCS/boundaries/gadm41_", gadm0, "_0.shp"))
+gadm <- sf::st_read(paste0(boundary_dir, "/gadm41_", gadm0, "_0.shp"))
 
 boundary <- sf::st_as_sf(gadm)
 
@@ -56,9 +64,7 @@ ntiles = ceiling(max((maxlat - minlat), (maxlon - minlon)))
 steps = ntiles + 1
 rlon = seq(bounds$xmin, bounds$xmax, length.out = steps)
 rlat = seq(bounds$ymin, bounds$ymax, length.out = steps)
-dir_tiles = "/srv/shiny-server/dashboard/appdata/topotiles/"
 
-#BORIS# hsurf <- raster::brick(paste0(dir_tiles, "hsurf_ecmwf.nc"))
 preproc_grid <- data.frame()
 preproc_train <- data.frame()
 
@@ -66,13 +72,13 @@ for (x in 1:ntiles) {
   for (y in 1:ntiles) {
     print(paste0("Reading tiles x=", x, " y=", y))
     ele <-
-      raster::brick(paste0(dir_tiles, 'DEM-30m-x=', x - 1, '-y=', y - 1, '.tif'))
+      raster::brick(paste0(topotile_dir, '/DEM-30m-x=', x - 1, '-y=', y - 1, '.tif'))
     tpi5 <-
-      raster::brick(paste0(dir_tiles, 'TPI-5--x=', x - 1, '-y=', y - 1, '.nc'))
+      raster::brick(paste0(topotile_dir, '/TPI-5--x=', x - 1, '-y=', y - 1, '.nc'))
     tpi20 <-
-      raster::brick(paste0(dir_tiles, 'TPI-20--x=', x - 1, '-y=', y - 1, '.nc'))
+      raster::brick(paste0(topotile_dir, '/TPI-20--x=', x - 1, '-y=', y - 1, '.nc'))
     tpi100 <-
-      raster::brick(paste0(dir_tiles, 'TPI-100--x=', x - 1, '-y=', y - 1, '.nc'))
+      raster::brick(paste0(topotile_dir, '/TPI-100--x=', x - 1, '-y=', y - 1, '.nc'))
     
     poi <- grid_points %>%
       dplyr::select(c(lon, lat)) %>%
@@ -89,8 +95,6 @@ for (x in 1:ntiles) {
       tpi5_poi <- raster::extract(tpi5, poi) %>% as.vector()
       tpi20_poi <- raster::extract(tpi20, poi) %>% as.vector()
       tpi100_poi <- raster::extract(tpi100, poi) %>% as.vector()
-#BORIS#       hsurf_poi <-
-#BORIS#         raster::extract(hsurf, poi) %>% as.vector() - ele_poi
       
       preproc_grid <- grid_points %>%
         dplyr::filter(lon >= rlon[x] &
@@ -99,7 +103,6 @@ for (x in 1:ntiles) {
         dplyr::mutate(TPI5 = tpi5_poi) %>%
         dplyr::mutate(TPI20 = tpi20_poi) %>%
         dplyr::mutate(TPI100 = tpi100_poi) %>%
-#BORIS#         dplyr::mutate(HSURF = hsurf_poi) %>%
         dplyr::bind_rows(preproc_grid)
     }
     
@@ -108,8 +111,6 @@ for (x in 1:ntiles) {
       tpi5_train <- raster::extract(tpi5, train) %>% as.vector()
       tpi20_train <- raster::extract(tpi20, train) %>% as.vector()
       tpi100_train <- raster::extract(tpi100, train) %>% as.vector()
-#BORIS#       hsurf_train <-
-#BORIS#         raster::extract(hsurf, train) %>% as.vector() - ele_train
       
       preproc_train <- train_points %>%
         dplyr::filter(lon >= rlon[x] &
@@ -118,21 +119,23 @@ for (x in 1:ntiles) {
         dplyr::mutate(TPI5 = tpi5_train) %>%
         dplyr::mutate(TPI20 = tpi20_train) %>%
         dplyr::mutate(TPI100 = tpi100_train) %>%
-#BORIS#         dplyr::mutate(HSURF = hsurf_train) %>%
         dplyr::bind_rows(preproc_train)
     }
   }
 }
+preproc_grid <- preproc_grid %>% 
+                dplyr::distinct(poi, .keep_all = TRUE)
 
+## prepare parameters for grid specification file
 bbox <- sf::st_bbox(boundary)
 xsize = length(seq(bbox$xmin, bbox$xmax, by = grid_spacing))
 ysize = length(seq(bbox$ymin, bbox$ymax, by = grid_spacing))
 gridsize = xsize * ysize
 
-# CREATE GRID FOR CDO
+# change to gEMOS directory, CREATE GRID FOR CDO
 # --------------------------------
-
-sink("gemos_grid.txt")
+setwd(file.path(ROOT_DIR, "WWCS/dashboard/service/gEMOS"))
+sink("gemos_grid.txt"))
 cat("gridtype  = lonlat")
 cat("\n")
 cat(paste0("gridsize = ", gridsize))
@@ -149,16 +152,6 @@ cat(paste0("yfirst = ", bbox$ymin))
 cat("\n")
 cat(paste0("yinc = ", grid_spacing))
 sink()
-
-preproc_grid <- preproc_grid %>% 
-                dplyr::distinct(poi, .keep_all = TRUE)
-
-gemos_folder <- "/srv/shiny-server/dashboard/appdata/topotiles/"
-
-if (!file.exists(gemos_folder)) {
-  # If the folder does not exist, create it
-  dir.create(gemos_folder, recursive = TRUE)
-}
 
 saveRDS(preproc_grid, "preproc_grid.rds")
 saveRDS(preproc_train, "preproc_train.rds")

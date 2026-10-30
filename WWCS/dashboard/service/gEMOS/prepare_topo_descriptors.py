@@ -4,11 +4,35 @@ import os.path
 from topo_descriptors import topo
 from topo_descriptors.helpers import get_dem_netcdf, scale_to_pixel
 import yaml
+import pathlib
+
+def get_rootdir():
+    """
+    Returns the absolute path to the project's root directory (or working directory in
+    Git's parlance).
+    """
+    current_dir = pathlib.Path(__file__).parent.resolve()
+    print(current_dir)
+    while current_dir != current_dir.parent:
+        env_path = current_dir / '.git'
+        if env_path.exists():
+            return current_dir
+        current_dir = current_dir.parent
+
+ROOT_DIR = get_rootdir()
 
 # Read YAML file
-with open("/home/wwcs/wwcs/WWCS/config.yaml", 'r') as file:
+yaml_file = ROOT_DIR / 'WWCS/config.yaml'
+with open(yaml_file, 'r') as file:
     config = yaml.safe_load(file)
 
+# check/create out-dir    
+outdir = ROOT_DIR / 'WWCS/dashboard/appdata/topotiles/'
+print(outdir)
+
+if not os.path.exists(outdir):
+   os.makedirs(outdir)
+    
 # Access parameters
 minlat = config.get("minlat")
 maxlat = config.get("maxlat")
@@ -23,11 +47,6 @@ margin = 0.5
 margin2 = 1 # To compute meaningful values TPI values at boundaries
 rlon = np.linspace(bounds[0], bounds[2], steps)
 rlat = np.linspace(bounds[1], bounds[3], steps)
-
-outdir = '/srv/shiny-server/dashboard/appdata/topotiles/'
-
-if not os.path.exists(outdir):
-   os.makedirs(outdir)
 
 # Download raw DEM files
 for x in range(ntiles):
@@ -45,11 +64,11 @@ for x in range(ntiles):
 # Generate topographic indices from DEM
 for x in range(ntiles):
     for y in range(ntiles): 
-        filein = outdir + 'DEM-30m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
-        filein2 = outdir + 'DEM-90m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
-        fileout5 = outdir + 'TPI-5-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
-        fileout20 = outdir + 'TPI-20-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
-        fileout100 = outdir + 'TPI-100-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
+        filein = str(outdir) + '/DEM-30m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
+        filein2 = str(outdir) + '/DEM-90m' + '-x=' + str(x) + '-y=' + str(y) + '.tif'
+        fileout5 = str(outdir) + '/TPI-5-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
+        fileout20 = str(outdir) + '/TPI-20-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
+        fileout100 = str(outdir) + '/TPI-100-' + '-x=' + str(x) + '-y=' + str(y) + '.nc'
 
         tpi5_created = False
         tpi100_created = False

@@ -41,6 +41,7 @@ WWCS/map_dev/
 WWCS/dashboard_dev/
 WWCS/dashboard/service/cronjob_tjhm_data.sh
 WWCS/dashboard/service/get_hydromet_data/
+WWCS/dashboard/service/gEMOS/gemos_grid.txt
 
 # macOS files
 .DS_Store
