@@ -4,19 +4,22 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
   offset = 0.10
   
   assign_bins <- function(datetime) {
-    hour <- as.numeric(format(datetime, "%H")) ## BORIS here - midnight belongs to prev. day
-    if (hour > 0 & hour <= 6) {
+    hour <- as.numeric(format(datetime, "%H")) 
+    if (hour == 0){ ## midnight belongs to prev. day
+      bin <- "7pm-12am"
+      center_time <- floor_date(datetime, "day") - hours(3)
+    } else if (hour > 0 & hour <= 6) {
       bin <- "0-6am"
-      center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(3), tz = timezone_country)
+      center_time <- floor_date(datetime, "day") + hours(3)
     } else if (hour > 6 & hour <= 12) {
       bin <- "7am-12pm"
-      center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(9), tz = timezone_country)
+      center_time <- floor_date(datetime, "day") + hours(9)
     } else if (hour > 12 & hour <= 18) {
       bin <- "1pm-6pm"
-      center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(15), tz = timezone_country)
+      center_time <- floor_date(datetime, "day") + hours(15)
     } else {
       bin <- "7pm-12am"
-      center_time <- as.POSIXct(as.Date(datetime) + lubridate::hours(21), tz = timezone_country)
+      center_time <- floor_date(datetime, "day") + hours(21)
     }
     return(data.frame(bin, center_time))
   }
@@ -63,10 +66,9 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
       ungroup()
     
     forecast_pr_data <- emos_data %>%
-      group_by(bins, center_time) %>% 
+      group_by(center_time) %>% 
       summarize(
         PR = sum(IFS_PR_mea, na.rm = TRUE)
-        ## PR_std = mean(IFS_PR_std, na.rm = TRUE) ## BORIS here
       ) %>%
       ungroup() %>%
       arrange(center_time) %>%
@@ -90,8 +92,8 @@ plot_meteogram_precip <- function(emos, dmo, pictos, id, period, ecmwf, mobile) 
         mutate(bins = assign_bins(time)$bin,
                center_time = assign_bins(time)$center_time) %>%
         ungroup() %>%
-        group_by(bins, center_time) %>%
-        summarize(PR = sum(Precipitation, na.rm = TRUE), )
+        group_by(center_time) %>%
+        summarize(PR = sum(Precipitation, na.rm = TRUE))
       
     } else {
       observations_pr <- data.frame(
