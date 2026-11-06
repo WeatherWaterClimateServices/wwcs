@@ -40,7 +40,7 @@ plot_observations <- function(obs, id, period, var) {
           ),
           opacity = 0.4,
           hovertemplate = paste(
-            '<b>Time</b>: %{x|%b %d %H:%M} UTC<br>',
+            '<b>Time</b>: %{x|%b %d %H:%M} <br>',
             '<b>Value</b>: %{y:.1f}<br>'
           )
         ) %>%
@@ -57,7 +57,7 @@ plot_observations <- function(obs, id, period, var) {
           ),
           name = "Smoothed",
           hovertemplate = paste(
-            '<b>Time</b>: %{x|%b %d %H:%M} UTC<br>',
+            '<b>Time</b>: %{x|%b %d %H:%M} <br>',
             '<b>Value</b>: %{y:.1f}<br>'
           )
         ) %>%
