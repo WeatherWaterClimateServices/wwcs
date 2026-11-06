@@ -37,7 +37,7 @@ pictocodes_daytime <- pictocodes_hourly %>%
 pictocodes_6hourly <- data.frame()
 for (j in 1:4){
   pictocodes_6hourly <- pictocodes_hourly %>%
-    dplyr::filter(hour > (j - 1) * 6 & hour <= j * 6) %>%
+    dplyr::filter(hour >= (j - 1) * 6 & hour < j * 6) %>%
     dplyr::group_by(reftime, date, siteID) %>%
     dplyr::summarise(
              ## Method A: Maximum Severity (Open-Meteo operational standard)
