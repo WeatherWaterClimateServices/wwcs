@@ -59,6 +59,7 @@ if(irrigation_default_station %in% sites_map_ui$siteID){
     dplyr::select(c(siteID, latitude, longitude))
 } else {
   default_station <- DBI::dbReadTable(pool, "Sites") %>%
+    filter(irrigation == 1) %>%
     head(1) %>%
     dplyr::select(c(siteID, latitude, longitude))  
 }
